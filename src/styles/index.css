@@ -1,0 +1,377 @@
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=DM+Sans:wght@400;500;700&family=Noto+Sans+Tamil:wght@400;500;700&family=Bebas+Neue&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F7F3EE;
+  --bg-card: #FFFFFF;
+  --bg-hero: #003366;
+  --text-primary: #1A1A2E;
+  --text-secondary: #2C3E6B;
+  --text-muted: #6B7280;
+  --border: #E5DDD0;
+  --nav-bg: #FFFFFF;
+  --nav-border: #FF6B00;
+  --footer-bg: #1A1A2E;
+  --footer-text: #FFFFFF;
+  --amber: #FF6B00;
+  --amber-light: #FFB347;
+  --amber-hover: #E55A00;
+  --navy: #003366;
+  --card-shadow: 0 2px 16px rgba(0,51,102,0.10);
+  --input-bg: #FFFFFF;
+  --input-border: #D1C8BC;
+  --input-text: #1A1A2E;
+  --input-placeholder: #6B7280;
+}
+
+html.dark {
+  color-scheme: dark;
+  --bg-primary: #0D0D0D;
+  --bg-secondary: #141414;
+  --bg-card: #1C1C1C;
+  --bg-hero: #0D0D0D;
+  --text-primary: #F0F0F0;
+  --text-secondary: #CCCCCC;
+  --text-muted: #888888;
+  --border: #2A2A2A;
+  --nav-bg: #111111;
+  --nav-border: #FF6B00;
+  --footer-bg: #0A0A0A;
+  --footer-text: #CCCCCC;
+  --amber: #FF6B00;
+  --amber-light: #FFB347;
+  --amber-hover: #FF8C00;
+  --navy: #4A90D9;
+  --card-shadow: 0 2px 16px rgba(0,0,0,0.40);
+  --input-bg: #111111;
+  --input-border: #2A2A2A;
+  --input-text: #F0F0F0;
+  --input-placeholder: #888888;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Noto Sans Tamil', 'DM Sans', sans-serif;
+  font-size: clamp(14px, 4vw, 18px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: rgba(255, 107, 0, 0.3);
+}
+
+input, select, textarea {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1.5px solid var(--input-border);
+  color: var(--input-text);
+  padding: 0.9rem 1rem;
+  border-radius: 0.75rem;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--input-placeholder);
+}
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--input-text) 50%),
+    linear-gradient(135deg, var(--input-text) 50%, transparent 50%);
+  background-position: calc(100% - 24px) calc(1em + 2px), calc(100% - 16px) calc(1em + 2px);
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+}
+
+select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.12);
+}
+
+/* ─── Theme-aware utility classes ─── */
+.bg-primary { background-color: var(--bg-primary); }
+.bg-secondary { background-color: var(--bg-secondary); }
+.bg-card { background-color: var(--bg-card); }
+.bg-hero { background-color: var(--bg-hero); }
+.bg-nav-bg { background-color: var(--nav-bg); }
+.bg-footer-bg { background-color: var(--footer-bg); }
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-navy { color: var(--navy); }
+.text-footer { color: var(--footer-text); }
+.border-default { border-color: var(--border); }
+.border-nav { border-color: var(--nav-border); }
+
+/* ─── Component styles ─── */
+
+.button-amber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--amber);
+  color: #000;
+  font-weight: 600;
+  padding: 0.75rem 2rem;
+  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 8px 20px rgba(255, 107, 0, 0.2);
+  min-height: 44px;
+}
+
+.button-amber:hover {
+  background: var(--amber-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(255, 107, 0, 0.3);
+}
+
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-weight: 500;
+  padding: 0.75rem 2rem;
+  transition: border-color 0.25s ease, color 0.25s ease;
+  min-height: 44px;
+}
+
+.button-secondary:hover {
+  border-color: var(--amber);
+  color: var(--text-primary);
+}
+
+.button-metal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 107, 0, 0.35);
+  background: rgba(255, 107, 0, 0.12);
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.95rem 1.8rem;
+  border-radius: 999px;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.button-metal:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 107, 0, 0.2);
+}
+
+.glow-button {
+  box-shadow: 0 0 20px rgba(255, 107, 0, 0.22);
+}
+
+.glow-button:hover {
+  box-shadow: 0 0 32px rgba(255, 107, 0, 0.35);
+}
+
+.error-text {
+  color: #ff6b6b;
+  font-size: 0.9rem;
+}
+
+.tamil-font {
+  font-family: 'Noto Sans Tamil', 'DM Sans', sans-serif;
+}
+
+.courier-id {
+  font-family: 'Courier Prime', monospace;
+  letter-spacing: 2px;
+}
+
+/* ─── Logo ring effect ─── */
+.logo-ring {
+  box-shadow: 0 0 0 4px var(--bg-primary), 0 0 0 7px var(--amber);
+  border-radius: 999px;
+}
+
+/* ─── Animations ─── */
+
+.route-transition {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.35s ease forwards;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.particle {
+  position: absolute;
+  top: 0;
+  width: 6px;
+  height: 6px;
+  background: linear-gradient(180deg, rgba(255, 179, 71, 1), rgba(255, 107, 0, 0.2));
+  border-radius: 999px;
+  filter: drop-shadow(0 0 10px rgba(255, 179, 71, 0.45));
+  animation: sparkMove 3s infinite ease-in-out;
+}
+
+@keyframes sparkMove {
+  0% { transform: translateY(0) translateX(0); opacity: 1; }
+  50% { transform: translateY(-120px) translateX(18px); opacity: 0.6; }
+  100% { transform: translateY(0) translateX(-12px); opacity: 0; }
+}
+
+.card-flip {
+  perspective: 1600px;
+  position: relative;
+}
+
+.card-flip-inner {
+  position: relative;
+  transition: transform 0.8s ease;
+  transform-style: preserve-3d;
+  min-height: 480px;
+}
+
+.card-flip-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+/* ─── ID Card Watermark ─── */
+.id-watermark {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.04;
+  font-size: 48px;
+  font-weight: 900;
+  color: #003366;
+  transform: rotate(-30deg);
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.id-watermark span {
+  display: inline-block;
+  margin: 0 1.5rem;
+}
+
+/* ─── Hologram shimmer strip ─── */
+.hologram-strip {
+  height: 3px;
+  background: linear-gradient(90deg, #FF9933, #FF6B00, #138808, #003366, #FF9933, #138808);
+  background-size: 200% 100%;
+  animation: hologramShimmer 2s linear infinite;
+}
+
+@keyframes hologramShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Mobile helpers ─── */
+/* ─── Shake animation for validation errors ─── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+.animate-shake {
+  animation: shake 0.4s ease;
+}
+
+/* ─── Dark mode form override — paper card ─── */
+html.dark .register-form {
+  background-color: #F8F4EF !important;
+  border-color: #D1C8BC !important;
+}
+html.dark .register-form input,
+html.dark .register-form select,
+html.dark .register-form textarea {
+  background: #FFFFFF !important;
+  color: #1A1A2E !important;
+  border-color: #D1C8BC !important;
+}
+html.dark .register-form select {
+  background-image: linear-gradient(45deg, transparent 50%, #1A1A2E 50%),
+    linear-gradient(135deg, #1A1A2E 50%, transparent 50%);
+}
+html.dark .register-form p,
+html.dark .register-form .text-navy-inline,
+html.dark .register-form .register-heading {
+  color: #1A1A2E !important;
+}
+html.dark .register-form label > span {
+  color: #2C3E6B !important;
+}
+
+@media (max-width: 768px) {
+  section {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .id-card-container {
+    transform: scale(0.75);
+    transform-origin: top center;
+  }
+}
