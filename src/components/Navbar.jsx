@@ -33,9 +33,9 @@ function Navbar() {
       <div className="mx-auto flex h-[70px] max-w-7xl items-center justify-between" style={{ padding: '0 2.5rem' }}>
         <NavLink to="/" className="flex items-center" style={{ gap: '12px' }}>
           <OrgLogo size={52} />
-          <div className="hidden sm:block">
-            <p style={{ fontSize: '15px', fontWeight: 800, color: 'var(--amber)' }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</p>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>South India Welding Workers Welfare Association</p>
+          <div className="flex flex-col text-left">
+            <p className="text-[13px] font-bold text-amber sm:text-[15px]">தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</p>
+            <p className="mt-0.5 text-[10px] text-secondary sm:text-[11px]">South India Welding Workers Welfare Association</p>
           </div>
         </NavLink>
 
