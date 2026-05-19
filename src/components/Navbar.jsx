@@ -30,12 +30,12 @@ function Navbar() {
   return (
     <header className={`sticky top-0 z-50 w-full transition duration-300 ${scrolled ? 'backdrop-blur-[12px] shadow-[0_2px_12px_rgba(0,0,0,0.10)]' : ''} bg-nav-bg`}
       style={{ borderBottom: '2px solid var(--nav-border)' }}>
-      <div className="mx-auto flex h-[70px] max-w-7xl items-center justify-between" style={{ padding: '0 2.5rem' }}>
-        <NavLink to="/" className="flex items-center" style={{ gap: '12px' }}>
+      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-start justify-between gap-3 px-4 py-3 md:h-[70px] md:flex-nowrap md:items-center md:px-10">
+        <NavLink to="/" className="flex min-w-0 items-center gap-3">
           <OrgLogo size={52} />
-          <div className="flex flex-col text-left">
-            <p className="text-[13px] font-bold text-amber sm:text-[15px]">தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</p>
-            <p className="mt-0.5 text-[10px] text-secondary sm:text-[11px]">South India Welding Workers Welfare Association</p>
+          <div className="flex min-w-0 flex-col text-left">
+            <p className="text-[12px] font-bold leading-tight text-amber sm:text-[14px]">தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</p>
+            <p className="mt-0.5 text-[10px] leading-snug text-secondary sm:text-[11px]">South India Welding Workers Welfare Association</p>
           </div>
         </NavLink>
 
