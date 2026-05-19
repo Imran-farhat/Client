@@ -441,7 +441,7 @@ function Register() {
                   <img src="/logo.png" width="60" height="60" style={{ borderRadius: '50%', border: '2px solid #FF6B00', objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none' }} />
                   <div>
                     <p style={{ fontSize: '18px', fontWeight: 800, color: '#003366', margin: 0 }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</p>
-                    <p style={{ fontSize: '11px', color: '#666666', margin: '4px 0 0 0' }}>South India Welding Welfare Association — உறுப்பினர் படிவம் / MEMBERSHIP FORM</p>
+                    <p style={{ fontSize: '11px', color: '#666666', margin: '4px 0 0 0' }}>South India Welding Workers Welfare Association — உறுப்பினர் படிவம் / MEMBERSHIP FORM</p>
                   </div>
                 </div>
                 {form.photoPreview && (
@@ -496,7 +496,7 @@ function Register() {
               </div>
 
               <div style={{ position: 'absolute', bottom: '40px', left: '40px', right: '40px', textAlign: 'center', borderTop: '2px solid #003366', paddingTop: '12px' }}>
-                <p style={{ color: '#888', fontSize: '10px', letterSpacing: '1px' }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம் · SOUTH INDIA WELDING WELFARE ASSOCIATION</p>
+                <p style={{ color: '#888', fontSize: '10px', letterSpacing: '1px' }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம் · South India Welding Workers Welfare Association</p>
               </div>
             </div>
 

@@ -35,7 +35,7 @@ function Navbar() {
           <OrgLogo size={52} />
           <div className="hidden sm:block">
             <p style={{ fontSize: '15px', fontWeight: 800, color: 'var(--amber)' }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</p>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>South India Welding Welfare Association</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>South India Welding Workers Welfare Association</p>
           </div>
         </NavLink>
 
