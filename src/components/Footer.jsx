@@ -19,7 +19,7 @@ function Footer() {
             <OrgLogo size={56} />
             <div>
               <p className="text-lg font-semibold" style={{ color: '#FFFFFF' }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</p>
-              <p className="text-sm" style={{ color: '#CCCCCC' }}>South India Welding Workers Welfare Association, India</p>
+              <p className="text-sm" style={{ color: '#CCCCCC' }}>Thennindia Welding Thozhilaalargal Nala Sangam, India</p>
             </div>
           </div>
           <p className="text-sm leading-6" style={{ color: '#CCCCCC' }}>Stay connected with our network of certified welding experts, training, and events across India.</p>

@@ -35,7 +35,7 @@ function Navbar() {
           <OrgLogo size={52} />
           <div className="flex min-w-0 flex-col text-left">
             <p className="text-[12px] font-bold leading-tight text-amber sm:text-[14px]">தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</p>
-            <p className="mt-0.5 text-[10px] leading-snug text-secondary sm:text-[11px]">South India Welding Workers Welfare Association</p>
+            <p className="mt-0.5 text-[10px] leading-snug text-secondary sm:text-[11px]">Thennindia Welding Thozhilaalargal Nala Sangam</p>
           </div>
         </NavLink>
 

@@ -50,7 +50,7 @@ function Home() {
           <div className="logo-ring mx-auto w-fit">
             <OrgLogo size={100} />
           </div>
-          <p className="mt-6 text-sm uppercase tracking-[0.3em] text-amber font-semibold">South India Welding Workers Welfare Association</p>
+          <p className="mt-6 text-sm uppercase tracking-[0.3em] text-amber font-semibold">Thennindia Welding Thozhilaalargal Nala Sangam</p>
           <h1 className="mt-4 text-[2rem] font-display tracking-[0.04em] md:text-5xl" style={{ color: '#FFFFFF' }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 md:mt-6" style={{ color: '#B8C9E0' }}>Industrial-Premium Welding Network</p>
           <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
