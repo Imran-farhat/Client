@@ -1,10 +1,13 @@
 import OrgLogo from '../components/OrgLogo';
+import balajiPhoto from '../assets/balaji.png';
+import idhreesPhoto from '../assets/Idhrees.jpeg';
+import muraliPhoto from '../assets/murali.jpeg';
 
 function About() {
   const team = [
-    { name: 'Arjun Mehta', role: 'Founder & Chair', photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=500&q=60' },
-    { name: 'Sneha Rao', role: 'Certification Director', photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=500&q=60' },
-    { name: 'Vikram Joshi', role: 'Training Lead', photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=500&q=60' },
+    { name: 'Balaji', role: 'Founder & Chair', photo: balajiPhoto },
+    { name: 'Idhrees', role: 'Certification Director', photo: idhreesPhoto },
+    { name: 'Murali', role: 'Training Lead', photo: muraliPhoto },
   ];
 
   const milestones = [
