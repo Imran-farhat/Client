@@ -5,9 +5,9 @@ import muraliPhoto from '../assets/murali.jpeg';
 
 function About() {
   const team = [
-    { name: 'Balaji', role: 'Founder & Chair', photo: balajiPhoto, photoPosition: 'center center' },
-    { name: 'Idhrees', role: 'Certification Director', photo: idhreesPhoto, photoPosition: 'center 25%' },
-    { name: 'Murali', role: 'Training Lead', photo: muraliPhoto, photoPosition: 'center center' },
+    { name: 'A.பாலாஜி ', role: 'மாநில தலைவர்', photo: balajiPhoto, photoPosition: 'center center' },
+    { name: 'M.முகமது இத்ரீஸ்', role: 'மாநில செயலாளர்', photo: idhreesPhoto, photoPosition: 'center 25%' },
+    { name: 'A.முரளிதரன்', role: 'மாநில பொருளாளர்', photo: muraliPhoto, photoPosition: 'center center' },
   ];
 
   const milestones = [
