@@ -5,9 +5,9 @@ import muraliPhoto from '../assets/murali.jpeg';
 
 function About() {
   const team = [
-    { name: 'Balaji', role: 'Founder & Chair', photo: balajiPhoto },
-    { name: 'Idhrees', role: 'Certification Director', photo: idhreesPhoto },
-    { name: 'Murali', role: 'Training Lead', photo: muraliPhoto },
+    { name: 'Balaji', role: 'Founder & Chair', photo: balajiPhoto, photoPosition: 'center center' },
+    { name: 'Idhrees', role: 'Certification Director', photo: idhreesPhoto, photoPosition: 'center 25%' },
+    { name: 'Murali', role: 'Training Lead', photo: muraliPhoto, photoPosition: 'center center' },
   ];
 
   const milestones = [
@@ -49,7 +49,7 @@ function About() {
             <div className="mt-8 grid gap-6 md:grid-cols-3">
               {team.map((member) => (
                 <div key={member.name} className="rounded-3xl border border-[var(--border)] bg-secondary p-6 text-center">
-                  <img src={member.photo} alt={member.name} className="mx-auto h-32 w-32 rounded-full object-cover object-top" />
+                  <img src={member.photo} alt={member.name} className="mx-auto h-32 w-32 rounded-full object-cover" style={{ objectPosition: member.photoPosition }} />
                   <h3 className="mt-5 text-xl font-semibold text-navy">{member.name}</h3>
                   <p className="mt-2 text-sm text-secondary">{member.role}</p>
                 </div>
