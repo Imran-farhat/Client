@@ -100,7 +100,10 @@ function Register() {
   };
 
   const handleSubmit = (event) => {
-    event.preventDefault();
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
     setSubmitting(true);
     const nextErrors = validate();
     if (Object.keys(nextErrors).length) {
@@ -193,7 +196,7 @@ function Register() {
         </div>
 
         {!member ? (
-          <form ref={formRef} onSubmit={handleSubmit} className="register-form rounded-[16px] border border-[#E5DDD0] bg-card" style={{ padding: '2rem', boxShadow: '0 4px 24px rgba(0,51,102,0.08)' }}>
+          <form ref={formRef} className="register-form rounded-[16px] border border-[#E5DDD0] bg-card" style={{ padding: '2rem', boxShadow: '0 4px 24px rgba(0,51,102,0.08)' }}>
             <div className="space-y-8">
               <div className="flex flex-col gap-4 rounded-[16px] p-4 sm:flex-row sm:items-center" style={{ background: '#003366' }}>
                 <OrgLogo size={48} />
@@ -357,7 +360,7 @@ function Register() {
                         <span>படம் பதிவேற்று</span>
                       </div>
                     )}
-                    <input type="file" accept="image/*" style={{ position: 'absolute', inset: 0, cursor: 'pointer', opacity: 0 }} onChange={handlePhotoChange} />
+                    <input type="file" accept="image/*" capture={false} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%', zIndex: 2 }} onChange={handlePhotoChange} />
                   </label>
                   {errors.profilePhoto && <p style={{ color: '#E53E3E', fontSize: '12px', marginTop: '6px', textAlign: 'center' }}>{errors.profilePhoto}</p>}
                 </div>
@@ -428,7 +431,7 @@ function Register() {
               </div>
             </div>
 
-            <button type="submit" className="mt-8 inline-flex h-[52px] w-full items-center justify-center rounded-[12px] px-6 text-sm font-semibold transition-all hover:opacity-90" style={{ background: '#FF6B00', color: '#FFFFFF' }}>
+            <button type="button" onClick={handleSubmit} className="mt-8 inline-flex h-[52px] w-full items-center justify-center rounded-[12px] px-6 text-sm font-semibold transition-all hover:opacity-90" style={{ background: '#FF6B00', color: '#FFFFFF' }}>
               பதிவு செய்க
               <span className="ml-3 text-xs uppercase tracking-[0.2em]">Register Now</span>
             </button>

@@ -248,43 +248,67 @@ function IDCard({ member, onReset }) {
   };
 
   const downloadFront = async () => {
-    const cardEl = document.getElementById('id-card-front');
-    if (!cardEl) return;
-    const originalOverflow = cardEl.style.overflow;
-    cardEl.style.overflow = 'visible';
+    const originalCard = document.getElementById('id-card-front');
+    if (!originalCard) return;
+
+    const renderContainer = document.createElement('div');
+    renderContainer.style.cssText = `
+      position: fixed;
+      top: -99999px;
+      left: -99999px;
+      width: 240px;
+      height: auto;
+      transform: none;
+      zoom: 1;
+      opacity: 1;
+      pointer-events: none;
+      z-index: -1;
+    `;
+    document.body.appendChild(renderContainer);
+
+    const clone = originalCard.cloneNode(true);
+    clone.id = 'id-card-front-clone';
+    clone.style.cssText = `
+      width: 240px;
+      height: auto;
+      min-height: 380px;
+      transform: none;
+      zoom: 1;
+      overflow: visible;
+      position: relative;
+      opacity: 1;
+      border-radius: 10px;
+      font-family: Catamaran, sans-serif;
+    `;
+
+    clone.querySelectorAll('img').forEach(img => {
+      img.style.opacity = '1';
+      img.style.visibility = 'visible';
+      try { img.crossOrigin = 'anonymous'; } catch (e) {}
+    });
+
+    clone.querySelectorAll('*').forEach(el => {
+      el.style.transform = 'none';
+      el.style.backdropFilter = 'none';
+      el.style.webkitBackdropFilter = 'none';
+    });
+
+    renderContainer.appendChild(clone);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
     try {
-      await preloadImages([balajiSign, idhreesSign, muraliSign]);
-      await delay(300);
-      const canvas = await html2canvas(cardEl, {
+      const canvas = await html2canvas(clone, {
         scale: 4,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#FFFFFF',
         logging: false,
-        width: cardEl.scrollWidth,
-        height: cardEl.scrollHeight,
-        windowWidth: cardEl.scrollWidth,
-        windowHeight: cardEl.scrollHeight,
-        onclone: (doc) => {
-          const el = doc.getElementById('id-card-front');
-          if (!el) return;
-          el.style.overflow = 'visible';
-          el.style.transform = 'none';
-          el.style.backdropFilter = 'none';
-          el.style.opacity = '1';
-          el.querySelectorAll('img').forEach(img => {
-            img.style.opacity = '1';
-            img.style.visibility = 'visible';
-            try { img.crossOrigin = 'anonymous'; } catch (e) {}
-          });
-          el.querySelectorAll('div, span').forEach(node => {
-            try {
-              const computed = window.getComputedStyle(node);
-              node.style.color = computed.color;
-              node.style.backgroundColor = computed.backgroundColor;
-            } catch (e) {}
-          });
-        }
+        width: 240,
+        height: clone.scrollHeight,
+        windowWidth: 240,
+        windowHeight: clone.scrollHeight,
+        x: 0,
+        y: 0,
       });
       const link = document.createElement('a');
       link.download = `TIWTN_${(member.fullName || 'member').replace(/\s+/g, '_')}_IDCard.png`;
@@ -295,14 +319,62 @@ function IDCard({ member, onReset }) {
     } catch (e) {
       console.error(e);
     } finally {
-      cardEl.style.overflow = originalOverflow;
+      document.body.removeChild(renderContainer);
     }
   };
 
   const downloadBoth = async () => {
-    const frontEl = document.getElementById('id-card-front');
-    const backEl = document.getElementById('id-card-back');
-    if (!frontEl || !backEl) return;
+    const originalFront = document.getElementById('id-card-front');
+    const originalBack = document.getElementById('id-card-back');
+    if (!originalFront || !originalBack) return;
+
+    const renderContainer = document.createElement('div');
+    renderContainer.style.cssText = `
+      position: fixed;
+      top: -99999px;
+      left: -99999px;
+      width: 240px;
+      transform: none;
+      zoom: 1;
+      pointer-events: none;
+      z-index: -1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    `;
+    document.body.appendChild(renderContainer);
+
+    const cloneCard = (original, newId) => {
+      const clone = original.cloneNode(true);
+      clone.id = newId;
+      clone.style.cssText = `
+        width: 240px;
+        height: auto;
+        min-height: 380px;
+        transform: none;
+        zoom: 1;
+        overflow: visible;
+        position: relative;
+        opacity: 1;
+        border-radius: 10px;
+      `;
+      clone.querySelectorAll('img').forEach(img => {
+        img.style.opacity = '1';
+        try { img.crossOrigin = 'anonymous'; } catch (e) {}
+      });
+      clone.querySelectorAll('*').forEach(el => {
+        el.style.transform = 'none';
+        el.style.backdropFilter = 'none';
+      });
+      return clone;
+    };
+
+    const frontClone = cloneCard(originalFront, 'front-clone');
+    const backClone = cloneCard(originalBack, 'back-clone');
+    renderContainer.appendChild(frontClone);
+    renderContainer.appendChild(backClone);
+
+    await new Promise((resolve) => setTimeout(resolve, 700));
 
     const opts = {
       scale: 4,
@@ -310,38 +382,30 @@ function IDCard({ member, onReset }) {
       allowTaint: true,
       backgroundColor: '#FFFFFF',
       logging: false,
-      onclone: (doc) => {
-        doc.querySelectorAll('#id-card-front, #id-card-back').forEach(el => {
-          el.style.overflow = 'visible';
-          el.style.transform = 'none';
-          el.style.backdropFilter = 'none';
-          el.style.opacity = '1';
-          el.querySelectorAll('img').forEach(img => {
-            try { img.style.opacity = '1'; img.crossOrigin = 'anonymous'; } catch (e) {}
-          });
-        });
-      }
+      windowWidth: 240,
     };
+
     try {
-      await preloadImages([balajiSign, idhreesSign, muraliSign]);
-      frontEl.style.overflow = 'visible';
-      backEl.style.overflow = 'visible';
-      await delay(400);
-      const frontCanvas = await html2canvas(frontEl, { ...opts, width: frontEl.scrollWidth, height: frontEl.scrollHeight });
-      const backCanvas = await html2canvas(backEl, { ...opts, width: backEl.scrollWidth, height: backEl.scrollHeight });
+      const frontCanvas = await html2canvas(frontClone, {
+        ...opts,
+        width: 240,
+        height: frontClone.scrollHeight,
+      });
+      const backCanvas = await html2canvas(backClone, {
+        ...opts,
+        width: 240,
+        height: backClone.scrollHeight,
+      });
 
-      frontEl.style.overflow = 'hidden';
-      backEl.style.overflow = 'hidden';
-
-      const gap = 40;
+      const gap = 30;
       const combined = document.createElement('canvas');
-      combined.width = Math.max(frontCanvas.width, backCanvas.width);
-      combined.height = frontCanvas.height + gap + backCanvas.height;
+      combined.width = 960;
+      combined.height = frontCanvas.height + gap * 4 + backCanvas.height;
       const ctx = combined.getContext('2d');
-      ctx.fillStyle = '#F0F0F0';
+      ctx.fillStyle = '#EEEEEE';
       ctx.fillRect(0, 0, combined.width, combined.height);
       ctx.drawImage(frontCanvas, 0, 0);
-      ctx.drawImage(backCanvas, 0, frontCanvas.height + gap);
+      ctx.drawImage(backCanvas, 0, frontCanvas.height + gap * 4);
 
       const link = document.createElement('a');
       link.download = `TIWTN_${(member.fullName || 'member').replace(/\s+/g, '_')}_IDCard_BothSides.png`;
@@ -349,7 +413,11 @@ function IDCard({ member, onReset }) {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      document.body.removeChild(renderContainer);
+    }
   };
 
   return (
