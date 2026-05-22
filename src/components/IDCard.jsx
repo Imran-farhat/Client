@@ -45,13 +45,10 @@ function LogoFallback() {
 }
 
 function CardFront({ member }) {
-  const aadhaarValue = member.aadhaar ? member.aadhaar.replace(/^(\d{2})(\d{4})(\d{4})$/, 'XX $2 $3') : 'XX XXXX XXXX';
   const infoRows = [
     { label: 'பெயர்', labelEn: 'Name', value: member.fullName || '-' },
     { label: 'பிறந்த தேதி', labelEn: 'D.O.B', value: member.dob || '-' },
-    { label: 'இரத்த பிரிவு', labelEn: 'Blood', value: member.bloodGroup || '-' },
     { label: 'கைபேசி', labelEn: 'Mobile', value: member.mobile || '-' },
-    { label: 'ஆதார் எண்', labelEn: 'Aadhaar', value: aadhaarValue },
     { label: 'மாவட்டம்', labelEn: 'District', value: member.pledgeDistrict || '-' },
     { label: 'முகவரி', labelEn: 'Address', value: member.address || '-' },
     { label: 'இணைந்த தேதி', labelEn: 'Joined', value: member.joiningDate || '-' },
@@ -59,7 +56,7 @@ function CardFront({ member }) {
 
   return (
     <div id="id-card-front" style={{ width: '340px', height: '214px', background: '#FFFFFF', borderRadius: '6px', border: '1px solid #CCCCCC', position: 'relative', overflow: 'hidden', fontFamily: "'Catamaran', 'Noto Sans Tamil', sans-serif" }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '6px', background: '#FF6B00', zIndex: 2 }} />
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '6px', background: '#FF6B00', zIndex: 2, borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }} />
 
       <TricolorStrip />
 
@@ -147,7 +144,7 @@ function CardFront({ member }) {
 function CardBack({ member }) {
   return (
     <div id="id-card-back" style={{ width: `${CARD_W}px`, height: `${CARD_H}px`, background: '#FFFFFF', borderRadius: '6px', border: '1px solid #CCCCCC', position: 'relative', overflow: 'hidden', fontFamily: "'Catamaran', 'Noto Sans Tamil', sans-serif", boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '6px', background: '#FF6B00', zIndex: 2 }} />
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '6px', background: '#FF6B00', zIndex: 2, borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }} />
       <TricolorStrip />
 
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
@@ -184,6 +181,13 @@ function CardBack({ member }) {
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '7px', color: '#555555', textTransform: 'uppercase', marginBottom: '2px' }}>இரத்த பிரிவு / BLOOD GROUP</div>
             <div style={{ fontWeight: 700 }}>{member.bloodGroup || '-'}</div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', fontSize: '8px', color: '#003366' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '7px', color: '#555555', textTransform: 'uppercase', marginBottom: '2px' }}>ஆதார் எண் / Aadhaar</div>
+            <div style={{ fontWeight: 700 }}>{member.aadhaar || '-'}</div>
           </div>
         </div>
 
