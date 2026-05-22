@@ -1,7 +1,31 @@
 import { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
+import balajiSign from '../assets/balaji_clean.png';
+import idhreesSign from '../assets/idhrees_clean.png';
+import muraliSign from '../assets/murali_clean.png';
 
 const CARD_W = 900;
+
+const AUTHORITIES = [
+  {
+    sign: balajiSign,
+    nameTamil: 'அ. பாலாஜி',
+    role: 'மாநில தலைவர்',
+    roleEn: 'State President'
+  },
+  {
+    sign: idhreesSign,
+    nameTamil: 'ம. முகமது இத்ரீஸ்',
+    role: 'மாநில செயலாளர்',
+    roleEn: 'State Secretary'
+  },
+  {
+    sign: muraliSign,
+    nameTamil: 'அ. முரளிதரன்',
+    role: 'மாநில பொருளாளர்',
+    roleEn: 'State Treasurer'
+  }
+];
 
 function TricolorStrip() {
   return (
@@ -20,80 +44,98 @@ function LogoFallback() {
 }
 
 function CardFront({ member }) {
-  return (
-    <div id="id-card-front" style={{ width: `${CARD_W}px`, background: '#FFFFFF', borderRadius: '8px', border: '1px solid #CCCCCC', position: 'relative', overflow: 'hidden', fontFamily: "'Catamaran', 'Noto Sans Tamil', sans-serif", boxShadow: '0 4px 24px rgba(0,0,0,0.15)' }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '6px', background: '#FF6B00', zIndex: 2 }} />
+  const aadhaarValue = member.aadhaar ? member.aadhaar.replace(/^(\d{2})(\d{4})(\d{4})$/, 'XX $2 $3') : 'XX XXXX XXXX';
+  const infoRows = [
+    { label: 'பெயர்', labelEn: 'Name', value: member.fullName || '-' },
+    { label: 'பிறந்த தேதி', labelEn: 'D.O.B', value: member.dob || '-' },
+    { label: 'இரத்த பிரிவு', labelEn: 'Blood', value: member.bloodGroup || '-' },
+    { label: 'கைபேசி', labelEn: 'Mobile', value: member.mobile || '-' },
+    { label: 'ஆதார் எண்', labelEn: 'Aadhaar', value: aadhaarValue },
+    { label: 'மாவட்டம்', labelEn: 'District', value: member.pledgeDistrict || '-' },
+    { label: 'முகவரி', labelEn: 'Address', value: member.address || '-' },
+    { label: 'இணைந்த தேதி', labelEn: 'Joined', value: member.joiningDate || '-' },
+  ];
 
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
-        {Array.from({ length: 15 }).map((_, i) => (
-          <span key={i} style={{ position: 'absolute', fontSize: '52px', fontWeight: 900, color: 'rgba(0,51,102,0.05)', transform: 'rotate(-30deg)', whiteSpace: 'nowrap', userSelect: 'none', top: `${-50 + (i % 5) * 130}px`, left: `${-80 + Math.floor(i / 5) * 340}px` }}>TIWTN</span>
-        ))}
-      </div>
+  return (
+    <div id="id-card-front" style={{ width: '720px', background: '#FFFFFF', borderRadius: '8px', border: '1px solid #CCCCCC', position: 'relative', overflow: 'hidden', fontFamily: "'Catamaran', 'Noto Sans Tamil', sans-serif" }}>
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '6px', background: '#FF6B00', zIndex: 2 }} />
 
       <TricolorStrip />
 
-      <div style={{ position: 'relative', zIndex: 1, padding: '16px 20px 12px', display: 'flex', alignItems: 'center', gap: '16px', borderBottom: '1px solid #E0E0E0' }}>
-        <img src="/logo.png" width="64" height="64" style={{ borderRadius: '50%', border: '2px solid #FF6B00', objectFit: 'cover', minWidth: '64px' }} onError={(e) => { e.target.style.display = 'none'; }} />
-        <div style={{ flex: 1 }}>
-          <p style={{ fontSize: '22px', fontWeight: 800, color: '#003366', lineHeight: 1.2, margin: 0 }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</p>
-          <p style={{ fontSize: '12px', color: '#666666', fontWeight: 400, margin: '2px 0' }}>WELDING PROFESSIONALS WELFARE ASSOCIATION</p>
-          <p style={{ fontSize: '11px', color: '#FF6B00', letterSpacing: '1px', fontWeight: 600, margin: 0, textTransform: 'uppercase' }}>உறுப்பினர் அட்டை / MEMBER IDENTITY CARD</p>
+      <div style={{ background: '#003366', padding: '10px 16px 10px 22px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <img
+          src="/logo.png"
+          alt="TIWTN logo"
+          style={{ width: '60px', height: '60px', borderRadius: '50%', border: '2px solid #FF6B00', flexShrink: 0, objectFit: 'cover' }}
+          onError={(e) => { e.target.style.display = 'none'; }}
+        />
+        <div>
+          <div style={{ fontSize: '18px', fontWeight: '800', color: '#FFFFFF', lineHeight: 1.3 }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</div>
+          <div style={{ fontSize: '11px', color: '#B8C9E0', letterSpacing: '1px', marginTop: '2px' }}>WELDING PROFESSIONALS WELFARE ASSOCIATION</div>
         </div>
       </div>
 
-      <div style={{ padding: '16px 20px', display: 'flex', gap: '20px' }}>
-        <div style={{ width: '160px', minWidth: '160px', flexShrink: 0 }}>
+      <div style={{ background: '#FF6B00', textAlign: 'center', padding: '5px', fontSize: '12px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '2px' }}>
+        உறுப்பினர் அட்டை / MEMBER IDENTITY CARD
+      </div>
+
+      <div style={{ display: 'flex', padding: '12px 16px 12px 22px', gap: '14px', borderBottom: '1px solid #E0E0E0' }}>
+        <div style={{ flexShrink: 0 }}>
           {member.photoPreview ? (
-            <img src={member.photoPreview} alt="Member" style={{ width: '160px', height: '190px', objectFit: 'cover', borderRadius: '4px', border: '2px solid #003366' }} />
+            <img
+              src={member.photoPreview}
+              alt="Member"
+              style={{ width: '120px', height: '145px', objectFit: 'cover', border: '2px solid #003366', borderRadius: '3px', display: 'block' }}
+            />
           ) : (
-            <div style={{ width: '160px', height: '190px', borderRadius: '4px', border: '2px solid #003366', background: '#F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: '12px' }}>PHOTO</div>
+            <div style={{ width: '120px', height: '145px', borderRadius: '3px', border: '2px solid #003366', background: '#F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: '12px' }}>PHOTO</div>
           )}
         </div>
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 24px', alignContent: 'start' }}>
-          <div>
-            <span style={{ fontSize: '11px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 400, display: 'block', marginBottom: '2px' }}>பெயர் / NAME</span>
-            <span style={{ fontSize: '15px', color: '#003366', fontWeight: 700, display: 'block' }}>{member.fullName}</span>
-          </div>
-          <div>
-            <span style={{ fontSize: '11px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 400, display: 'block', marginBottom: '2px' }}>பிறந்த தேதி / DOB</span>
-            <span style={{ fontSize: '15px', color: '#003366', fontWeight: 700, display: 'block' }}>{member.dob}</span>
-          </div>
-          <div>
-            <span style={{ fontSize: '11px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 400, display: 'block', marginBottom: '2px' }}>இரத்த பிரிவு / BLOOD</span>
-            <span style={{ fontSize: '15px', color: '#003366', fontWeight: 700, display: 'block' }}>{member.bloodGroup}</span>
-          </div>
-          <div>
-            <span style={{ fontSize: '11px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 400, display: 'block', marginBottom: '2px' }}>கைபேசி / MOBILE</span>
-            <span style={{ fontSize: '15px', color: '#003366', fontWeight: 700, display: 'block' }}>{member.mobile}</span>
-          </div>
-          <div style={{ gridColumn: '1 / -1' }}>
-            <span style={{ fontSize: '11px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 400, display: 'block', marginBottom: '2px' }}>முகவரி / ADDRESS</span>
-            <span style={{ fontSize: '14px', color: '#003366', fontWeight: 600, display: 'block' }}>{member.address.split('\n')[0] || member.address}</span>
-          </div>
-          <div>
-            <span style={{ fontSize: '11px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 400, display: 'block', marginBottom: '2px' }}>மாவட்டம் / DISTRICT</span>
-            <span style={{ fontSize: '14px', color: '#003366', fontWeight: 600, display: 'block' }}>{member.pledgeDistrict}</span>
-          </div>
-          <div>
-            <span style={{ fontSize: '11px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 400, display: 'block', marginBottom: '2px' }}>JOINED DATE</span>
-            <span style={{ fontSize: '14px', color: '#003366', fontWeight: 600, display: 'block' }}>{member.joiningDate}</span>
-          </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', justifyContent: 'center' }}>
+          {infoRows.map((row, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', fontSize: '12px', lineHeight: 1.4 }}>
+              <span style={{ width: '110px', flexShrink: 0, color: '#555555', fontWeight: 600 }}>
+                {row.label}
+                <span style={{ fontSize: '9px', color: '#999999', display: 'block' }}>{row.labelEn}</span>
+              </span>
+              <span style={{ color: '#333333', margin: '0 6px 0 4px', fontWeight: 600 }}>:</span>
+              <span style={{ color: '#003366', fontWeight: 700, flex: 1 }}>{row.value}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div style={{ padding: '10px 20px', borderTop: '1px solid #E0E0E0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ background: '#F0F4F8', padding: '8px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E0E0E0' }}>
         <div>
-          <span style={{ fontSize: '11px', color: '#888', display: 'block' }}>உறுப்பினர் எண்</span>
-          <span style={{ fontFamily: "'Courier Prime', monospace", fontSize: '18px', fontWeight: 700, color: '#003366', letterSpacing: '2px' }}>{member.memberId}</span>
+          <span style={{ fontSize: '10px', color: '#888888', display: 'block', marginBottom: '2px' }}>உறுப்பினர் எண் / Member ID</span>
+          <span style={{ fontFamily: "'Courier Prime', monospace", fontSize: '16px', fontWeight: 700, color: '#003366', letterSpacing: '2px' }}>{member.memberId || 'TIWTN-2026-XXXXX'}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ width: '140px', borderTop: '1px solid #333', paddingTop: '4px' }} />
-            <span style={{ fontSize: '11px', color: '#888', display: 'block', marginTop: '2px' }}>கையொப்பம்</span>
-            <span style={{ fontSize: '10px', color: '#666', display: 'block' }}>அங்கீகரிக்கப்பட்டது / AUTHORIZED</span>
+        <img
+          src="/logo.png"
+          alt="TIWTN"
+          style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid #FF6B00', opacity: 0.8, objectFit: 'cover' }}
+          onError={(e) => { e.target.style.display = 'none'; }}
+        />
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-around', padding: '10px 22px 12px', background: '#FFFFFF' }}>
+        {AUTHORITIES.map((auth, i) => (
+          <div key={i} style={{ textAlign: 'center', width: '30%' }}>
+            <div style={{ height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '3px' }}>
+              <img
+                src={auth.sign}
+                alt=""
+                crossOrigin="anonymous"
+                style={{ maxWidth: '120px', maxHeight: '48px', objectFit: 'contain', display: 'block' }}
+              />
+            </div>
+            <div style={{ borderTop: '1.5px solid #333333', paddingTop: '4px' }}>
+              <div style={{ fontSize: '11px', fontWeight: '800', color: '#003366' }}>{auth.nameTamil}</div>
+              <div style={{ fontSize: '10px', color: '#555555' }}>{auth.role}</div>
+              <div style={{ fontSize: '9px', color: '#999999' }}>{auth.roleEn}</div>
+            </div>
           </div>
-          <img src="/logo.png" width="36" height="36" style={{ borderRadius: '50%', border: '1px solid #FF6B00', opacity: 0.9, objectFit: 'cover' }} onError={(e) => { e.target.style.display = 'none'; }} />
-        </div>
+        ))}
       </div>
 
       <TricolorStrip />
@@ -184,12 +226,30 @@ function IDCard({ member, onReset }) {
     },
   };
 
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const preloadImages = async (sources) => {
+    await Promise.all(
+      sources.map((src) =>
+        new Promise((res, rej) => {
+          const img = new Image();
+          img.onload = res;
+          img.onerror = rej;
+          img.crossOrigin = 'anonymous';
+          img.src = src;
+        })
+      )
+    );
+  };
+
   const downloadFront = async () => {
     const el = document.getElementById('id-card-front');
     if (!el) return;
     el.style.transform = 'none';
     el.style.backdropFilter = 'none';
     try {
+      await preloadImages([balajiSign, idhreesSign, muraliSign]);
+      await delay(400);
       const canvas = await html2canvas(el, { ...downloadOpts, onclone: (doc) => {
         const cloned = doc.getElementById('id-card-front');
         if (cloned) {
@@ -217,6 +277,8 @@ function IDCard({ member, onReset }) {
 
     const opts = { scale: 2.5, useCORS: true, allowTaint: true, backgroundColor: '#FFFFFF', logging: false };
     try {
+      await preloadImages([balajiSign, idhreesSign, muraliSign]);
+      await delay(400);
       const frontCanvas = await html2canvas(frontEl, opts);
       const backCanvas = await html2canvas(backEl, opts);
 

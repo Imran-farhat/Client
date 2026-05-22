@@ -4,3 +4,7 @@ dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Ignore generated image outputs and temporary artifacts
+process-output.txt
+public/signatures/
