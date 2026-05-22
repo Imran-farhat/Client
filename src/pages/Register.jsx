@@ -435,7 +435,7 @@ function Register() {
               பதிவு செய்க
               <span className="ml-3 text-xs uppercase tracking-[0.2em]">Register Now</span>
             </button>
-          </form>
+          </div>
         ) : (
           <>
             <div id="printable-form" style={{ background: '#FFFFFF', padding: '40px', width: '794px', minHeight: '1123px', position: 'relative', margin: '0 auto', borderRadius: '0', boxShadow: 'none', transform: 'none', backdropFilter: 'none', fontFamily: "'Noto Sans Tamil', 'DM Sans', sans-serif" }}>
