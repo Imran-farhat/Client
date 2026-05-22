@@ -4,8 +4,8 @@ import balajiSign from '../assets/balaji_clean.png';
 import idhreesSign from '../assets/idhrees_clean.png';
 import muraliSign from '../assets/murali_clean.png';
 
-const CARD_W = 340;
-const CARD_H = 214;
+const CARD_W = 240;
+const CARD_H = 380;
 
 const AUTHORITIES = [
   {
@@ -45,98 +45,108 @@ function LogoFallback() {
 }
 
 function CardFront({ member }) {
-  const infoRows = [
-    { label: 'பெயர்', labelEn: 'Name', value: member.fullName || '-' },
-    { label: 'பிறந்த தேதி', labelEn: 'D.O.B', value: member.dob || '-' },
-    { label: 'கைபேசி', labelEn: 'Mobile', value: member.mobile || '-' },
-    { label: 'மாவட்டம்', labelEn: 'District', value: member.pledgeDistrict || '-' },
-    { label: 'முகவரி', labelEn: 'Address', value: member.address || '-' },
-    { label: 'இணைந்த தேதி', labelEn: 'Joined', value: member.joiningDate || '-' },
+  const rows = [
+    { label: 'Name', value: member.fullName || '-' },
+    { label: 'D.O.B', value: member.dob || '-' },
+    { label: 'Mobile', value: member.mobile || '-' },
+    { label: 'District', value: member.pledgeDistrict || member.district || '-' },
+    { label: 'Address', value: member.address || '-' },
+    { label: 'Joined', value: member.joiningDate || member.joinDate || '-' },
   ];
 
   return (
-    <div id="id-card-front" style={{ width: '340px', height: '214px', background: '#FFFFFF', borderRadius: '6px', border: '1px solid #CCCCCC', position: 'relative', overflow: 'hidden', fontFamily: "'Catamaran', 'Noto Sans Tamil', sans-serif" }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '6px', background: '#FF6B00', zIndex: 2, borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }} />
+    <div id="id-card-front" style={{
+      width: '240px',
+      height: '380px',
+      background: '#FFFFFF',
+      borderRadius: '10px',
+      overflow: 'hidden',
+      position: 'relative',
+      border: '1px solid #CCCCCC',
+      fontFamily: 'Catamaran, sans-serif',
+      flexShrink: 0
+    }}>
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '5px', background: '#FF6B00', zIndex: 2 }} />
 
-      <TricolorStrip />
+      <div style={{ display: 'flex', height: '5px' }}>
+        <div style={{ flex: 1, background: '#FF9933' }} />
+        <div style={{ flex: 1, background: '#FFFFFF', borderTop: '0.5px solid #DDD', borderBottom: '0.5px solid #DDD' }} />
+        <div style={{ flex: 1, background: '#138808' }} />
+      </div>
 
-      <div style={{ background: '#003366', padding: '5px 8px 5px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <img
-          src="/logo.png"
-          alt="TIWTN logo"
-          style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #FF6B00', flexShrink: 0, objectFit: 'cover' }}
-          onError={(e) => { e.target.style.display = 'none'; }}
-        />
+      <div style={{ background: '#003366', padding: '6px 8px 6px 13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <img src={'/logo.png'} alt="TIWTN" style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid #FF6B00', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none'; }} />
         <div>
-          <div style={{ fontSize: '9px', fontWeight: '800', color: '#FFFFFF', lineHeight: 1.2 }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</div>
-          <div style={{ fontSize: '7px', color: '#B8C9E0', marginTop: '1px' }}>WELDING PROFESSIONALS WELFARE ASSOCIATION</div>
+          <div style={{ fontSize: '8px', fontWeight: '800', color: '#FFFFFF', lineHeight: '1.3' }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</div>
+          <div style={{ fontSize: '6px', color: '#B8C9E0', letterSpacing: '0.5px', marginTop: '1px' }}>WELDING PROFESSIONALS WELFARE ASSOCIATION</div>
         </div>
       </div>
 
-      <div style={{ background: '#FF6B00', textAlign: 'center', padding: '3px', fontSize: '8px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '1px' }}>
-        உறுப்பினர் அட்டை / MEMBER IDENTITY CARD
+      <div style={{ background: '#FF6B00', textAlign: 'center', padding: '3px', fontSize: '7px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '1px' }}>உறுப்பினர் அட்டை / MEMBER IDENTITY CARD</div>
+
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '5px 0 4px', borderBottom: '1px solid #E0E0E0' }}>
+        {member.photoPreview ? (
+          <img src={member.photoPreview} alt="Member" style={{ width: '65px', height: '78px', objectFit: 'cover', border: '1.5px solid #003366', borderRadius: '2px' }} />
+        ) : (
+          <div style={{ width: '65px', height: '78px', borderRadius: '2px', border: '1.5px solid #003366', background: '#F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: '8px' }}>PHOTO</div>
+        )}
       </div>
 
-      <div style={{ display: 'flex', padding: '5px 8px 5px 14px', gap: '8px', borderBottom: '1px solid #E0E0E0' }}>
-        <div style={{ flexShrink: 0 }}>
-          {member.photoPreview ? (
-            <img
-              src={member.photoPreview}
-              alt="Member"
-              style={{ width: '68px', height: '88px', objectFit: 'cover', border: '1.5px solid #003366', borderRadius: '2px', display: 'block' }}
-            />
-          ) : (
-            <div style={{ width: '68px', height: '88px', borderRadius: '2px', border: '1.5px solid #003366', background: '#F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: '7px', textAlign: 'center' }}>PHOTO</div>
-          )}
-        </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', justifyContent: 'center' }}>
-          {infoRows.map((row, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', fontSize: '8px', lineHeight: 1.2 }}>
-              <span style={{ width: '68px', flexShrink: 0, color: '#555555', fontWeight: 600 }}>
-                {row.label}
-                <span style={{ fontSize: '6px', color: '#999999', display: 'block' }}>{row.labelEn}</span>
-              </span>
-              <span style={{ color: '#333333', margin: '0 4px', fontWeight: 600, fontSize: '8px' }}>:</span>
-              <span style={{ color: '#003366', fontWeight: 700, flex: 1, fontSize: '8px' }}>{row.value}</span>
-            </div>
-          ))}
-        </div>
+      <div style={{ padding: '5px 8px 5px 13px', borderBottom: '1px solid #E0E0E0', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+        {rows.map((row, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '2px' }}>
+            <div style={{
+              width: '55px',
+              flexShrink: 0,
+              fontSize: '7px',
+              fontWeight: '700',
+              color: '#555555',
+              lineHeight: '1.3'
+            }}>{row.label}</div>
+            <div style={{ fontSize: '8px', color: '#333', fontWeight: '600', flexShrink: 0 }}>:</div>
+            <div style={{ fontSize: '8px', fontWeight: '800', color: '#003366', flex: 1, wordBreak: 'break-word' }}>{row.value}</div>
+          </div>
+        ))}
       </div>
 
-      <div style={{ background: '#F0F4F8', padding: '4px 8px 4px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E0E0E0' }}>
+      <div style={{ padding: '4px 8px 4px 13px', background: '#F0F4F8', borderBottom: '1px solid #E0E0E0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <span style={{ fontSize: '8px', color: '#888888', display: 'block', marginBottom: '2px' }}>உறுப்பினர் எண் / Member ID</span>
-          <span style={{ fontFamily: "'Courier Prime', monospace", fontSize: '10px', fontWeight: 700, color: '#003366', letterSpacing: '1.5px' }}>{member.memberId || 'TIWTN-2026-XXXXX'}</span>
+          <div style={{ fontSize: '6px', color: '#888', marginBottom: '1px' }}>உறுப்பினர் எண் / Member ID</div>
+          <div style={{ fontFamily: 'Courier Prime, monospace', fontSize: '9px', fontWeight: '700', color: '#003366', letterSpacing: '1px' }}>{member.memberId || 'TIWTN-2026-XXXXX'}</div>
         </div>
-        <img
-          src="/logo.png"
-          alt="TIWTN"
-          style={{ width: '22px', height: '22px', borderRadius: '50%', border: '1px solid #FF6B00', opacity: 0.8, objectFit: 'cover' }}
-          onError={(e) => { e.target.style.display = 'none'; }}
-        />
+        <img src={'/logo.png'} alt="TIWTN" style={{ width: '22px', height: '22px', borderRadius: '50%', border: '1px solid #FF6B00', opacity: 0.8 }} onError={(e) => { e.target.style.display = 'none'; }} />
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 8px 5px 14px', background: '#FFFFFF' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-around', padding: '6px 6px 4px 11px', background: '#FFFFFF' }}>
         {AUTHORITIES.map((auth, i) => (
-          <div key={i} style={{ textAlign: 'center', width: '31%' }}>
-            <div style={{ height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '2px' }}>
+          <div key={i} style={{ textAlign: 'center', width: '30%' }}>
+            <div style={{ height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <img
                 src={auth.sign}
                 alt=""
                 crossOrigin="anonymous"
-                style={{ maxWidth: '70px', maxHeight: '26px', objectFit: 'contain', display: 'block' }}
+                style={{
+                  maxWidth: '68px',
+                  maxHeight: '32px',
+                  objectFit: 'contain',
+                  filter: 'brightness(0) invert(0)',
+                  opacity: 1
+                }}
               />
             </div>
-            <div style={{ borderTop: '1px solid #333333', paddingTop: '3px' }}>
-              <div style={{ fontSize: '7px', fontWeight: '800', color: '#003366' }}>{auth.nameTamil}</div>
-              <div style={{ fontSize: '6px', color: '#555555', marginTop: '1px' }}>{auth.role}</div>
-              <div style={{ fontSize: '5px', color: '#999999' }}>{auth.roleEn}</div>
+            <div style={{ borderTop: '1px solid #333', paddingTop: '2px' }}>
+              <div style={{ fontSize: '8px', fontWeight: '800', color: '#003366' }}>{auth.nameTamil}</div>
+              <div style={{ fontSize: '7px', color: '#555' }}>{auth.role}</div>
             </div>
           </div>
         ))}
       </div>
 
-      <TricolorStrip />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', height: '5px' }}>
+        <div style={{ flex: 1, background: '#FF9933' }} />
+        <div style={{ flex: 1, background: '#FFFFFF', borderTop: '0.5px solid #DDD', borderBottom: '0.5px solid #DDD' }} />
+        <div style={{ flex: 1, background: '#138808' }} />
+      </div>
     </div>
   );
 }
@@ -207,7 +217,7 @@ function IDCard({ member, onReset }) {
   const backRef = useRef(null);
 
   const downloadOpts = {
-    scale: 3,
+    scale: 4,
     useCORS: true,
     allowTaint: true,
     backgroundColor: '#FFFFFF',
@@ -238,31 +248,55 @@ function IDCard({ member, onReset }) {
   };
 
   const downloadFront = async () => {
-    const el = document.getElementById('id-card-front');
-    if (!el) return;
-    el.style.transform = 'none';
-    el.style.backdropFilter = 'none';
+    const cardEl = document.getElementById('id-card-front');
+    if (!cardEl) return;
+    const originalOverflow = cardEl.style.overflow;
+    cardEl.style.overflow = 'visible';
     try {
       await preloadImages([balajiSign, idhreesSign, muraliSign]);
-      await delay(400);
-      const canvas = await html2canvas(el, { ...downloadOpts, onclone: (doc) => {
-        const cloned = doc.getElementById('id-card-front');
-        if (cloned) {
-          cloned.style.transform = 'none';
-          cloned.style.backdropFilter = 'none';
-          cloned.style.opacity = '1';
-          cloned.querySelectorAll('*').forEach(c => { c.style.webkitPrintColorAdjust = 'exact'; });
+      await delay(300);
+      const canvas = await html2canvas(cardEl, {
+        scale: 4,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#FFFFFF',
+        logging: false,
+        width: cardEl.scrollWidth,
+        height: cardEl.scrollHeight,
+        windowWidth: cardEl.scrollWidth,
+        windowHeight: cardEl.scrollHeight,
+        onclone: (doc) => {
+          const el = doc.getElementById('id-card-front');
+          if (!el) return;
+          el.style.overflow = 'visible';
+          el.style.transform = 'none';
+          el.style.backdropFilter = 'none';
+          el.style.opacity = '1';
+          el.querySelectorAll('img').forEach(img => {
+            img.style.opacity = '1';
+            img.style.visibility = 'visible';
+            try { img.crossOrigin = 'anonymous'; } catch (e) {}
+          });
+          el.querySelectorAll('div, span').forEach(node => {
+            try {
+              const computed = window.getComputedStyle(node);
+              node.style.color = computed.color;
+              node.style.backgroundColor = computed.backgroundColor;
+            } catch (e) {}
+          });
         }
-      }});
+      });
       const link = document.createElement('a');
-      link.download = `TIWTN_${member.fullName.replace(/\s+/g, '_')}_IDCard.png`;
+      link.download = `TIWTN_${(member.fullName || 'member').replace(/\s+/g, '_')}_IDCard.png`;
       link.href = canvas.toDataURL('image/png', 1.0);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } catch (e) { console.error(e); }
-    el.style.transform = '';
-    el.style.backdropFilter = '';
+    } catch (e) {
+      console.error(e);
+    } finally {
+      cardEl.style.overflow = originalOverflow;
+    }
   };
 
   const downloadBoth = async () => {
@@ -270,24 +304,47 @@ function IDCard({ member, onReset }) {
     const backEl = document.getElementById('id-card-back');
     if (!frontEl || !backEl) return;
 
-    const opts = { scale: 3, useCORS: true, allowTaint: true, backgroundColor: '#FFFFFF', logging: false };
+    const opts = {
+      scale: 4,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#FFFFFF',
+      logging: false,
+      onclone: (doc) => {
+        doc.querySelectorAll('#id-card-front, #id-card-back').forEach(el => {
+          el.style.overflow = 'visible';
+          el.style.transform = 'none';
+          el.style.backdropFilter = 'none';
+          el.style.opacity = '1';
+          el.querySelectorAll('img').forEach(img => {
+            try { img.style.opacity = '1'; img.crossOrigin = 'anonymous'; } catch (e) {}
+          });
+        });
+      }
+    };
     try {
       await preloadImages([balajiSign, idhreesSign, muraliSign]);
+      frontEl.style.overflow = 'visible';
+      backEl.style.overflow = 'visible';
       await delay(400);
-      const frontCanvas = await html2canvas(frontEl, opts);
-      const backCanvas = await html2canvas(backEl, opts);
+      const frontCanvas = await html2canvas(frontEl, { ...opts, width: frontEl.scrollWidth, height: frontEl.scrollHeight });
+      const backCanvas = await html2canvas(backEl, { ...opts, width: backEl.scrollWidth, height: backEl.scrollHeight });
 
+      frontEl.style.overflow = 'hidden';
+      backEl.style.overflow = 'hidden';
+
+      const gap = 40;
       const combined = document.createElement('canvas');
-      combined.width = 1020;
-      combined.height = 1324;
+      combined.width = Math.max(frontCanvas.width, backCanvas.width);
+      combined.height = frontCanvas.height + gap + backCanvas.height;
       const ctx = combined.getContext('2d');
-      ctx.fillStyle = '#F5F5F5';
+      ctx.fillStyle = '#F0F0F0';
       ctx.fillRect(0, 0, combined.width, combined.height);
       ctx.drawImage(frontCanvas, 0, 0);
-      ctx.drawImage(backCanvas, 0, frontCanvas.height + 40);
+      ctx.drawImage(backCanvas, 0, frontCanvas.height + gap);
 
       const link = document.createElement('a');
-      link.download = `TIWTN_${member.fullName.replace(/\s+/g, '_')}_IDCard_BothSides.png`;
+      link.download = `TIWTN_${(member.fullName || 'member').replace(/\s+/g, '_')}_IDCard_BothSides.png`;
       link.href = combined.toDataURL('image/png', 1.0);
       document.body.appendChild(link);
       link.click();
