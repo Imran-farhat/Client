@@ -196,7 +196,7 @@ function Register() {
         </div>
 
         {!member ? (
-          <form ref={formRef} className="register-form rounded-[16px] border border-[#E5DDD0] bg-card" style={{ padding: '2rem', boxShadow: '0 4px 24px rgba(0,51,102,0.08)' }}>
+          <div ref={formRef} className="register-form rounded-[16px] border border-[#E5DDD0] bg-card" style={{ padding: '2rem', boxShadow: '0 4px 24px rgba(0,51,102,0.08)' }}>
             <div className="space-y-8">
               <div className="flex flex-col gap-4 rounded-[16px] p-4 sm:flex-row sm:items-center" style={{ background: '#003366' }}>
                 <OrgLogo size={48} />
