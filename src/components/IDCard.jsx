@@ -153,61 +153,105 @@ function CardFront({ member }) {
 
 function CardBack({ member }) {
   return (
-    <div id="id-card-back" style={{ width: `${CARD_W}px`, height: `${CARD_H}px`, background: '#FFFFFF', borderRadius: '6px', border: '1px solid #CCCCCC', position: 'relative', overflow: 'hidden', fontFamily: "'Catamaran', 'Noto Sans Tamil', sans-serif", boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '6px', background: '#FF6B00', zIndex: 2, borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }} />
-      <TricolorStrip />
+    <div id="id-card-back" style={{
+      width: `${CARD_W}px`,
+      height: `${CARD_H}px`,
+      background: '#FFFFFF',
+      borderRadius: '10px',
+      overflow: 'hidden',
+      position: 'relative',
+      border: '1px solid #CCCCCC',
+      fontFamily: 'Catamaran, sans-serif',
+      flexShrink: 0
+    }}>
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '5px', background: '#FF6B00', zIndex: 2 }} />
 
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
-        <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%, -50%) rotate(-25deg)', opacity: 0.03, fontSize: '40px', fontWeight: 900, color: '#003366' }}>TIWTN</div>
+      <div style={{ display: 'flex', height: '5px' }}>
+        <div style={{ flex: 1, background: '#FF9933' }} />
+        <div style={{ flex: 1, background: '#FFFFFF', borderTop: '0.5px solid #DDD', borderBottom: '0.5px solid #DDD' }} />
+        <div style={{ flex: 1, background: '#138808' }} />
       </div>
 
-      <div style={{ position: 'relative', zIndex: 1, padding: '5px 8px 5px 14px', display: 'flex', flexDirection: 'column', gap: '6px', height: 'calc(100% - 10px)' }}>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-          <div style={{ width: '52px', height: '52px', border: '1px solid #CCCCCC', borderRadius: '4px', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="38" height="38" viewBox="0 0 38 38" style={{ display: 'block' }}>
-              <rect x="2" y="2" width="10" height="10" fill="#003366" rx="2" />
-              <rect x="26" y="2" width="10" height="10" fill="#003366" rx="2" />
-              <rect x="2" y="26" width="10" height="10" fill="#003366" rx="2" />
-              <rect x="6" y="6" width="4" height="4" fill="#FFFFFF" rx="1" />
-              <rect x="30" y="6" width="4" height="4" fill="#FFFFFF" rx="1" />
-              <rect x="6" y="30" width="4" height="4" fill="#FFFFFF" rx="1" />
-            </svg>
-          </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <div style={{ fontSize: '7px', color: '#888888', textTransform: 'uppercase' }}>அலுவல முகவரி / OFFICE ADDRESS</div>
-            <div style={{ fontSize: '8px', color: '#003366', lineHeight: 1.4 }}>
-              தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்<br />
-              133/34, 1A, 1A பெங்களூர் ஹைவே,<br />
-              சென்னை – 600124, தமிழ்நாடு.
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px', fontSize: '8px', color: '#003366' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '7px', color: '#555555', textTransform: 'uppercase', marginBottom: '2px' }}>வாரிசுதாரர் / NOMINEE</div>
-            <div style={{ fontWeight: 700 }}>{member.nomineeName || '-'}</div>
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '7px', color: '#555555', textTransform: 'uppercase', marginBottom: '2px' }}>இரத்த பிரிவு / BLOOD GROUP</div>
-            <div style={{ fontWeight: 700 }}>{member.bloodGroup || '-'}</div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px', fontSize: '8px', color: '#003366' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '7px', color: '#555555', textTransform: 'uppercase', marginBottom: '2px' }}>ஆதார் எண் / Aadhaar</div>
-            <div style={{ fontWeight: 700 }}>{member.aadhaar || '-'}</div>
-          </div>
-        </div>
-
-        <div style={{ marginTop: 'auto', padding: '5px 8px', background: '#FFF8F0', border: '1px solid #FFB347', borderRadius: '4px' }}>
-          <div style={{ fontSize: '8px', color: '#333333', lineHeight: 1.4 }}>இந்த அட்டை சங்கத்தின் சொத்து. தொலைந்தால் திருப்பித் தரவும்.</div>
-          <div style={{ fontSize: '8px', color: '#666666', marginTop: '2px' }}>If found, please return to the above address.</div>
+      <div style={{ background: '#003366', padding: '6px 8px 6px 13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <img src={'/logo.png'} alt="TIWTN" style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2px solid #FF6B00', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none'; }} />
+        <div style={{ fontSize: '7px', fontWeight: '800', color: '#FFFFFF', lineHeight: '1.3' }}>
+          தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்
         </div>
       </div>
 
-      <TricolorStrip />
+      <div style={{ padding: '10px 8px 10px 13px', borderBottom: '1px solid #E0E0E0', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+        <div style={{ flexShrink: 0, textAlign: 'center' }}>
+          <svg width="60" height="60" viewBox="0 0 60 60" style={{ border: '1px solid #CCC', borderRadius: '3px', padding: '3px' }}>
+            <rect x="2" y="2" width="16" height="16" fill="none" stroke="#003366" strokeWidth="2" />
+            <rect x="6" y="6" width="8" height="8" fill="#003366" />
+            <rect x="42" y="2" width="16" height="16" fill="none" stroke="#003366" strokeWidth="2" />
+            <rect x="46" y="6" width="8" height="8" fill="#003366" />
+            <rect x="2" y="42" width="16" height="16" fill="none" stroke="#003366" strokeWidth="2" />
+            <rect x="6" y="46" width="8" height="8" fill="#003366" />
+            <rect x="24" y="4" width="4" height="4" fill="#003366" />
+            <rect x="30" y="4" width="4" height="4" fill="#003366" />
+            <rect x="24" y="10" width="4" height="4" fill="#003366" />
+            <rect x="4" y="24" width="4" height="4" fill="#003366" />
+            <rect x="10" y="30" width="4" height="4" fill="#003366" />
+            <rect x="24" y="24" width="4" height="4" fill="#003366" />
+            <rect x="30" y="30" width="4" height="4" fill="#003366" />
+            <rect x="36" y="24" width="4" height="4" fill="#003366" />
+            <rect x="42" y="30" width="4" height="4" fill="#003366" />
+            <rect x="48" y="24" width="4" height="4" fill="#003366" />
+            <rect x="24" y="42" width="4" height="4" fill="#003366" />
+            <rect x="30" y="48" width="4" height="4" fill="#003366" />
+            <rect x="36" y="42" width="4" height="4" fill="#003366" />
+          </svg>
+          <div style={{ fontSize: '6px', color: '#888', marginTop: '2px' }}>Scan to verify</div>
+        </div>
+
+        <div>
+          <div style={{ fontSize: '6px', color: '#888', letterSpacing: '0.5px', marginBottom: '3px' }}>அலுவல முகவரி / OFFICE ADDRESS</div>
+          <div style={{ fontSize: '8px', fontWeight: '700', color: '#003366', lineHeight: '1.5' }}>
+            தென்னிந்திய வெல்டிங்<br />
+            தொழிலாளர்கள் நலச்சங்கம்<br />
+            133/34, 1A, 1A பெங்களூர்<br />
+            ஹைவே, சென்னை – 600124,<br />
+            தமிழ்நாடு.
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding: '8px 8px 8px 13px', display: 'flex', gap: '16px', borderBottom: '1px solid #E0E0E0' }}>
+        <div>
+          <div style={{ fontSize: '6px', color: '#888' }}>வாரிசுதாரர் / NOMINEE</div>
+          <div style={{ fontSize: '9px', fontWeight: '800', color: '#003366' }}>{member.nomineeName || '-'}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '6px', color: '#888' }}>இரத்த பிரிவு / BLOOD</div>
+          <div style={{ fontSize: '9px', fontWeight: '800', color: '#003366' }}>{member.bloodGroup || '-'}</div>
+        </div>
+      </div>
+
+      <div style={{ padding: '8px 8px 8px 13px', borderBottom: '1px solid #E0E0E0' }}>
+        <div style={{ fontSize: '6px', color: '#888', marginBottom: '2px' }}>ஆதார் எண் / AADHAAR</div>
+        <div style={{ fontFamily: 'Courier Prime, monospace', fontSize: '10px', fontWeight: '700', color: '#003366', letterSpacing: '1px' }}>{member.aadhaar || '-'}</div>
+      </div>
+
+      <div style={{ margin: '8px 8px 8px 13px', padding: '8px', background: '#FFF8F0', border: '1px solid #FFB347', borderRadius: '5px' }}>
+        <div style={{ fontSize: '8px', color: '#333', lineHeight: '1.6' }}>
+          இந்த அட்டை சங்கத்தின் சொத்து.<br />
+          தொலைந்தால் திருப்பித் தரவும்.
+        </div>
+        <div style={{ fontSize: '7px', color: '#666', marginTop: '3px' }}>
+          If found, please return to the above address.
+        </div>
+      </div>
+
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0.04, pointerEvents: 'none', zIndex: 0 }}>
+        <img src={'/logo.png'} alt="watermark" style={{ width: '160px', height: '160px' }} />
+      </div>
+
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', height: '5px' }}>
+        <div style={{ flex: 1, background: '#FF9933' }} />
+        <div style={{ flex: 1, background: '#FFFFFF', borderTop: '0.5px solid #DDD', borderBottom: '0.5px solid #DDD' }} />
+        <div style={{ flex: 1, background: '#138808' }} />
+      </div>
     </div>
   );
 }
