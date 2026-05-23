@@ -1,15 +1,13 @@
 import { useMemo, useState } from 'react';
 
 const images = [
-  { src: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80', caption: 'Industrial welding precision', category: 'Training' },
   { src: 'https://images.unsplash.com/photo-1514709814142-421ad3eaef81?auto=format&fit=crop&w=1200&q=80', caption: 'Spark and metal craft', category: 'Events' },
   { src: 'https://images.unsplash.com/photo-1517457373958-b0f4e7b9d5b9?auto=format&fit=crop&w=1200&q=80', caption: 'Workshop fabrication floor', category: 'Workshops' },
-  { src: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80', caption: 'Safety-focused teamwork', category: 'Training' },
   { src: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80', caption: 'Event showcase', category: 'Events' },
   { src: 'https://images.unsplash.com/photo-1516796182154-0f0163bfff91?auto=format&fit=crop&w=1200&q=80', caption: 'Precision joint weld', category: 'Workshops' },
 ];
 
-const categories = ['All', 'Training', 'Events', 'Workshops'];
+const categories = ['All', 'Events', 'Workshops'];
 
 function Gallery() {
   const [filter, setFilter] = useState('All');
@@ -25,7 +23,7 @@ function Gallery() {
         <div className="rounded-[32px] border border-[var(--border)] bg-primary p-10 shadow-sm">
           <p className="text-sm uppercase tracking-[0.3em] text-amber">GALLERY</p>
           <h1 className="mt-4 text-3xl font-display text-navy md:text-5xl">Welding scenes from workshops and events.</h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-secondary">Explore our gallery of industrial training, certification moments, and networking experiences.</p>
+          <p className="mt-6 max-w-3xl text-lg leading-8 text-secondary">Explore our gallery of certification moments, and networking experiences.</p>
         </div>
 
         <div className="mt-10 flex flex-wrap gap-3">
