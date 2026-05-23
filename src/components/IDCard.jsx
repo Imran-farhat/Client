@@ -57,14 +57,18 @@ function CardFront({ member }) {
   return (
     <div id="id-card-front" style={{
       width: '240px',
-      height: '380px',
+      height: 'auto',
+      minHeight: '380px',
+      maxHeight: 'none',
       background: '#FFFFFF',
       borderRadius: '10px',
-      overflow: 'hidden',
+      overflow: 'visible',
       position: 'relative',
       border: '1px solid #CCCCCC',
       fontFamily: 'Catamaran, sans-serif',
-      flexShrink: 0
+      flexShrink: 0,
+      display: 'flex',
+      flexDirection: 'column'
     }}>
       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '5px', background: '#FF6B00', zIndex: 2 }} />
 
@@ -119,15 +123,15 @@ function CardFront({ member }) {
 
       <div style={{ display: 'flex', justifyContent: 'space-around', padding: '6px 6px 4px 11px', background: '#FFFFFF' }}>
         {AUTHORITIES.map((auth, i) => (
-          <div key={i} style={{ textAlign: 'center', width: '30%' }}>
+          <div key={i} style={{ textAlign: 'center', width: '31%' }}>
             <div style={{ height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <img
                 src={auth.sign}
                 alt=""
                 crossOrigin="anonymous"
                 style={{
-                  maxWidth: '68px',
-                  maxHeight: '32px',
+                  maxWidth: '62px',
+                  maxHeight: '28px',
                   objectFit: 'contain',
                   filter: 'brightness(0) invert(0)',
                   opacity: 1
@@ -135,14 +139,15 @@ function CardFront({ member }) {
               />
             </div>
             <div style={{ borderTop: '1px solid #333', paddingTop: '2px' }}>
-              <div style={{ fontSize: '8px', fontWeight: '800', color: '#003366' }}>{auth.nameTamil}</div>
-              <div style={{ fontSize: '7px', color: '#555' }}>{auth.role}</div>
+              <div style={{ fontSize: '7px', fontWeight: '800', color: '#003366', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{auth.nameTamil}</div>
+              <div style={{ fontSize: '6px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{auth.role}</div>
+              <div style={{ fontSize: '5px', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{auth.roleEn}</div>
             </div>
           </div>
         ))}
       </div>
 
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', height: '5px' }}>
+      <div style={{ display: 'flex', height: '5px', marginTop: 'auto', position: 'relative' }}>
         <div style={{ flex: 1, background: '#FF9933' }} />
         <div style={{ flex: 1, background: '#FFFFFF', borderTop: '0.5px solid #DDD', borderBottom: '0.5px solid #DDD' }} />
         <div style={{ flex: 1, background: '#138808' }} />
@@ -314,15 +319,18 @@ function IDCard({ member, onReset }) {
     clone.id = 'id-card-front-clone';
     clone.style.cssText = `
       width: 240px;
-      height: auto;
+      height: auto !important;
       min-height: 380px;
+      max-height: none !important;
       transform: none;
       zoom: 1;
-      overflow: visible;
+      overflow: visible !important;
       position: relative;
       opacity: 1;
       border-radius: 10px;
       font-family: Catamaran, sans-serif;
+      display: flex;
+      flex-direction: column;
     `;
 
     clone.querySelectorAll('img').forEach(img => {
