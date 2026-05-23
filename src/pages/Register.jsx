@@ -156,6 +156,16 @@ function Register() {
       joiningDate,
       memberId: generatedId,
     };
+
+    localStorage.setItem('tiwtn_registered', 'true');
+    localStorage.setItem('tiwtn_member_data', JSON.stringify({
+      ...form,
+      memberId: generatedId,
+      joinDate: joiningDate,
+      district: form.pledgeDistrict,
+      photoPreview: form.photoPreview
+    }));
+
     setErrors({});
     setMemberId(generatedId);
     setMember(memberData);

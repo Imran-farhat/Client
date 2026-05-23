@@ -1,7 +1,8 @@
 import { useContext, useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import OrgLogo from './OrgLogo';
 import { ThemeContext } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const links = [
   { label: 'Home', to: '/' },
@@ -13,8 +14,10 @@ const links = [
 
 function Navbar() {
   const { theme, toggleTheme } = useContext(ThemeContext);
+  const { currentUser, isAdmin, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [dropOpen, setDropOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -87,6 +90,110 @@ function Navbar() {
           <NavLink to="/register" className="button-amber inline-flex px-4 py-2 text-sm font-semibold text-black">
             Register
           </NavLink>
+
+          {!currentUser ? (
+            <Link to="/login" style={{
+              color: 'var(--text-primary)',
+              border: '1px solid var(--amber)',
+              borderRadius: '6px',
+              padding: '6px 14px',
+              fontSize: '13px',
+              fontWeight: '600',
+              textDecoration: 'none'
+            }}>Login</Link>
+          ) : (
+            <div style={{ position: 'relative' }}
+              onMouseEnter={() => setDropOpen(true)}
+              onMouseLeave={() => setDropOpen(false)}
+            >
+              {/* Avatar circle */}
+              <div style={{
+                width: '38px', height: '38px',
+                borderRadius: '50%',
+                background: '#FF6B00',
+                display: 'flex', alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#fff', fontWeight: '800',
+                fontSize: '15px',
+                border: '2px solid #FFB347'
+              }}>
+                {currentUser.photo
+                  ? <img src={currentUser.photo}
+                      style={{ width:'100%', height:'100%',
+                      borderRadius:'50%', objectFit:'cover' }} alt="Avatar" />
+                  : currentUser.name?.charAt(0).toUpperCase()
+                }
+              </div>
+
+              {/* Dropdown */}
+              {dropOpen && (
+                <div style={{
+                  position: 'absolute', right: 0, top: '44px',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '10px',
+                  minWidth: '180px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                  zIndex: 200,
+                  overflow: 'hidden'
+                }}>
+                  {/* User info */}
+                  <div style={{
+                    padding: '12px 16px',
+                    borderBottom: '1px solid var(--border)'
+                  }}>
+                    <div style={{
+                      fontSize: '13px', fontWeight: '700',
+                      color: 'var(--text-primary)'
+                    }}>{currentUser.name}</div>
+                    <div style={{
+                      fontSize: '11px',
+                      color: 'var(--text-muted)'
+                    }}>{currentUser.email}</div>
+                  </div>
+
+                  {/* Links */}
+                  <Link to="/profile" style={{
+                    display: 'block',
+                    padding: '10px 16px',
+                    fontSize: '13px',
+                    color: 'var(--text-primary)',
+                    textDecoration: 'none',
+                    borderBottom: '1px solid var(--border)',
+                    transition: 'background 0.2s'
+                  }}>
+                    👤 My Profile
+                  </Link>
+                  {isAdmin && (
+                    <Link to="/admin" style={{
+                      display: 'block',
+                      padding: '10px 16px',
+                      fontSize: '13px',
+                      color: 'var(--text-primary)',
+                      textDecoration: 'none',
+                      borderBottom: '1px solid var(--border)',
+                      transition: 'background 0.2s'
+                    }}>
+                      🛡️ Admin Panel
+                    </Link>
+                  )}
+                  <div onClick={logout} style={{
+                    display: 'block',
+                    padding: '10px 16px',
+                    fontSize: '13px',
+                    color: '#E53E3E',
+                    textDecoration: 'none',
+                    borderBottom: '1px solid var(--border)',
+                    transition: 'background 0.2s',
+                    cursor: 'pointer'
+                  }}>
+                    🚪 Logout
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <button type="button" className="inline-flex h-11 w-11 flex-col items-center justify-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg-card)] p-2 text-secondary md:hidden" onClick={() => setOpen((prev) => !prev)} aria-label="Toggle menu">
@@ -118,6 +225,25 @@ function Navbar() {
           <NavLink to="/register" className="flex h-12 w-full items-center justify-center rounded-xl bg-amber font-semibold text-black transition hover:bg-amber-light" onClick={() => setOpen(false)}>
             Register
           </NavLink>
+          {!currentUser ? (
+            <NavLink to="/login" className="flex h-12 w-full items-center justify-center rounded-xl border border-amber text-primary transition hover:bg-amber hover:text-black" onClick={() => setOpen(false)}>
+              Login
+            </NavLink>
+          ) : (
+            <>
+              <NavLink to="/profile" className="flex h-12 w-full items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg-card)] text-secondary transition hover:bg-[var(--bg-secondary)]" onClick={() => setOpen(false)}>
+                👤 My Profile
+              </NavLink>
+              {isAdmin && (
+                <NavLink to="/admin" className="flex h-12 w-full items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg-card)] text-secondary transition hover:bg-[var(--bg-secondary)]" onClick={() => setOpen(false)}>
+                  🛡️ Admin Panel
+                </NavLink>
+              )}
+              <button onClick={() => { logout(); setOpen(false); }} className="flex h-12 w-full items-center justify-center rounded-xl border border-[var(--border)] text-[#E53E3E] transition hover:bg-[#E53E3E]/10">
+                🚪 Logout
+              </button>
+            </>
+          )}
         </div>
       </div>
     </header>

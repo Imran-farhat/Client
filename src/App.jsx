@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -9,6 +10,12 @@ import Services from './pages/Services';
 import Gallery from './pages/Gallery';
 import Register from './pages/Register';
 import Contact from './pages/Contact';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Profile from './pages/Profile';
+import AdminDashboard from './pages/AdminDashboard';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import NotFound from './pages/NotFound';
 
 const pageTitles = {
@@ -18,6 +25,10 @@ const pageTitles = {
   '/gallery': 'Gallery | தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்',
   '/register': 'Register | தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்',
   '/contact': 'Contact | தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்',
+  '/login': 'Login | தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்',
+  '/signup': 'Signup | தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்',
+  '/profile': 'Profile | தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்',
+  '/admin': 'Admin Dashboard | தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்',
 };
 
 function App() {
@@ -30,23 +41,33 @@ function App() {
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen bg-primary text-primary">
-        <Navbar />
-        <main className="relative overflow-hidden">
-          <div className="route-transition">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/gallery" element={<Gallery />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </div>
-        </main>
-        <Footer />
-      </div>
+      <AuthProvider>
+        <div className="min-h-screen bg-primary text-primary">
+          <Navbar />
+          <main className="relative overflow-hidden">
+            <div className="route-transition">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/gallery" element={<Gallery />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/profile" element={
+                  <ProtectedRoute><Profile /></ProtectedRoute>
+                } />
+                <Route path="/admin" element={
+                  <AdminRoute><AdminDashboard /></AdminRoute>
+                } />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
