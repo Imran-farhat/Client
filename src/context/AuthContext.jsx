@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from 'react'
-import { useGoogleLogin } from '@react-oauth/google'
+import { jwtDecode } from 'jwt-decode'
 
 const AuthContext = createContext()
 
@@ -7,28 +7,21 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null)
   const [isAdmin, setIsAdmin] = useState(false)
 
-  const loginWithGoogle = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-        });
-        const userInfo = await userInfoRes.json();
-        
-        setCurrentUser({
-          uid: userInfo.sub,
-          name: userInfo.name,
-          email: userInfo.email,
-          photo: userInfo.picture,
-          provider: 'google'
-        });
-        setIsAdmin(false);
-      } catch (err) {
-        console.error('Google login failed', err);
-      }
-    },
-    onError: (error) => console.log('Login Failed:', error)
-  });
+  const loginWithGoogleCredential = (credentialResponse) => {
+    try {
+      const decoded = jwtDecode(credentialResponse.credential);
+      setCurrentUser({
+        uid: decoded.sub,
+        name: decoded.name,
+        email: decoded.email,
+        photo: decoded.picture,
+        provider: 'google'
+      });
+      setIsAdmin(false);
+    } catch (err) {
+      console.error('Google login failed', err);
+    }
+  };
 
   const loginWithEmail = (email, password) => {
     // Mock — replace with Supabase later
@@ -62,7 +55,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider value={{
       currentUser,
       isAdmin,
-      loginWithGoogle,
+      loginWithGoogleCredential,
       loginWithEmail,
       logout
     }}>
