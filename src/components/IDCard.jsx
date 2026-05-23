@@ -63,9 +63,9 @@ function CardFront({ member }) {
       background: bg,
       borderBottom: '1px solid #E8EDF3'
     }}>
-      <div style={{ width: '46px', flexShrink: 0, fontSize: '7px', fontWeight: '700', color: '#555' }}>{label}</div>
+      <div style={{ width: '46px', flexShrink: 0, fontSize: '7px', fontWeight: '700', color: '#555', textAlign: 'left' }}>{label}</div>
       <div style={{ width: '12px', flexShrink: 0, fontSize: '7px', color: '#BBB', textAlign: 'center' }}>:</div>
-      <div style={{ flex: 1, fontSize: '8px', fontWeight: '800', color: '#003366', wordBreak: 'break-word', lineHeight: '1.25' }}>{value}</div>
+      <div style={{ flex: 1, fontSize: '8px', fontWeight: '800', color: '#003366', wordBreak: 'break-word', lineHeight: '1.25', textAlign: 'left' }}>{value}</div>
     </div>
   );
 
@@ -112,9 +112,9 @@ function CardFront({ member }) {
       <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0 5px', borderBottom: '1px solid #E0E0E0', background: '#FFFFFF' }}>
         {member.photoPreview ? (
           <img src={member.photoPreview} alt="Member"
-            style={{ width: '65px', height: '78px', objectFit: 'cover', border: '1.5px solid #003366', borderRadius: '3px', display: 'block' }} />
+            style={{ width: '65px', height: '78px', objectFit: 'cover', border: '1.5px solid #003366', borderRadius: '3px', display: 'block', margin: '0 auto' }} />
         ) : (
-          <div style={{ width: '65px', height: '78px', border: '1.5px dashed #003366', borderRadius: '3px', background: '#F0F4F8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: '7px', gap: '3px' }}>
+          <div style={{ width: '65px', height: '78px', border: '1.5px dashed #003366', borderRadius: '3px', background: '#F0F4F8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: '7px', gap: '3px', margin: '0 auto' }}>
             <span style={{ fontSize: '16px' }}>👤</span>PHOTO
           </div>
         )}
