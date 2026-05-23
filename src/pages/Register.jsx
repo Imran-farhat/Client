@@ -5,6 +5,45 @@ import OrgLogo from '../components/OrgLogo';
 
 const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
+const TAMIL_NADU_DISTRICTS = [
+  'அரியலூர்',
+  'சேலம்',
+  'சென்னை',
+  'கோயம்புத்தூர்',
+  'கடலூர்',
+  'தர்மபுரி',
+  'திண்டுக்கல்',
+  'ஈரோடு',
+  'காஞ்சிபுரம்',
+  'கன்னியாகுமரி',
+  'கரூர்',
+  'கிருஷ்ணகிரி',
+  'மதுரை',
+  'மயிலாடுதுறை',
+  'நாகப்பட்டினம்',
+  'நாமக்கல்',
+  'நீலகிரி',
+  'பெரம்பலூர்',
+  'புதுக்கோட்டை',
+  'ராமநாதபுரம்',
+  'ராணிப்பேட்டை',
+  'சிவகங்கை',
+  'தென்காசி',
+  'தஞ்சாவூர்',
+  'தேனி',
+  'திருவள்ளூர்',
+  'திருவண்ணாமலை',
+  'திருவாரூர்',
+  'தூத்துக்குடி',
+  'திருச்சிராப்பள்ளி',
+  'திருநெல்வேலி',
+  'திருப்பத்தூர்',
+  'திருப்பூர்',
+  'வேலூர்',
+  'விழுப்புரம்',
+  'விருதுநகர்'
+];
+
 const initialForm = {
   fullName: '',
   address: '',
@@ -87,7 +126,7 @@ function Register() {
     if (!form.nomineeName.trim()) nextErrors.nomineeName = 'இந்த தகவல் அவசியம்';
     if (form.nomineeMobile && !form.nomineeMobile.match(/^\d{10}$/)) nextErrors.nomineeMobile = 'சரியான செல் நம்பர் உள்ளிடுக';
     if (!form.pledgeName.trim()) nextErrors.pledgeName = 'இந்த தகவல் அவசியம்';
-    if (!form.pledgeDistrict.trim()) nextErrors.pledgeDistrict = 'இந்த தகவல் அவசியம்';
+    if (!form.pledgeDistrict || form.pledgeDistrict === '') nextErrors.pledgeDistrict = 'மாவட்டம் தேர்வு செய்க';
     if (!form.pledgeBranch.trim()) nextErrors.pledgeBranch = 'இந்த தகவல் அவசியம்';
     if (!form.profilePhoto) nextErrors.profilePhoto = 'படத்தை பதிவேற்றவும்';
     else if (!form.profilePhoto.type.startsWith('image/')) nextErrors.profilePhoto = 'படத்தை பதிவேற்றவும்';
@@ -375,6 +414,43 @@ function Register() {
 
               <p className="text-center text-sm" style={{ color: '#888888' }}>அனைவருக்கும் சம உரிமை:</p>
 
+              <div className="rounded-[12px] p-4" style={{ border: '1.5px solid #E5DDD0', marginBottom: '8px' }}>
+                  <label className="block">
+                    <span className="text-sm font-semibold" style={{ color: '#2C3E6B' }}>
+                      மாவட்டம் <span style={{ color: '#E53E3E' }}>*</span>
+                      <span style={{ fontSize: '10px', color: '#888', marginLeft: '4px' }}>(District)</span>
+                    </span>
+                    <div style={{ marginTop: '4px' }}>
+                      <select
+                        value={form.pledgeDistrict}
+                        onChange={handleChange('pledgeDistrict')}
+                        style={{
+                          height: '44px',
+                          background: 'var(--input-bg)',
+                          border: errors.pledgeDistrict ? '1.5px solid #E53E3E' : '1.5px solid #D1C8BC',
+                          borderRadius: '8px',
+                          padding: '10px 14px',
+                          fontSize: '14px',
+                          color: 'var(--input-text)',
+                          fontFamily: 'Catamaran, sans-serif',
+                          width: '100%',
+                          outline: 'none',
+                          cursor: 'pointer',
+                          appearance: 'auto'
+                        }}
+                      >
+                        <option value="">-- மாவட்டம் தேர்வு செய்க --</option>
+                        {TAMIL_NADU_DISTRICTS.map((district) => (
+                          <option key={district} value={district}>{district}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {errors.pledgeDistrict && (
+                      <p style={{ color: '#E53E3E', fontSize: '12px', marginTop: '4px' }}>{errors.pledgeDistrict}</p>
+                    )}
+                  </label>
+                </div>
+
               <div className="rounded-[12px] p-6" style={{ background: '#FFF8F0', border: '1.5px solid #FFB347' }}>
                 <div className="mb-4 text-center">
                   <p className="text-lg font-semibold underline decoration-amber decoration-2 underline-offset-4" style={{ color: '#003366' }}>உறுதிமொழி</p>
@@ -383,7 +459,7 @@ function Register() {
                   ஐயா,
                   <input value={form.pledgeName} onChange={handleChange('pledgeName')} placeholder="Name" style={{ background: 'transparent', border: 'none', borderBottom: '1.5px solid #003366', color: '#1A1A2E', fontFamily: 'inherit', fontSize: 'inherit', padding: '0 4px', width: '180px', borderRadius: '0', display: 'inline', outline: 'none' }} />
                   ஆகிய நான் தென் இந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கத்தின்
-                  <input value={form.pledgeDistrict} onChange={handleChange('pledgeDistrict')} placeholder="District" style={{ background: 'transparent', border: 'none', borderBottom: '1.5px solid #003366', color: '#1A1A2E', fontFamily: 'inherit', fontSize: 'inherit', padding: '0 4px', width: '120px', borderRadius: '0', display: 'inline', outline: 'none' }} />
+                  {' '}<strong>{form.pledgeDistrict || '___________'}</strong>{' '}
                   மாவட்டம்
                   <input value={form.pledgeBranch} onChange={handleChange('pledgeBranch')} placeholder="Branch" style={{ background: 'transparent', border: 'none', borderBottom: '1.5px solid #003366', color: '#1A1A2E', fontFamily: 'inherit', fontSize: 'inherit', padding: '0 4px', width: '140px', borderRadius: '0', display: 'inline', outline: 'none' }} />
                   கிளைசங்கத்தில் உறுப்பினராக சேர்ந்து பணியாற்ற சம்மதிக்கின்றேன்.

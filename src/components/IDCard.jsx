@@ -45,109 +45,128 @@ function LogoFallback() {
 }
 
 function CardFront({ member }) {
-  const rows = [
-    { label: 'Name', value: member.fullName || '-' },
-    { label: 'D.O.B', value: member.dob || '-' },
-    { label: 'Mobile', value: member.mobile || '-' },
+  const fields = [
+    { label: 'Name',     value: member.fullName || '-' },
+    { label: 'D.O.B',    value: member.dob || '-' },
+    { label: 'Mobile',   value: member.mobile || '-' },
     { label: 'District', value: member.pledgeDistrict || member.district || '-' },
-    { label: 'Address', value: member.address || '-' },
-    { label: 'Joined', value: member.joiningDate || member.joinDate || '-' },
+    { label: 'Address',  value: member.address || '-' },
+    { label: 'Joined',   value: member.joiningDate || member.joinDate || '-' },
   ];
+
+  const fieldRow = (label, value, bg) => (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      minHeight: '20px',
+      padding: '3px 8px 3px 13px',
+      background: bg,
+      borderBottom: '1px solid #E8EDF3'
+    }}>
+      <div style={{ width: '46px', flexShrink: 0, fontSize: '7px', fontWeight: '700', color: '#555' }}>{label}</div>
+      <div style={{ width: '12px', flexShrink: 0, fontSize: '7px', color: '#BBB', textAlign: 'center' }}>:</div>
+      <div style={{ flex: 1, fontSize: '8px', fontWeight: '800', color: '#003366', wordBreak: 'break-word', lineHeight: '1.25' }}>{value}</div>
+    </div>
+  );
 
   return (
     <div id="id-card-front" style={{
       width: '240px',
+      minHeight: '420px',
       height: 'auto',
-      minHeight: '380px',
-      maxHeight: 'none',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative',
+      overflow: 'hidden',
       background: '#FFFFFF',
       borderRadius: '10px',
-      overflow: 'visible',
-      position: 'relative',
       border: '1px solid #CCCCCC',
       fontFamily: 'Catamaran, sans-serif',
-      flexShrink: 0,
-      display: 'flex',
-      flexDirection: 'column'
+      flexShrink: 0
     }}>
+      {/* Left orange accent bar */}
       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '5px', background: '#FF6B00', zIndex: 2 }} />
 
-      <div style={{ display: 'flex', height: '5px' }}>
+      {/* Top tricolor */}
+      <div style={{ display: 'flex', height: '5px', flexShrink: 0 }}>
         <div style={{ flex: 1, background: '#FF9933' }} />
         <div style={{ flex: 1, background: '#FFFFFF', borderTop: '0.5px solid #DDD', borderBottom: '0.5px solid #DDD' }} />
         <div style={{ flex: 1, background: '#138808' }} />
       </div>
 
-      <div style={{ background: '#003366', padding: '6px 8px 6px 13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <img src={'/logo.png'} alt="TIWTN" style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid #FF6B00', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none'; }} />
+      {/* Navy header */}
+      <div style={{ background: '#003366', padding: '5px 8px 5px 13px', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        <img src={'/logo.png'} alt="TIWTN" style={{ width: '34px', height: '34px', borderRadius: '50%', border: '2px solid #FF6B00', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none'; }} />
         <div>
-          <div style={{ fontSize: '8px', fontWeight: '800', color: '#FFFFFF', lineHeight: '1.3' }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</div>
-          <div style={{ fontSize: '6px', color: '#B8C9E0', letterSpacing: '0.5px', marginTop: '1px' }}>WELDING PROFESSIONALS WELFARE ASSOCIATION</div>
+          <div style={{ fontSize: '7.5px', fontWeight: '800', color: '#FFFFFF', lineHeight: '1.3' }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</div>
+          <div style={{ fontSize: '5.5px', color: '#B8C9E0', letterSpacing: '0.4px', marginTop: '1px' }}>WELDING PROFESSIONALS WELFARE ASSOCIATION</div>
         </div>
       </div>
 
-      <div style={{ background: '#FF6B00', textAlign: 'center', padding: '3px', fontSize: '7px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '1px' }}>உறுப்பினர் அட்டை / MEMBER IDENTITY CARD</div>
+      {/* Orange title bar */}
+      <div style={{ background: '#FF6B00', textAlign: 'center', padding: '3px', fontSize: '7px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '1px', flexShrink: 0 }}>
+        உறுப்பினர் அட்டை / MEMBER IDENTITY CARD
+      </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '5px 0 4px', borderBottom: '1px solid #E0E0E0' }}>
+      {/* ── PHOTO (Centered) ── */}
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0 5px', borderBottom: '1px solid #E0E0E0', background: '#FFFFFF' }}>
         {member.photoPreview ? (
-          <img src={member.photoPreview} alt="Member" style={{ width: '65px', height: '78px', objectFit: 'cover', border: '1.5px solid #003366', borderRadius: '2px' }} />
+          <img src={member.photoPreview} alt="Member"
+            style={{ width: '65px', height: '78px', objectFit: 'cover', border: '1.5px solid #003366', borderRadius: '3px', display: 'block' }} />
         ) : (
-          <div style={{ width: '65px', height: '78px', borderRadius: '2px', border: '1.5px solid #003366', background: '#F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: '8px' }}>PHOTO</div>
+          <div style={{ width: '65px', height: '78px', border: '1.5px dashed #003366', borderRadius: '3px', background: '#F0F4F8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: '7px', gap: '3px' }}>
+            <span style={{ fontSize: '16px' }}>👤</span>PHOTO
+          </div>
         )}
       </div>
 
-      <div style={{ padding: '5px 8px 5px 13px', borderBottom: '1px solid #E0E0E0', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-        {rows.map((row, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '2px' }}>
-            <div style={{
-              width: '55px',
-              flexShrink: 0,
-              fontSize: '7px',
-              fontWeight: '700',
-              color: '#555555',
-              lineHeight: '1.3'
-            }}>{row.label}</div>
-            <div style={{ fontSize: '8px', color: '#333', fontWeight: '600', flexShrink: 0 }}>:</div>
-            <div style={{ fontSize: '8px', fontWeight: '800', color: '#003366', flex: 1, wordBreak: 'break-word' }}>{row.value}</div>
-          </div>
-        ))}
+      {/* ── All 6 fields (full width) ── */}
+      <div style={{ borderBottom: '1px solid #E0E0E0', flex: 1 }}>
+        {fields.map((f, i) =>
+          fieldRow(f.label, f.value, i % 2 === 0 ? '#FFFFFF' : '#F4F7FB')
+        )}
       </div>
 
-      <div style={{ padding: '4px 8px 4px 13px', background: '#F0F4F8', borderBottom: '1px solid #E0E0E0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* ── Member ID bar ── */}
+      <div style={{ padding: '4px 8px 4px 13px', background: '#EBF0F8', borderBottom: '1px solid #D8E2EF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <div>
-          <div style={{ fontSize: '6px', color: '#888', marginBottom: '1px' }}>உறுப்பினர் எண் / Member ID</div>
-          <div style={{ fontFamily: 'Courier Prime, monospace', fontSize: '9px', fontWeight: '700', color: '#003366', letterSpacing: '1px' }}>{member.memberId || 'TIWTN-2026-XXXXX'}</div>
+          <div style={{ fontSize: '6px', color: '#888', marginBottom: '1px', letterSpacing: '0.3px' }}>உறுப்பினர் எண் / Member ID</div>
+          <div style={{ fontFamily: 'Courier Prime, monospace', fontSize: '9px', fontWeight: '700', color: '#003366', letterSpacing: '1px' }}>
+            {member.memberId || 'TIWTN-2026-XXXXX'}
+          </div>
         </div>
-        <img src={'/logo.png'} alt="TIWTN" style={{ width: '22px', height: '22px', borderRadius: '50%', border: '1px solid #FF6B00', opacity: 0.8 }} onError={(e) => { e.target.style.display = 'none'; }} />
+        <img src={'/logo.png'} alt="TIWTN" style={{ width: '22px', height: '22px', borderRadius: '50%', border: '1px solid #FF6B00', opacity: 0.75 }} onError={(e) => { e.target.style.display = 'none'; }} />
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-around', padding: '6px 6px 4px 11px', background: '#FFFFFF' }}>
+      {/* ── Signature section ── */}
+      <div style={{
+        padding: '5px 6px 5px 11px',
+        background: '#FAFAFA',
+        borderTop: '1px solid #E0E0E0',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+        flexShrink: 0
+      }}>
         {AUTHORITIES.map((auth, i) => (
-          <div key={i} style={{ textAlign: 'center', width: '31%' }}>
-            <div style={{ height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img
-                src={auth.sign}
-                alt=""
-                crossOrigin="anonymous"
-                style={{
-                  maxWidth: '62px',
-                  maxHeight: '28px',
-                  objectFit: 'contain',
-                  filter: 'brightness(0) invert(0)',
-                  opacity: 1
-                }}
-              />
-            </div>
-            <div style={{ borderTop: '1px solid #333', paddingTop: '2px' }}>
-              <div style={{ fontSize: '7px', fontWeight: '800', color: '#003366', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{auth.nameTamil}</div>
-              <div style={{ fontSize: '6px', color: '#555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{auth.role}</div>
-              <div style={{ fontSize: '5px', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{auth.roleEn}</div>
-            </div>
+          <div key={i} style={{ width: '32%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+            {/* Name */}
+            <div style={{ fontSize: '6.5px', fontWeight: '800', color: '#003366', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'normal' }}>{auth.nameTamil}</div>
+            {/* Tamil role */}
+            <div style={{ fontSize: '6px', color: '#444', lineHeight: '1.3' }}>{auth.role}</div>
+            {/* English role */}
+            <div style={{ fontSize: '5px', color: '#888', marginBottom: '4px' }}>{auth.roleEn}</div>
+            {/* Signature image */}
+            <img src={auth.sign} alt="" crossOrigin="anonymous"
+              style={{ width: '66px', height: '24px', objectFit: 'contain', display: 'block', filter: 'brightness(0)', opacity: 1 }} />
+            {/* Signature line */}
+            <div style={{ width: '100%', borderTop: '1px solid #444', marginTop: '2px' }} />
           </div>
         ))}
       </div>
 
-      <div style={{ display: 'flex', height: '5px', marginTop: 'auto', position: 'relative' }}>
+      {/* Bottom tricolor */}
+      <div style={{ display: 'flex', height: '5px', width: '100%', flexShrink: 0 }}>
         <div style={{ flex: 1, background: '#FF9933' }} />
         <div style={{ flex: 1, background: '#FFFFFF', borderTop: '0.5px solid #DDD', borderBottom: '0.5px solid #DDD' }} />
         <div style={{ flex: 1, background: '#138808' }} />
@@ -159,100 +178,120 @@ function CardFront({ member }) {
 function CardBack({ member }) {
   return (
     <div id="id-card-back" style={{
-      width: `${CARD_W}px`,
-      height: `${CARD_H}px`,
+      width: '240px',
+      minHeight: '420px',
+      height: 'auto',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative',
+      overflow: 'hidden',
       background: '#FFFFFF',
       borderRadius: '10px',
-      overflow: 'hidden',
-      position: 'relative',
       border: '1px solid #CCCCCC',
       fontFamily: 'Catamaran, sans-serif',
       flexShrink: 0
     }}>
+      {/* Left orange accent bar */}
       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '5px', background: '#FF6B00', zIndex: 2 }} />
 
-      <div style={{ display: 'flex', height: '5px' }}>
+      {/* 1. Tricolor top */}
+      <div style={{ display: 'flex', height: '5px', flexShrink: 0 }}>
         <div style={{ flex: 1, background: '#FF9933' }} />
         <div style={{ flex: 1, background: '#FFFFFF', borderTop: '0.5px solid #DDD', borderBottom: '0.5px solid #DDD' }} />
         <div style={{ flex: 1, background: '#138808' }} />
       </div>
 
-      <div style={{ background: '#003366', padding: '6px 8px 6px 13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <img src={'/logo.png'} alt="TIWTN" style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2px solid #FF6B00', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none'; }} />
-        <div style={{ fontSize: '7px', fontWeight: '800', color: '#FFFFFF', lineHeight: '1.3' }}>
-          தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்
+      {/* 2. Navy header — same as front */}
+      <div style={{ background: '#003366', padding: '6px 8px 6px 13px', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        <img src={'/logo.png'} alt="TIWTN" style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid #FF6B00', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none'; }} />
+        <div>
+          <div style={{ fontSize: '8px', fontWeight: '800', color: '#FFFFFF', lineHeight: '1.3' }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</div>
+          <div style={{ fontSize: '6px', color: '#B8C9E0', letterSpacing: '0.5px', marginTop: '1px' }}>WELDING PROFESSIONALS WELFARE ASSOCIATION</div>
         </div>
       </div>
 
-      <div style={{ padding: '10px 8px 10px 13px', borderBottom: '1px solid #E0E0E0', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-        <div style={{ flexShrink: 0, textAlign: 'center' }}>
-          <svg width="60" height="60" viewBox="0 0 60 60" style={{ border: '1px solid #CCC', borderRadius: '3px', padding: '3px' }}>
-            <rect x="2" y="2" width="16" height="16" fill="none" stroke="#003366" strokeWidth="2" />
-            <rect x="6" y="6" width="8" height="8" fill="#003366" />
-            <rect x="42" y="2" width="16" height="16" fill="none" stroke="#003366" strokeWidth="2" />
-            <rect x="46" y="6" width="8" height="8" fill="#003366" />
-            <rect x="2" y="42" width="16" height="16" fill="none" stroke="#003366" strokeWidth="2" />
-            <rect x="6" y="46" width="8" height="8" fill="#003366" />
-            <rect x="24" y="4" width="4" height="4" fill="#003366" />
-            <rect x="30" y="4" width="4" height="4" fill="#003366" />
-            <rect x="24" y="10" width="4" height="4" fill="#003366" />
-            <rect x="4" y="24" width="4" height="4" fill="#003366" />
-            <rect x="10" y="30" width="4" height="4" fill="#003366" />
-            <rect x="24" y="24" width="4" height="4" fill="#003366" />
-            <rect x="30" y="30" width="4" height="4" fill="#003366" />
-            <rect x="36" y="24" width="4" height="4" fill="#003366" />
-            <rect x="42" y="30" width="4" height="4" fill="#003366" />
-            <rect x="48" y="24" width="4" height="4" fill="#003366" />
-            <rect x="24" y="42" width="4" height="4" fill="#003366" />
-            <rect x="30" y="48" width="4" height="4" fill="#003366" />
-            <rect x="36" y="42" width="4" height="4" fill="#003366" />
-          </svg>
-          <div style={{ fontSize: '6px', color: '#888', marginTop: '2px' }}>Scan to verify</div>
-        </div>
+      {/* 3. Orange title bar */}
+      <div style={{ background: '#FF6B00', textAlign: 'center', padding: '3px 0', fontSize: '7px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '1px', flexShrink: 0 }}>பின்பக்கம் / BACK SIDE</div>
 
-        <div>
-          <div style={{ fontSize: '6px', color: '#888', letterSpacing: '0.5px', marginBottom: '3px' }}>அலுவல முகவரி / OFFICE ADDRESS</div>
-          <div style={{ fontSize: '8px', fontWeight: '700', color: '#003366', lineHeight: '1.5' }}>
-            தென்னிந்திய வெல்டிங்<br />
-            தொழிலாளர்கள் நலச்சங்கம்<br />
-            133/34, 1A, 1A பெங்களூர்<br />
-            ஹைவே, சென்னை – 600124,<br />
-            தமிழ்நாடு.
+      {/* 4. Content body */}
+      <div style={{ minHeight: '285px', padding: '10px 8px 10px 13px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+
+        {/* QR + address */}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+          <div style={{ flexShrink: 0, textAlign: 'center' }}>
+            <svg width="60" height="60" viewBox="0 0 60 60" style={{ border: '1px solid #CCC', borderRadius: '3px', padding: '3px' }}>
+              <rect x="2" y="2" width="16" height="16" fill="none" stroke="#003366" strokeWidth="2" />
+              <rect x="6" y="6" width="8" height="8" fill="#003366" />
+              <rect x="42" y="2" width="16" height="16" fill="none" stroke="#003366" strokeWidth="2" />
+              <rect x="46" y="6" width="8" height="8" fill="#003366" />
+              <rect x="2" y="42" width="16" height="16" fill="none" stroke="#003366" strokeWidth="2" />
+              <rect x="6" y="46" width="8" height="8" fill="#003366" />
+              <rect x="24" y="4" width="4" height="4" fill="#003366" />
+              <rect x="30" y="4" width="4" height="4" fill="#003366" />
+              <rect x="24" y="10" width="4" height="4" fill="#003366" />
+              <rect x="4" y="24" width="4" height="4" fill="#003366" />
+              <rect x="10" y="30" width="4" height="4" fill="#003366" />
+              <rect x="24" y="24" width="4" height="4" fill="#003366" />
+              <rect x="30" y="30" width="4" height="4" fill="#003366" />
+              <rect x="36" y="24" width="4" height="4" fill="#003366" />
+              <rect x="42" y="30" width="4" height="4" fill="#003366" />
+              <rect x="48" y="24" width="4" height="4" fill="#003366" />
+              <rect x="24" y="42" width="4" height="4" fill="#003366" />
+              <rect x="30" y="48" width="4" height="4" fill="#003366" />
+              <rect x="36" y="42" width="4" height="4" fill="#003366" />
+            </svg>
+            <div style={{ fontSize: '6px', color: '#888', marginTop: '2px' }}>Scan to verify</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '6px', color: '#888', letterSpacing: '0.5px', marginBottom: '3px' }}>அலுவல முகவரி / OFFICE ADDRESS</div>
+            <div style={{ fontSize: '8px', fontWeight: '700', color: '#003366', lineHeight: '1.5' }}>
+              தென்னிந்திய வெல்டிங்<br />
+              தொழிலாளர்கள் நலச்சங்கம்<br />
+              133/34, 1A, 1A பெங்களூர்<br />
+              ஹைவே, சென்னை – 600124,<br />
+              தமிழ்நாடு.
+            </div>
           </div>
         </div>
-      </div>
 
-      <div style={{ padding: '8px 8px 8px 13px', display: 'flex', gap: '16px', borderBottom: '1px solid #E0E0E0' }}>
-        <div>
-          <div style={{ fontSize: '6px', color: '#888' }}>வாரிசுதாரர் / NOMINEE</div>
-          <div style={{ fontSize: '9px', fontWeight: '800', color: '#003366' }}>{member.nomineeName || '-'}</div>
+        {/* Nominee + blood row */}
+        <div style={{ display: 'flex', gap: '16px', borderTop: '1px solid #E0E0E0', paddingTop: '8px' }}>
+          <div>
+            <div style={{ fontSize: '6px', color: '#888' }}>வாரிசுதாரர் / NOMINEE</div>
+            <div style={{ fontSize: '9px', fontWeight: '800', color: '#003366' }}>{member.nomineeName || '-'}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '6px', color: '#888' }}>இரத்த பிரிவு / BLOOD</div>
+            <div style={{ fontSize: '9px', fontWeight: '800', color: '#003366' }}>{member.bloodGroup || '-'}</div>
+          </div>
         </div>
-        <div>
-          <div style={{ fontSize: '6px', color: '#888' }}>இரத்த பிரிவு / BLOOD</div>
-          <div style={{ fontSize: '9px', fontWeight: '800', color: '#003366' }}>{member.bloodGroup || '-'}</div>
+
+        {/* Aadhaar */}
+        <div style={{ borderTop: '1px solid #E0E0E0', paddingTop: '8px' }}>
+          <div style={{ fontSize: '6px', color: '#888', marginBottom: '2px' }}>ஆதார் எண் / AADHAAR</div>
+          <div style={{ fontFamily: 'Courier Prime, monospace', fontSize: '10px', fontWeight: '700', color: '#003366', letterSpacing: '1px' }}>{member.aadhaar || '-'}</div>
         </div>
-      </div>
 
-      <div style={{ padding: '8px 8px 8px 13px', borderBottom: '1px solid #E0E0E0' }}>
-        <div style={{ fontSize: '6px', color: '#888', marginBottom: '2px' }}>ஆதார் எண் / AADHAAR</div>
-        <div style={{ fontFamily: 'Courier Prime, monospace', fontSize: '10px', fontWeight: '700', color: '#003366', letterSpacing: '1px' }}>{member.aadhaar || '-'}</div>
-      </div>
-
-      <div style={{ margin: '8px 8px 8px 13px', padding: '8px', background: '#FFF8F0', border: '1px solid #FFB347', borderRadius: '5px' }}>
-        <div style={{ fontSize: '8px', color: '#333', lineHeight: '1.6' }}>
-          இந்த அட்டை சங்கத்தின் சொத்து.<br />
-          தொலைந்தால் திருப்பித் தரவும்.
+        {/* Disclaimer */}
+        <div style={{ padding: '8px', background: '#FFF8F0', border: '1px solid #FFB347', borderRadius: '5px' }}>
+          <div style={{ fontSize: '8px', color: '#333', lineHeight: '1.6' }}>
+            இந்த அட்டை சங்கத்தின் சொத்து.<br />
+            தொலைந்தால் திருப்பித் தரவும்.
+          </div>
+          <div style={{ fontSize: '7px', color: '#666', marginTop: '3px' }}>
+            If found, please return to the above address.
+          </div>
         </div>
-        <div style={{ fontSize: '7px', color: '#666', marginTop: '3px' }}>
-          If found, please return to the above address.
+
+        {/* Watermark */}
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0.04, pointerEvents: 'none', zIndex: 0 }}>
+          <img src={'/logo.png'} alt="watermark" style={{ width: '160px', height: '160px' }} />
         </div>
+
       </div>
 
-      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0.04, pointerEvents: 'none', zIndex: 0 }}>
-        <img src={'/logo.png'} alt="watermark" style={{ width: '160px', height: '160px' }} />
-      </div>
-
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', height: '5px' }}>
+      {/* 5. Tricolor bottom — flow, last child */}
+      <div style={{ display: 'flex', height: '5px', width: '100%', marginTop: 'auto', flexShrink: 0 }}>
         <div style={{ flex: 1, background: '#FF9933' }} />
         <div style={{ flex: 1, background: '#FFFFFF', borderTop: '0.5px solid #DDD', borderBottom: '0.5px solid #DDD' }} />
         <div style={{ flex: 1, background: '#138808' }} />
@@ -296,180 +335,192 @@ function IDCard({ member, onReset }) {
     );
   };
 
-  const downloadFront = async () => {
-    const originalCard = document.getElementById('id-card-front');
-    if (!originalCard) return;
-
-    const renderContainer = document.createElement('div');
-    renderContainer.style.cssText = `
-      position: fixed;
-      top: -99999px;
-      left: -99999px;
-      width: 240px;
-      height: auto;
-      transform: none;
-      zoom: 1;
-      opacity: 1;
-      pointer-events: none;
-      z-index: -1;
+  const downloadCard = async () => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `
+      position:fixed;
+      left:-99999px;
+      top:0;
+      width:240px;
+      z-index:-999;
+      pointer-events:none;
+      background:#FFFFFF;
     `;
-    document.body.appendChild(renderContainer);
+    document.body.appendChild(wrap);
 
-    const clone = originalCard.cloneNode(true);
-    clone.id = 'id-card-front-clone';
+    const src = document.getElementById('id-card-front');
+    const clone = src.cloneNode(true);
+    clone.id = 'dl-front-clone';
     clone.style.cssText = `
-      width: 240px;
-      height: auto !important;
-      min-height: 380px;
-      max-height: none !important;
-      transform: none;
-      zoom: 1;
-      overflow: visible !important;
-      position: relative;
-      opacity: 1;
-      border-radius: 10px;
-      font-family: Catamaran, sans-serif;
-      display: flex;
-      flex-direction: column;
+      width:240px;
+      height:auto;
+      min-height:0;
+      max-height:none;
+      overflow:visible;
+      transform:none;
+      position:relative;
+      opacity:1;
+      display:flex;
+      flex-direction:column;
+      background:#FFFFFF;
+      border-radius:10px;
+      font-family:Catamaran,sans-serif;
     `;
-
-    clone.querySelectorAll('img').forEach(img => {
-      img.style.opacity = '1';
-      img.style.visibility = 'visible';
-      try { img.crossOrigin = 'anonymous'; } catch (e) {}
-    });
-
     clone.querySelectorAll('*').forEach(el => {
       el.style.transform = 'none';
       el.style.backdropFilter = 'none';
       el.style.webkitBackdropFilter = 'none';
     });
+    clone.querySelectorAll('img').forEach(img => {
+      img.style.opacity = '1';
+      img.style.visibility = 'visible';
+      img.crossOrigin = 'anonymous';
+    });
+    wrap.appendChild(clone);
 
-    renderContainer.appendChild(clone);
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    await document.fonts.ready;
+    await new Promise(r => setTimeout(r, 600));
 
-    try {
-      const canvas = await html2canvas(clone, {
-        scale: 4,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#FFFFFF',
-        logging: false,
-        width: 240,
-        height: clone.scrollHeight,
-        windowWidth: 240,
-        windowHeight: clone.scrollHeight,
-        x: 0,
-        y: 0,
-      });
-      const link = document.createElement('a');
-      link.download = `TIWTN_${(member.fullName || 'member').replace(/\s+/g, '_')}_IDCard.png`;
-      link.href = canvas.toDataURL('image/png', 1.0);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      document.body.removeChild(renderContainer);
-    }
-  };
+    // Measure natural height, then lock it so html2canvas sees exactly this
+    const cardH = Math.max(Math.ceil(clone.getBoundingClientRect().height || clone.scrollHeight), 420);
+    clone.style.height = cardH + 'px';
+    clone.style.overflow = 'hidden';
+    await new Promise(r => setTimeout(r, 50));
 
-  const downloadBoth = async () => {
-    const originalFront = document.getElementById('id-card-front');
-    const originalBack = document.getElementById('id-card-back');
-    if (!originalFront || !originalBack) return;
-
-    const renderContainer = document.createElement('div');
-    renderContainer.style.cssText = `
-      position: fixed;
-      top: -99999px;
-      left: -99999px;
-      width: 240px;
-      transform: none;
-      zoom: 1;
-      pointer-events: none;
-      z-index: -1;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    `;
-    document.body.appendChild(renderContainer);
-
-    const cloneCard = (original, newId) => {
-      const clone = original.cloneNode(true);
-      clone.id = newId;
-      clone.style.cssText = `
-        width: 240px;
-        height: auto;
-        min-height: 380px;
-        transform: none;
-        zoom: 1;
-        overflow: visible;
-        position: relative;
-        opacity: 1;
-        border-radius: 10px;
-      `;
-      clone.querySelectorAll('img').forEach(img => {
-        img.style.opacity = '1';
-        try { img.crossOrigin = 'anonymous'; } catch (e) {}
-      });
-      clone.querySelectorAll('*').forEach(el => {
-        el.style.transform = 'none';
-        el.style.backdropFilter = 'none';
-      });
-      return clone;
-    };
-
-    const frontClone = cloneCard(originalFront, 'front-clone');
-    const backClone = cloneCard(originalBack, 'back-clone');
-    renderContainer.appendChild(frontClone);
-    renderContainer.appendChild(backClone);
-
-    await new Promise((resolve) => setTimeout(resolve, 700));
-
-    const opts = {
+    const canvas = await html2canvas(clone, {
       scale: 4,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#FFFFFF',
       logging: false,
-      windowWidth: 240,
+      width: 240,
+      height: cardH,
+      windowWidth: 1200,
+      windowHeight: 3000
+    });
+
+    document.body.removeChild(wrap);
+
+    const link = document.createElement('a');
+    link.download = `TIWTN_${member.fullName}_IDCard.png`;
+    link.href = canvas.toDataURL('image/png', 1.0);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const downloadBoth = async () => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `
+      position:fixed;
+      left:-99999px;
+      top:0;
+      width:280px;
+      z-index:-999;
+      pointer-events:none;
+      background:#F5F5F5;
+      display:flex;
+      flex-direction:column;
+      gap:20px;
+      padding:20px;
+    `;
+    document.body.appendChild(wrap);
+
+    const cloneCard = (id) => {
+      const src = document.getElementById(id);
+      const clone = src.cloneNode(true);
+      clone.id = id + '-clone';
+      clone.style.cssText = `
+        width:240px;
+        height:auto;
+        min-height:0;
+        max-height:none;
+        overflow:visible;
+        transform:none;
+        position:relative;
+        opacity:1;
+        display:flex;
+        flex-direction:column;
+        background:#FFFFFF;
+        border-radius:10px;
+        font-family:Catamaran,sans-serif;
+      `;
+      clone.querySelectorAll('*').forEach(el => {
+        el.style.transform = 'none';
+        el.style.backdropFilter = 'none';
+        el.style.webkitBackdropFilter = 'none';
+      });
+      clone.querySelectorAll('img').forEach(img => {
+        img.style.opacity = '1';
+        img.crossOrigin = 'anonymous';
+      });
+      return clone;
     };
 
-    try {
-      const frontCanvas = await html2canvas(frontClone, {
-        ...opts,
-        width: 240,
-        height: frontClone.scrollHeight,
-      });
-      const backCanvas = await html2canvas(backClone, {
-        ...opts,
-        width: 240,
-        height: backClone.scrollHeight,
-      });
+    const frontClone = cloneCard('id-card-front');
+    const backClone = cloneCard('id-card-back');
+    wrap.appendChild(frontClone);
+    wrap.appendChild(backClone);
 
-      const gap = 30;
-      const combined = document.createElement('canvas');
-      combined.width = 960;
-      combined.height = frontCanvas.height + gap * 4 + backCanvas.height;
-      const ctx = combined.getContext('2d');
-      ctx.fillStyle = '#EEEEEE';
-      ctx.fillRect(0, 0, combined.width, combined.height);
-      ctx.drawImage(frontCanvas, 0, 0);
-      ctx.drawImage(backCanvas, 0, frontCanvas.height + gap * 4);
+    await document.fonts.ready;
+    await new Promise(r => setTimeout(r, 600));
 
-      const link = document.createElement('a');
-      link.download = `TIWTN_${(member.fullName || 'member').replace(/\s+/g, '_')}_IDCard_BothSides.png`;
-      link.href = combined.toDataURL('image/png', 1.0);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      document.body.removeChild(renderContainer);
-    }
+    // ── KEY FIX ──────────────────────────────────────────────────────
+    // Measure the FRONT card's natural height — it is always the reference.
+    // Then FORCE BOTH clones to that exact pixel height before capture.
+    // html2canvas must receive the same `height` for both calls so both
+    // canvases are exactly the same pixel size. No post-capture normalization needed.
+    const cardH = Math.max(
+      Math.ceil(frontClone.getBoundingClientRect().height || frontClone.scrollHeight),
+      420
+    );
+
+    frontClone.style.height = cardH + 'px';
+    frontClone.style.overflow = 'hidden';
+    backClone.style.height = cardH + 'px';
+    backClone.style.overflow = 'hidden';
+
+    // One frame for layout to settle after forcing heights
+    await new Promise(r => setTimeout(r, 80));
+
+    const captureOpts = {
+      scale: 4,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#FFFFFF',
+      logging: false,
+      width: 240,
+      height: cardH,          // ← same value for BOTH
+      windowWidth: 1200,
+      windowHeight: 3000
+    };
+
+    const frontCanvas = await html2canvas(frontClone, captureOpts);
+    const backCanvas  = await html2canvas(backClone,  captureOpts);
+
+    document.body.removeChild(wrap);
+
+    // Both canvases are now guaranteed identical size — combine directly
+    const gap = 60;
+    const cw = frontCanvas.width;   // 960 at scale:4
+    const ch = frontCanvas.height;  // cardH × 4
+
+    const combined = document.createElement('canvas');
+    combined.width  = cw;
+    combined.height = ch + gap + ch;
+
+    const ctx = combined.getContext('2d');
+    ctx.fillStyle = '#DDDDDD';
+    ctx.fillRect(0, 0, combined.width, combined.height);
+    ctx.drawImage(frontCanvas, 0, 0);
+    ctx.drawImage(backCanvas,  0, ch + gap);
+
+    const link = document.createElement('a');
+    link.download = `TIWTN_${member.fullName}_IDCard_BothSides.png`;
+    link.href = combined.toDataURL('image/png', 1.0);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -486,7 +537,7 @@ function IDCard({ member, onReset }) {
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
-        <button type="button" onClick={downloadFront} style={{ height: '52px', padding: '0 28px', borderRadius: '12px', border: 'none', background: '#FF6B00', color: '#000000', fontSize: '14px', fontWeight: 600, cursor: 'pointer', minWidth: '200px' }}>
+        <button type="button" onClick={downloadCard} style={{ height: '52px', padding: '0 28px', borderRadius: '12px', border: 'none', background: '#FF6B00', color: '#000000', fontSize: '14px', fontWeight: 600, cursor: 'pointer', minWidth: '200px' }}>
           அட்டை பதிவிறக்கு / Download Front
         </button>
         <button type="button" onClick={downloadBoth} style={{ height: '52px', padding: '0 28px', borderRadius: '12px', border: '1.5px solid #FF6B00', background: '#FFFFFF', color: '#FF6B00', fontSize: '14px', fontWeight: 600, cursor: 'pointer', minWidth: '220px' }}>
