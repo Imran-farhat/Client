@@ -58,14 +58,15 @@ function CardFront({ member }) {
     <div style={{
       display: 'flex',
       alignItems: 'center',
-      minHeight: '20px',
-      padding: '3px 8px 3px 13px',
+      justifyContent: 'center',
+      minHeight: '24px',
+      padding: '4px 8px',
       background: bg,
       borderBottom: '1px solid #E8EDF3'
     }}>
-      <div style={{ width: '46px', flexShrink: 0, fontSize: '7px', fontWeight: '700', color: '#555', textAlign: 'left' }}>{label}</div>
-      <div style={{ width: '12px', flexShrink: 0, fontSize: '7px', color: '#BBB', textAlign: 'center' }}>:</div>
-      <div style={{ flex: 1, fontSize: '8px', fontWeight: '800', color: '#003366', wordBreak: 'break-word', lineHeight: '1.25', textAlign: 'left' }}>{value}</div>
+      <div style={{ width: '60px', flexShrink: 0, fontSize: '9px', fontWeight: '700', color: '#555', textAlign: 'left' }}>{label}</div>
+      <div style={{ width: '15px', flexShrink: 0, fontSize: '9px', color: '#BBB', textAlign: 'center' }}>:</div>
+      <div style={{ width: '125px', flexShrink: 0, fontSize: '10px', fontWeight: '800', color: '#003366', wordBreak: 'break-word', lineHeight: '1.25', textAlign: 'left' }}>{value}</div>
     </div>
   );
 
