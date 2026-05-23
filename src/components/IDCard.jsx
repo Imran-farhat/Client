@@ -46,12 +46,12 @@ function LogoFallback() {
 
 function CardFront({ member }) {
   const fields = [
-    { label: 'Name',     value: member.fullName || '-' },
-    { label: 'D.O.B',    value: member.dob || '-' },
-    { label: 'Mobile',   value: member.mobile || '-' },
+    { label: 'Name', value: member.fullName || '-' },
+    { label: 'D.O.B', value: member.dob || '-' },
+    { label: 'Mobile', value: member.mobile || '-' },
     { label: 'District', value: member.pledgeDistrict || member.district || '-' },
-    { label: 'Address',  value: member.address || '-' },
-    { label: 'Joined',   value: member.joiningDate || member.joinDate || '-' },
+    { label: 'Address', value: member.address || '-' },
+    { label: 'Joined', value: member.joiningDate || member.joinDate || '-' },
   ];
 
   const fieldRow = (label, value, bg) => (
@@ -211,7 +211,7 @@ function CardBack({ member }) {
       </div>
 
       {/* 3. Orange title bar */}
-      <div style={{ background: '#FF6B00', textAlign: 'center', padding: '3px 0', fontSize: '7px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '1px', flexShrink: 0 }}>பின்பக்கம் / BACK SIDE</div>
+      <div style={{ background: '#FF6B00', textAlign: 'center', padding: '3px 0', fontSize: '7px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '1px', flexShrink: 0 }}></div>
 
       {/* 4. Content body */}
       <div style={{ minHeight: '285px', padding: '10px 8px 10px 13px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
@@ -496,7 +496,7 @@ function IDCard({ member, onReset }) {
     };
 
     const frontCanvas = await html2canvas(frontClone, captureOpts);
-    const backCanvas  = await html2canvas(backClone,  captureOpts);
+    const backCanvas = await html2canvas(backClone, captureOpts);
 
     document.body.removeChild(wrap);
 
@@ -506,14 +506,14 @@ function IDCard({ member, onReset }) {
     const ch = frontCanvas.height;  // cardH × 4
 
     const combined = document.createElement('canvas');
-    combined.width  = cw;
+    combined.width = cw;
     combined.height = ch + gap + ch;
 
     const ctx = combined.getContext('2d');
     ctx.fillStyle = '#DDDDDD';
     ctx.fillRect(0, 0, combined.width, combined.height);
     ctx.drawImage(frontCanvas, 0, 0);
-    ctx.drawImage(backCanvas,  0, ch + gap);
+    ctx.drawImage(backCanvas, 0, ch + gap);
 
     const link = document.createElement('a');
     link.download = `TIWTN_${member.fullName}_IDCard_BothSides.png`;
