@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import emailjs from '@emailjs/browser';
 
 const info = [
   { title: 'Phone', value: '+91 98765 43210, +91 86085 08342, +91 97861 11700' },
@@ -9,13 +10,32 @@ const info = [
 
 function Contact() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState('idle'); // idle | sending | success | error
+  const formRef = useRef(null);
 
   const handleChange = (field) => (event) => setForm((prev) => ({ ...prev, [field]: event.target.value }));
-  const handleSubmit = (event) => {
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    setSubmitted(true);
-    setForm({ name: '', email: '', subject: '', message: '' });
+    setStatus('sending');
+    try {
+      await emailjs.send(
+        'service_9g1ryad',
+        'template_soersde',
+        {
+          from_name: form.name,
+          from_email: form.email,
+          subject: form.subject,
+          message: form.message,
+        },
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
+      setStatus('success');
+      setForm({ name: '', email: '', subject: '', message: '' });
+    } catch (err) {
+      console.error('EmailJS error:', err);
+      setStatus('error');
+    }
   };
 
   return (
@@ -47,8 +67,23 @@ function Contact() {
                 <span className="text-sm font-medium text-primary">Message</span>
                 <textarea rows="5" value={form.message} onChange={handleChange('message')} placeholder="Your message" />
               </label>
-              <button type="submit" className="button-amber inline-flex px-8 py-4 text-sm font-semibold text-black">Submit Message</button>
-              {submitted && <p className="text-sm text-amber">Message sent — we'll get back to you soon.</p>}
+              <button
+                type="submit"
+                disabled={status === 'sending'}
+                className="button-amber inline-flex items-center gap-2 px-8 py-4 text-sm font-semibold text-black disabled:opacity-60"
+              >
+                {status === 'sending' ? 'Sending...' : 'Submit Message'}
+              </button>
+              {status === 'success' && (
+                <p className="text-sm text-green-500 font-medium">
+                  ✓ Message sent successfully — we'll get back to you soon!
+                </p>
+              )}
+              {status === 'error' && (
+                <p className="text-sm text-red-500 font-medium">
+                  ✗ Failed to send. Please try again or email us directly.
+                </p>
+              )}
             </form>
           </div>
 
