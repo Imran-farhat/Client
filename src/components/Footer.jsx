@@ -48,9 +48,8 @@ function Footer() {
             <h3 className="mb-3 text-sm uppercase tracking-[0.3em]" style={{ color: '#FF6B00' }}>Follow Us</h3>
             <div className="flex flex-wrap justify-center gap-3 text-sm md:justify-start">
               <a href="https://www.facebook.com/profile.php?id=61590281134558" className="transition" style={{ color: '#CCCCCC' }}>Facebook</a>
-              <a href="#" className="transition" style={{ color: '#CCCCCC' }}>Instagram</a>
-              <a href="#" className="transition" style={{ color: '#CCCCCC' }}>LinkedIn</a>
-              <a href="#" className="transition" style={{ color: '#CCCCCC' }}>YouTube</a>
+              <a href="https://www.instagram.com/thenindiawelding/" className="transition" style={{ color: '#CCCCCC' }}>Instagram</a>
+              <a href="https://www.youtube.com/channel/UCdrEkD6M6zJtFUtvRoYgDDw" className="transition" style={{ color: '#CCCCCC' }}>YouTube</a>
             </div>
           </div>
         </div>
