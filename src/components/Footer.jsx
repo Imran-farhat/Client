@@ -40,14 +40,14 @@ function Footer() {
           <div>
             <h3 className="mb-3 text-sm uppercase tracking-[0.3em]" style={{ color: '#FF6B00' }}>Contact</h3>
             <p className="text-sm" style={{ color: '#CCCCCC' }}>thenindiawelding@gmail.com</p>
-            <p className="text-sm" style={{ color: '#CCCCCC' }}>+91 98765 43210</p>
-            <p className="text-sm" style={{ color: '#CCCCCC' }}>Industrial Estate, Pune, India</p>
+            <p className="text-sm" style={{ color: '#CCCCCC' }}>+91 98765 43210, +91 86085 08342, +91 97861 11700</p>
+            <p className="text-sm" style={{ color: '#CCCCCC' }}>மாநில தலைமை நிர்வாக அலுவலகம் 133/34 1A, 1A பெங்களூரு ஹைவே சென்னை -600124, தமிழ்நாடு.</p>
           </div>
 
           <div>
             <h3 className="mb-3 text-sm uppercase tracking-[0.3em]" style={{ color: '#FF6B00' }}>Follow Us</h3>
             <div className="flex flex-wrap justify-center gap-3 text-sm md:justify-start">
-              <a href="#" className="transition" style={{ color: '#CCCCCC' }}>Facebook</a>
+              <a href="https://www.facebook.com/profile.php?id=61590281134558" className="transition" style={{ color: '#CCCCCC' }}>Facebook</a>
               <a href="#" className="transition" style={{ color: '#CCCCCC' }}>Instagram</a>
               <a href="#" className="transition" style={{ color: '#CCCCCC' }}>LinkedIn</a>
               <a href="#" className="transition" style={{ color: '#CCCCCC' }}>YouTube</a>
@@ -56,7 +56,7 @@ function Footer() {
         </div>
       </div>
       <div className="mt-10 pt-6 text-center text-sm" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', color: '#888888' }}>
-        © 2025 தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம். All Rights Reserved.
+        © 2026 தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம். All Rights Reserved.
       </div>
     </footer>
   );

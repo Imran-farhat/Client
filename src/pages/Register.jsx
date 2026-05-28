@@ -82,7 +82,7 @@ function Register() {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [member, setMember] = useState(null);
-  const [memberId, setMemberId] = useState('TIWTN-2025-_____');
+  const [memberId, setMemberId] = useState('TIWTN-2026-_____');
   const [cardReady, setCardReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const cardRef = useRef(null);
@@ -178,7 +178,7 @@ function Register() {
     setForm(initialForm);
     setErrors({});
     setMember(null);
-    setMemberId('TIWTN-2025-_____');
+    setMemberId('TIWTN-2026-_____');
     setCardReady(false);
   };
 
@@ -417,7 +417,7 @@ function Register() {
                 <div className="w-full rounded-[12px] p-4 text-center" style={{ background: '#F0F7FF', border: '1.5px solid #003366' }}>
                   <p className="mb-2 text-xs" style={{ color: '#888888' }}>உறுப்பினர் பதிவு எண்</p>
                   <div style={{ fontFamily: "'Courier Prime', monospace", fontSize: '14px', letterSpacing: '1px', color: '#003366', padding: '8px', borderTop: '1px solid #003366' }}>
-                    {memberId === 'TIWTN-2025-_____' ? '-- -- -- -- --' : memberId}
+                    {memberId === 'TIWTN-2026-_____' ? '-- -- -- -- --' : memberId}
                   </div>
                 </div>
               </div>
@@ -425,41 +425,41 @@ function Register() {
               <p className="text-center text-sm" style={{ color: '#888888' }}>அனைவருக்கும் சம உரிமை:</p>
 
               <div className="rounded-[12px] p-4" style={{ border: '1.5px solid #E5DDD0', marginBottom: '8px' }}>
-                  <label className="block">
-                    <span className="text-sm font-semibold" style={{ color: '#2C3E6B' }}>
-                      மாவட்டம் <span style={{ color: '#E53E3E' }}>*</span>
-                      <span style={{ fontSize: '10px', color: '#888', marginLeft: '4px' }}>(District)</span>
-                    </span>
-                    <div style={{ marginTop: '4px' }}>
-                      <select
-                        value={form.pledgeDistrict}
-                        onChange={handleChange('pledgeDistrict')}
-                        style={{
-                          height: '44px',
-                          background: 'var(--input-bg)',
-                          border: errors.pledgeDistrict ? '1.5px solid #E53E3E' : '1.5px solid #D1C8BC',
-                          borderRadius: '8px',
-                          padding: '10px 14px',
-                          fontSize: '14px',
-                          color: 'var(--input-text)',
-                          fontFamily: 'Catamaran, sans-serif',
-                          width: '100%',
-                          outline: 'none',
-                          cursor: 'pointer',
-                          appearance: 'auto'
-                        }}
-                      >
-                        <option value="">-- மாவட்டம் தேர்வு செய்க --</option>
-                        {TAMIL_NADU_DISTRICTS.map((district) => (
-                          <option key={district} value={district}>{district}</option>
-                        ))}
-                      </select>
-                    </div>
-                    {errors.pledgeDistrict && (
-                      <p style={{ color: '#E53E3E', fontSize: '12px', marginTop: '4px' }}>{errors.pledgeDistrict}</p>
-                    )}
-                  </label>
-                </div>
+                <label className="block">
+                  <span className="text-sm font-semibold" style={{ color: '#2C3E6B' }}>
+                    மாவட்டம் <span style={{ color: '#E53E3E' }}>*</span>
+                    <span style={{ fontSize: '10px', color: '#888', marginLeft: '4px' }}>(District)</span>
+                  </span>
+                  <div style={{ marginTop: '4px' }}>
+                    <select
+                      value={form.pledgeDistrict}
+                      onChange={handleChange('pledgeDistrict')}
+                      style={{
+                        height: '44px',
+                        background: 'var(--input-bg)',
+                        border: errors.pledgeDistrict ? '1.5px solid #E53E3E' : '1.5px solid #D1C8BC',
+                        borderRadius: '8px',
+                        padding: '10px 14px',
+                        fontSize: '14px',
+                        color: 'var(--input-text)',
+                        fontFamily: 'Catamaran, sans-serif',
+                        width: '100%',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        appearance: 'auto'
+                      }}
+                    >
+                      <option value="">-- மாவட்டம் தேர்வு செய்க --</option>
+                      {TAMIL_NADU_DISTRICTS.map((district) => (
+                        <option key={district} value={district}>{district}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {errors.pledgeDistrict && (
+                    <p style={{ color: '#E53E3E', fontSize: '12px', marginTop: '4px' }}>{errors.pledgeDistrict}</p>
+                  )}
+                </label>
+              </div>
 
               <div className="rounded-[12px] p-6" style={{ background: '#FFF8F0', border: '1.5px solid #FFB347' }}>
                 <div className="mb-4 text-center">
