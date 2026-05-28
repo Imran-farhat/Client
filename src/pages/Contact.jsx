@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 const info = [
   { title: 'Phone', value: '+91 98765 43210' },
-  { title: 'Email', value: 'info@wpa.org.in' },
+  { title: 'Email', value: 'thenindiawelding@gmail.com' },
   { title: 'Address', value: 'Industrial Estate, Pune, India' },
   { title: 'Hours', value: 'Mon - Sat | 9am - 6pm' },
 ];

@@ -39,7 +39,7 @@ function Footer() {
 
           <div>
             <h3 className="mb-3 text-sm uppercase tracking-[0.3em]" style={{ color: '#FF6B00' }}>Contact</h3>
-            <p className="text-sm" style={{ color: '#CCCCCC' }}>info@wpa.org.in</p>
+            <p className="text-sm" style={{ color: '#CCCCCC' }}>thenindiawelding@gmail.com</p>
             <p className="text-sm" style={{ color: '#CCCCCC' }}>+91 98765 43210</p>
             <p className="text-sm" style={{ color: '#CCCCCC' }}>Industrial Estate, Pune, India</p>
           </div>
