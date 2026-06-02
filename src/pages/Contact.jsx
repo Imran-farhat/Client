@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import emailjs from '@emailjs/browser';
 
 const info = [
   { title: 'Phone', value: '+91 98765 43210, +91 86085 08342, +91 97861 11700' },
@@ -19,21 +18,26 @@ function Contact() {
     event.preventDefault();
     setStatus('sending');
     try {
-      await emailjs.send(
-        'service_9g1ryad',
-        'template_soersde',
-        {
-          from_name: form.name,
-          from_email: form.email,
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: 'fecf7859-db02-4db0-9e17-08fedad22e49',
+          name: form.name,
+          email: form.email,
           subject: form.subject,
           message: form.message,
-        },
-        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-      );
-      setStatus('success');
-      setForm({ name: '', email: '', subject: '', message: '' });
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStatus('success');
+        setForm({ name: '', email: '', subject: '', message: '' });
+      } else {
+        throw new Error(data.message || 'Submission failed');
+      }
     } catch (err) {
-      console.error('EmailJS error:', err);
+      console.error('Web3Forms error:', err);
       setStatus('error');
     }
   };
