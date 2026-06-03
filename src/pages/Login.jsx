@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import OrgLogo from '../components/OrgLogo';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabase/client';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -21,8 +22,21 @@ function Login() {
     try {
       setError('');
       setLoading(true);
-      await loginWithGoogle();
-      // Google OAuth redirects — no navigate needed here
+      const redirectTo = window.location.hostname === 'localhost'
+        ? 'http://localhost:5173/profile'
+        : `${window.location.origin}/profile`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
+        }
+      });
+      if (error) throw error;
     } catch (err) {
       setError(err.message);
       setLoading(false);

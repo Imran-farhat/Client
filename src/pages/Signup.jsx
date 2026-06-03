@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import OrgLogo from '../components/OrgLogo';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabase/client';
 
 function Signup() {
   const [name, setName] = useState('');
@@ -20,11 +21,25 @@ function Signup() {
     }
   }, [currentUser, navigate]);
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleSignup = async () => {
     try {
       setError('');
       setLoading(true);
-      await loginWithGoogle();
+      const redirectTo = window.location.hostname === 'localhost'
+        ? 'http://localhost:5173/profile'
+        : `${window.location.origin}/profile`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
+        }
+      });
+      if (error) throw error;
     } catch (err) {
       setError(err.message);
       setLoading(false);
@@ -71,7 +86,7 @@ function Signup() {
           <button
             id="signup-google-btn"
             type="button"
-            onClick={handleGoogleLogin}
+            onClick={handleGoogleSignup}
             disabled={loading}
             className="flex h-[40px] w-full items-center justify-center gap-2 rounded border border-gray-300 bg-white text-gray-700 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-60"
           >

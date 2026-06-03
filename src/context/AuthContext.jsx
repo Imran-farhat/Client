@@ -80,10 +80,18 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   const loginWithGoogle = async () => {
+    const redirectTo = window.location.hostname === 'localhost'
+      ? 'http://localhost:5173/profile'
+      : `${window.location.origin}/profile`
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/profile`
+        redirectTo,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent'
+        }
       }
     })
     if (error) throw error
