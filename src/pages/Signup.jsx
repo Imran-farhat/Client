@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
 import OrgLogo from '../components/OrgLogo';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,7 +9,9 @@ function Signup() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const { loginWithEmail, loginWithGoogleCredential, currentUser } = useAuth();
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { signupWithEmail, loginWithGoogle, currentUser } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,19 +20,41 @@ function Signup() {
     }
   }, [currentUser, navigate]);
 
-  const handleSignup = (e) => {
+  const handleGoogleLogin = async () => {
+    try {
+      setError('');
+      setLoading(true);
+      await loginWithGoogle();
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  const handleSignup = async (e) => {
     e.preventDefault();
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
+    setError('');
+    setSuccess('');
+
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('கடவுச்சொற்கள் பொருந்தவில்லை / Passwords do not match');
       return;
     }
-    
-    loginWithEmail(email, password);
-    navigate('/profile');
+    if (password.length < 6) {
+      setError('கடவுச்சொல் குறைந்தது 6 எழுத்துகள் வேண்டும்');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signupWithEmail(name, email, password);
+      setSuccess('✅ கணக்கு உருவாக்கப்பட்டது! / Account created! Please Sign In.');
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,19 +68,23 @@ function Signup() {
         </div>
 
         <div className="mt-6 space-y-3">
-          <div className="flex justify-center w-full">
-            <GoogleLogin
-              onSuccess={credentialResponse => {
-                loginWithGoogleCredential(credentialResponse);
-              }}
-              onError={() => {
-                console.log('Login Failed');
-              }}
-              text="signup_with"
-              useOneTap
-            />
-          </div>
-          
+          <button
+            id="signup-google-btn"
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            className="flex h-[40px] w-full items-center justify-center gap-2 rounded border border-gray-300 bg-white text-gray-700 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-60"
+          >
+            <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              <path fill="none" d="M0 0h48v48H0z"/>
+            </svg>
+            Google மூலம் பதிவு செய்
+          </button>
+
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-[var(--border)]"></div>
             <span className="text-xs text-[var(--text-muted)]">அல்லது / or</span>
@@ -65,12 +92,41 @@ function Signup() {
           </div>
         </div>
 
-        {error && <div className="mb-4 text-sm text-red-500">{error}</div>}
+        {error && (
+          <div style={{
+            background: '#FEE2E2',
+            border: '1px solid #F87171',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            color: '#DC2626',
+            fontSize: '13px',
+            marginBottom: '12px',
+            textAlign: 'center'
+          }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        {success && (
+          <div style={{
+            background: '#DCFCE7',
+            border: '1px solid #86EFAC',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            color: '#16A34A',
+            fontSize: '13px',
+            marginBottom: '12px',
+            textAlign: 'center'
+          }}>
+            {success}
+          </div>
+        )}
 
         <form onSubmit={handleSignup} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">முழு பெயர் / Full Name</label>
             <input
+              id="signup-name"
               type="text"
               required
               value={name}
@@ -82,6 +138,7 @@ function Signup() {
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">மின்னஞ்சல் / Email</label>
             <input
+              id="signup-email"
               type="email"
               required
               value={email}
@@ -93,6 +150,7 @@ function Signup() {
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">கடவுச்சொல் / Password</label>
             <input
+              id="signup-password"
               type="password"
               required
               minLength={6}
@@ -105,6 +163,7 @@ function Signup() {
           <div>
             <label className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">உறுதிப்படுத்து / Confirm Password</label>
             <input
+              id="signup-confirm-password"
               type="password"
               required
               minLength={6}
@@ -115,8 +174,13 @@ function Signup() {
             />
           </div>
 
-          <button type="submit" className="button-amber mt-2 w-full text-black py-3 rounded-xl font-bold">
-            பதிவு செய் / Sign Up
+          <button
+            id="signup-submit-btn"
+            type="submit"
+            disabled={loading}
+            className="button-amber mt-2 w-full text-black py-3 rounded-xl font-bold disabled:opacity-60"
+          >
+            {loading ? 'பதிவு செய்கிறது...' : 'பதிவு செய் / Sign Up'}
           </button>
         </form>
 

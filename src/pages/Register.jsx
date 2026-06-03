@@ -2,6 +2,8 @@ import { useMemo, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import IDCard from '../components/IDCard';
 import OrgLogo from '../components/OrgLogo';
+import { supabase } from '../supabase/client';
+import { useAuth } from '../context/AuthContext';
 
 const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
@@ -79,6 +81,7 @@ function formatDateDisplay() {
 }
 
 function Register() {
+  const { currentUser, refreshProfile } = useAuth();
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [member, setMember] = useState(null);
@@ -88,6 +91,72 @@ function Register() {
   const cardRef = useRef(null);
   const formRef = useRef(null);
   const joiningDate = useMemo(() => formatDateDisplay(), []);
+
+  const saveToSupabase = async (formData, memberId) => {
+    try {
+      console.log('Saving to Supabase...', memberId);
+      console.log('Current user:', currentUser?.id);
+
+      const memberRecord = {
+        member_id: memberId,
+        user_id: currentUser?.id || null,
+        full_name: formData.fullName,
+        dob: formData.dob,
+        blood_group: formData.bloodGroup,
+        mobile: formData.mobile,
+        aadhar: formData.aadhaar,
+        address: formData.address,
+        org_address: formData.companyAddress || '',
+        district: formData.pledgeDistrict,
+        branch: formData.pledgeBranch || '',
+        nominee_name: formData.nomineeName || '',
+        nominee_phone: formData.nomineeMobile || '',
+        join_date: joiningDate,
+        referrer: formData.referral || '',
+        photo_base64: formData.photoPreview || null,
+        registered_at: new Date().toISOString()
+      };
+
+      console.log('Member record:', memberRecord);
+
+      const { data, error } = await supabase
+        .from('members')
+        .insert(memberRecord)
+        .select();
+
+      if (error) {
+        console.error('Supabase insert error:', error);
+        alert('பதிவு சேமிக்கப்படவில்லை: ' + error.message);
+        return false;
+      }
+
+      console.log('Saved successfully:', data);
+
+      // Update user profile if logged in
+      if (currentUser?.id) {
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ has_registered: true, member_id: memberId })
+          .eq('id', currentUser.id);
+
+        if (updateError) {
+          console.error('User update error:', updateError);
+        } else {
+          await refreshProfile();
+        }
+      }
+
+      // Clean up any legacy localStorage entries
+      localStorage.removeItem('tiwtn_registered');
+      localStorage.removeItem('tiwtn_member_data');
+
+      return true;
+    } catch (err) {
+      console.error('Save error:', err);
+      alert('பிழை: ' + err.message);
+      return false;
+    }
+  };
 
   const handlePhotoChange = (event) => {
     const file = event.target.files?.[0] || null;
@@ -138,7 +207,7 @@ function Register() {
     return `TIWTN-${new Date().getFullYear()}-${String(Math.floor(10000 + Math.random() * 90000)).padStart(5, '0')}`;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -157,15 +226,11 @@ function Register() {
       memberId: generatedId,
     };
 
-    localStorage.setItem('tiwtn_registered', 'true');
-    localStorage.setItem('tiwtn_member_data', JSON.stringify({
-      ...form,
-      memberId: generatedId,
-      joinDate: joiningDate,
-      district: form.pledgeDistrict,
-      photoPreview: form.photoPreview
-    }));
+    // Await save so errors surface before showing card
+    const saved = await saveToSupabase(form, generatedId);
+    console.log('Save result:', saved);
 
+    // Show card regardless (don't block on save error)
     setErrors({});
     setMemberId(generatedId);
     setMember(memberData);

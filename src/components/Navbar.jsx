@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import OrgLogo from './OrgLogo';
 import { ThemeContext } from '../context/ThemeContext';
@@ -18,6 +18,7 @@ function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [dropOpen, setDropOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -29,6 +30,17 @@ function Navbar() {
   useEffect(() => {
     setOpen(false);
   }, [location.pathname]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <header className={`sticky top-0 z-50 w-full transition duration-300 ${scrolled ? 'backdrop-blur-[12px] shadow-[0_2px_12px_rgba(0,0,0,0.10)]' : ''} bg-nav-bg`}
@@ -102,92 +114,104 @@ function Navbar() {
               textDecoration: 'none'
             }}>Login</Link>
           ) : (
-            <div style={{ position: 'relative' }}
-              onMouseEnter={() => setDropOpen(true)}
-              onMouseLeave={() => setDropOpen(false)}
-            >
-              {/* Avatar circle */}
-              <div style={{
-                width: '38px', height: '38px',
-                borderRadius: '50%',
-                background: '#FF6B00',
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: '#fff', fontWeight: '800',
-                fontSize: '15px',
-                border: '2px solid #FFB347'
-              }}>
-                {currentUser.photo
-                  ? <img src={currentUser.photo}
+            <div ref={dropdownRef} style={{ position: 'relative' }}>
+              {/* Avatar circle — click to toggle */}
+              <div
+                onClick={() => setDropOpen(prev => !prev)}
+                style={{
+                  width: '38px', height: '38px',
+                  borderRadius: '50%',
+                  background: '#FF6B00',
+                  display: 'flex', alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#fff', fontWeight: '800',
+                  fontSize: '15px',
+                  border: '2px solid #FFB347'
+                }}
+              >
+                {currentUser?.user_metadata?.avatar_url
+                  ? <img src={currentUser.user_metadata.avatar_url}
                       style={{ width:'100%', height:'100%',
                       borderRadius:'50%', objectFit:'cover' }} alt="Avatar" />
-                  : currentUser.name?.charAt(0).toUpperCase()
+                  : (currentUser?.user_metadata?.full_name ||
+                     currentUser?.email)?.charAt(0).toUpperCase()
                 }
               </div>
 
-              {/* Dropdown */}
+              {/* Dropdown — only shown when dropOpen */}
               {dropOpen && (
                 <div style={{
-                  position: 'absolute', right: 0, top: '44px',
+                  position: 'absolute', right: 0, top: '48px',
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border)',
                   borderRadius: '10px',
-                  minWidth: '180px',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                  zIndex: 200,
+                  minWidth: '200px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                  zIndex: 999,
                   overflow: 'hidden'
                 }}>
-                  {/* User info */}
+                  {/* Email */}
                   <div style={{
                     padding: '12px 16px',
-                    borderBottom: '1px solid var(--border)'
-                  }}>
-                    <div style={{
-                      fontSize: '13px', fontWeight: '700',
-                      color: 'var(--text-primary)'
-                    }}>{currentUser.name}</div>
-                    <div style={{
-                      fontSize: '11px',
-                      color: 'var(--text-muted)'
-                    }}>{currentUser.email}</div>
-                  </div>
-
-                  {/* Links */}
-                  <Link to="/profile" style={{
-                    display: 'block',
-                    padding: '10px 16px',
-                    fontSize: '13px',
-                    color: 'var(--text-primary)',
-                    textDecoration: 'none',
                     borderBottom: '1px solid var(--border)',
-                    transition: 'background 0.2s'
-                  }}>
-                    👤 My Profile
-                  </Link>
-                  {isAdmin && (
-                    <Link to="/admin" style={{
-                      display: 'block',
-                      padding: '10px 16px',
-                      fontSize: '13px',
+                    fontSize: '12px',
+                    color: 'var(--text-muted)'
+                  }}>{currentUser?.email}</div>
+
+                  {/* My Profile */}
+                  <Link
+                    to="/profile"
+                    onClick={() => setDropOpen(false)}
+                    style={{
+                      display: 'flex', alignItems: 'center',
+                      gap: '8px', padding: '12px 16px',
+                      fontSize: '14px',
                       color: 'var(--text-primary)',
                       textDecoration: 'none',
                       borderBottom: '1px solid var(--border)',
                       transition: 'background 0.2s'
-                    }}>
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    👤 My Profile
+                  </Link>
+
+                  {/* Admin Panel — only if admin */}
+                  {isAdmin && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setDropOpen(false)}
+                      style={{
+                        display: 'flex', alignItems: 'center',
+                        gap: '8px', padding: '12px 16px',
+                        fontSize: '14px',
+                        color: 'var(--text-primary)',
+                        textDecoration: 'none',
+                        borderBottom: '1px solid var(--border)',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
                       🛡️ Admin Panel
                     </Link>
                   )}
-                  <div onClick={logout} style={{
-                    display: 'block',
-                    padding: '10px 16px',
-                    fontSize: '13px',
-                    color: '#E53E3E',
-                    textDecoration: 'none',
-                    borderBottom: '1px solid var(--border)',
-                    transition: 'background 0.2s',
-                    cursor: 'pointer'
-                  }}>
+
+                  {/* Logout */}
+                  <div
+                    onClick={() => { logout(); setDropOpen(false); }}
+                    style={{
+                      display: 'flex', alignItems: 'center',
+                      gap: '8px', padding: '12px 16px',
+                      fontSize: '14px', color: '#E53E3E',
+                      cursor: 'pointer',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
                     🚪 Logout
                   </div>
                 </div>
