@@ -32,30 +32,39 @@ function Profile() {
       if (!currentUser) return;
       setLoading(true);
 
-      // Try by user_id first
-      let { data } = await supabase
-        .from('members')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .maybeSingle();
-
-      // Fallback: try by mobile from userProfile
-      if (!data && userProfile?.mobile) {
-        const { data: data2 } = await supabase
+      try {
+        // Try by user_id first
+        let { data, error } = await supabase
           .from('members')
           .select('*')
-          .eq('mobile', userProfile.mobile)
+          .eq('user_id', currentUser.id)
           .maybeSingle();
-        data = data2;
-      }
 
-      if (data) {
-        console.log('Member found:', data);
-        setMemberData(data);
-      } else {
-        console.log('No member found for user:', currentUser.id);
+        if (error) throw error;
+
+        // Fallback: try by mobile from userProfile
+        if (!data && userProfile?.mobile) {
+          const { data: data2, error: error2 } = await supabase
+            .from('members')
+            .select('*')
+            .eq('mobile', userProfile.mobile)
+            .maybeSingle();
+          if (error2) throw error2;
+          data = data2;
+        }
+
+        if (data) {
+          console.log('Member found:', data);
+          setMemberData(data);
+        } else {
+          console.log('No member found for user:', currentUser.id);
+          setMemberData(null);
+        }
+      } catch (err) {
+        console.error("Error loading member details:", err.message || err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     if (currentUser) loadMember();
@@ -64,13 +73,48 @@ function Profile() {
   const handleSaveName = async () => {
     if (!currentUser) return;
     setSaving(true);
-    await supabase
-      .from('users')
-      .update({ name: editName })
-      .eq('id', currentUser.id);
-    await refreshProfile();
-    setSaving(false);
-    alert('✅ பெயர் சேமிக்கப்பட்டது / Name saved!');
+    try {
+      // Check if user profile exists in database
+      const { data: existing, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (!existing) {
+        // Profile row does not exist, insert it now
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({
+            id: currentUser.id,
+            name: editName,
+            email: currentUser.email || '',
+            photo: currentUser.user_metadata?.avatar_url || null,
+            provider: currentUser.app_metadata?.provider || 'email',
+            role: 'member',
+            has_registered: false,
+            last_login: new Date().toISOString()
+          });
+        if (insertError) throw insertError;
+      } else {
+        // Profile row exists, update it
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ name: editName })
+          .eq('id', currentUser.id);
+        if (updateError) throw updateError;
+      }
+
+      await refreshProfile();
+      alert('✅ பெயர் சேமிக்கப்பட்டது / Name saved!');
+    } catch (err) {
+      console.error('Error saving name:', err.message || err);
+      alert('பெயர் சேமிக்கப்படவில்லை: ' + (err.message || err));
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Derive provider from Supabase app_metadata

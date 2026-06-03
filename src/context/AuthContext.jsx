@@ -25,6 +25,34 @@ export const AuthProvider = ({ children }) => {
       if (data) {
         setUserProfile(data)
         setIsAdmin(data.role === 'admin')
+      } else {
+        // User logged in but profile row doesn't exist yet (e.g. initial write failed)
+        // Let's lazy-create the profile row now.
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          const newProfile = {
+            id: session.user.id,
+            name: session.user.user_metadata?.full_name ||
+                  session.user.email?.split('@')[0] || '',
+            email: session.user.email || '',
+            photo: session.user.user_metadata?.avatar_url || null,
+            provider: session.user.app_metadata?.provider || 'email',
+            role: 'member',
+            has_registered: false,
+            last_login: new Date().toISOString()
+          }
+          
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert(newProfile)
+          
+          if (!insertError) {
+            setUserProfile(newProfile)
+            setIsAdmin(newProfile.role === 'admin')
+          } else {
+            console.error('Failed to lazy-create user profile:', insertError.message)
+          }
+        }
       }
     } catch (err) {
       console.error('Exception fetching profile:', err)
