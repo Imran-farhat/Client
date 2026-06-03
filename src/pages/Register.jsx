@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import IDCard from '../components/IDCard';
 import OrgLogo from '../components/OrgLogo';
@@ -81,7 +82,15 @@ function formatDateDisplay() {
 }
 
 function Register() {
-  const { currentUser, refreshProfile } = useAuth();
+  const { currentUser, userProfile, refreshProfile } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (currentUser && userProfile?.has_registered) {
+      navigate('/profile');
+    }
+  }, [currentUser, userProfile, navigate]);
+
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [member, setMember] = useState(null);

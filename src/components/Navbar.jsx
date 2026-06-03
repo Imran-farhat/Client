@@ -14,7 +14,7 @@ const links = [
 
 function Navbar() {
   const { theme, toggleTheme } = useContext(ThemeContext);
-  const { currentUser, isAdmin, logout } = useAuth();
+  const { currentUser, isAdmin, logout, userProfile } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [dropOpen, setDropOpen] = useState(false);
@@ -99,9 +99,11 @@ function Navbar() {
             </span>
           </div>
 
-          <NavLink to="/register" className="button-amber inline-flex px-4 py-2 text-sm font-semibold text-black">
-            Register
-          </NavLink>
+          {(!currentUser || !userProfile?.has_registered) && (
+            <NavLink to="/register" className="button-amber inline-flex px-4 py-2 text-sm font-semibold text-black">
+              Register
+            </NavLink>
+          )}
 
           {!currentUser ? (
             <Link to="/login" style={{
@@ -246,9 +248,11 @@ function Navbar() {
             <span className="mr-2">{theme === 'dark' ? '🌙' : '☀️'}</span>
             Toggle Theme
           </button>
-          <NavLink to="/register" className="flex h-12 w-full items-center justify-center rounded-xl bg-amber font-semibold text-black transition hover:bg-amber-light" onClick={() => setOpen(false)}>
-            Register
-          </NavLink>
+          {(!currentUser || !userProfile?.has_registered) && (
+            <NavLink to="/register" className="flex h-12 w-full items-center justify-center rounded-xl bg-amber font-semibold text-black transition hover:bg-amber-light" onClick={() => setOpen(false)}>
+              Register
+            </NavLink>
+          )}
           {!currentUser ? (
             <NavLink to="/login" className="flex h-12 w-full items-center justify-center rounded-xl border border-amber text-primary transition hover:bg-amber hover:text-black" onClick={() => setOpen(false)}>
               Login
