@@ -196,7 +196,7 @@ export const AuthProvider = ({ children }) => {
       logout,
       refreshProfile
     }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   )
 }
