@@ -10,73 +10,117 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   const fetchProfile = async (userId) => {
-    const { data } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    if (data) {
-      setUserProfile(data)
-      setIsAdmin(data.role === 'admin')
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
+      
+      if (error) {
+        console.error('Error fetching profile:', error.message)
+        return
+      }
+
+      if (data) {
+        setUserProfile(data)
+        setIsAdmin(data.role === 'admin')
+      }
+    } catch (err) {
+      console.error('Exception fetching profile:', err)
     }
   }
 
   const updateLastLogin = async (userId) => {
-    await supabase
-      .from('users')
-      .update({ last_login: new Date().toISOString() })
-      .eq('id', userId)
+    try {
+      await supabase
+        .from('users')
+        .update({ last_login: new Date().toISOString() })
+        .eq('id', userId)
+    } catch (err) {
+      console.error('Exception updating last login:', err)
+    }
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setCurrentUser(session.user)
-        fetchProfile(session.user.id)
-        updateLastLogin(session.user.id)
-      }
-      setLoading(false)
-    })
-
-    const { data: { subscription } } =
-      supabase.auth.onAuthStateChange(async (event, session) => {
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
         if (session?.user) {
           setCurrentUser(session.user)
           await fetchProfile(session.user.id)
-
-          if (event === 'SIGNED_IN') {
-            const { data } = await supabase
-              .from('users')
-              .select('id')
-              .eq('id', session.user.id)
-              .single()
-
-            if (!data) {
-              await supabase.from('users').insert({
-                id: session.user.id,
-                name: session.user.user_metadata?.full_name ||
-                      session.user.email?.split('@')[0],
-                email: session.user.email,
-                photo: session.user.user_metadata?.avatar_url,
-                provider: session.user.app_metadata?.provider,
-                role: 'member',
-                has_registered: false,
-                last_login: new Date().toISOString()
-              })
-              await fetchProfile(session.user.id)
-            } else {
-              await updateLastLogin(session.user.id)
-            }
-          }
-        } else {
-          setCurrentUser(null)
-          setUserProfile(null)
-          setIsAdmin(false)
+          await updateLastLogin(session.user.id)
         }
+      } catch (err) {
+        console.error('Supabase init session error:', err)
+      } finally {
         setLoading(false)
-      })
+      }
+    }
 
-    return () => subscription.unsubscribe()
+    initAuth()
+
+    let subscription;
+    try {
+      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+        try {
+          if (session?.user) {
+            setCurrentUser(session.user)
+            await fetchProfile(session.user.id)
+
+            if (event === 'SIGNED_IN') {
+              const { data: existingUser, error: checkError } = await supabase
+                .from('users')
+                .select('id')
+                .eq('id', session.user.id)
+                .maybeSingle()
+
+              if (checkError) {
+                console.error('Error checking existing user:', checkError.message)
+              }
+
+              if (!existingUser) {
+                const { error: insertError } = await supabase.from('users').insert({
+                  id: session.user.id,
+                  name: session.user.user_metadata?.full_name ||
+                        session.user.email?.split('@')[0],
+                  email: session.user.email,
+                  photo: session.user.user_metadata?.avatar_url,
+                  provider: session.user.app_metadata?.provider,
+                  role: 'member',
+                  has_registered: false,
+                  last_login: new Date().toISOString()
+                })
+
+                if (insertError) {
+                  console.error('Error creating user profile:', insertError.message)
+                } else {
+                  await fetchProfile(session.user.id)
+                }
+              } else {
+                await updateLastLogin(session.user.id)
+              }
+            }
+          } else {
+            setCurrentUser(null)
+            setUserProfile(null)
+            setIsAdmin(false)
+          }
+        } catch (innerErr) {
+          console.error('Exception in onAuthStateChange handler:', innerErr)
+        } finally {
+          setLoading(false)
+        }
+      })
+      subscription = data.subscription
+    } catch (err) {
+      console.error('Supabase auth state change subscription error:', err)
+      setLoading(false)
+    }
+
+    return () => {
+      if (subscription) subscription.unsubscribe()
+    }
   }, [])
 
   const loginWithGoogle = async () => {
