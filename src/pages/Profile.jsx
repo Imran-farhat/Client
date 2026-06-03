@@ -137,6 +137,7 @@ function Profile() {
     pledgeDistrict: memberData.district,
     pledgeBranch: memberData.branch,
     photoPreview: memberData.photo_base64,
+    aadhaar: memberData.aadhar,
   } : null;
 
   return (
