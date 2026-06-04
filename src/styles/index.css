@@ -375,3 +375,51 @@ html.dark .register-form label > span {
     transform-origin: top center;
   }
 }
+
+/* ─── Autocomplete, placeholder & text visibility overrides ─── */
+html.dark .register-form input:-webkit-autofill,
+html.dark .register-form input:-webkit-autofill:hover,
+html.dark .register-form input:-webkit-autofill:focus,
+html.dark .register-form textarea:-webkit-autofill,
+html.dark .register-form textarea:-webkit-autofill:hover,
+html.dark .register-form textarea:-webkit-autofill:focus,
+html.dark .register-form select:-webkit-autofill,
+html.dark .register-form select:-webkit-autofill:hover,
+html.dark .register-form select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #1A1A2E !important;
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover,
+html.dark input:-webkit-autofill:focus,
+html.dark textarea:-webkit-autofill,
+html.dark textarea:-webkit-autofill:hover,
+html.dark textarea:-webkit-autofill:focus,
+html.dark select:-webkit-autofill,
+html.dark select:-webkit-autofill:hover,
+html.dark select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg-card) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Placeholder colors */
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: var(--input-placeholder) !important;
+}
+
+html.dark .register-form input::placeholder,
+html.dark .register-form textarea::placeholder {
+  color: #888888 !important;
+}
+
+/* Ensure caret visibility matches text color */
+html.dark .register-form input,
+html.dark .register-form textarea,
+html.dark .register-form select {
+  caret-color: #1A1A2E !important;
+}
+

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import OrgLogo from '../components/OrgLogo';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabase/client';
@@ -11,20 +11,23 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const { loginWithGoogle, loginWithEmail, currentUser, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (currentUser) {
-      navigate(isAdmin ? '/admin' : '/profile');
+      const target = location.state?.redirectTo || (isAdmin ? '/admin' : '/profile');
+      navigate(target);
     }
-  }, [currentUser, isAdmin, navigate]);
+  }, [currentUser, isAdmin, navigate, location.state]);
 
   const handleGoogleLogin = async () => {
     try {
       setError('');
       setLoading(true);
+      const target = location.state?.redirectTo || '/profile';
       const redirectTo = window.location.hostname === 'localhost'
-        ? 'http://localhost:5173/profile'
-        : `${window.location.origin}/profile`;
+        ? `http://localhost:5173${target}`
+        : `${window.location.origin}${target}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -49,7 +52,8 @@ function Login() {
     setLoading(true);
     try {
       await loginWithEmail(email, password);
-      navigate(isAdmin ? '/admin' : '/profile');
+      const target = location.state?.redirectTo || (isAdmin ? '/admin' : '/profile');
+      navigate(target);
     } catch (err) {
       setError(err.message);
       setLoading(false);
@@ -90,6 +94,12 @@ function Login() {
           <span className="text-xs text-[var(--text-muted)]">அல்லது / or</span>
           <div className="h-px flex-1 bg-[var(--border)]"></div>
         </div>
+
+        {location.state?.message && (
+          <div className="mb-4 rounded-xl border border-amber/30 bg-amber/10 p-3 text-center text-sm text-amber font-semibold">
+            ⚠️ {location.state.message}
+          </div>
+        )}
 
         <form onSubmit={handleEmailLogin} className="space-y-4">
           <div>

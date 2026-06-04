@@ -1,20 +1,51 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { supabase } from '../supabase/client';
 
-const images = [
-  { src: 'https://images.unsplash.com/photo-1514709814142-421ad3eaef81?auto=format&fit=crop&w=1200&q=80', caption: 'Spark and metal craft', category: 'Events' },
-  { src: 'https://images.unsplash.com/photo-1517457373958-b0f4e7b9d5b9?auto=format&fit=crop&w=1200&q=80', caption: 'Workshop fabrication floor', category: 'Workshops' },
-  { src: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80', caption: 'Event showcase', category: 'Events' },
-  { src: 'https://images.unsplash.com/photo-1516796182154-0f0163bfff91?auto=format&fit=crop&w=1200&q=80', caption: 'Precision joint weld', category: 'Workshops' },
-];
-
-const categories = ['All', 'Events', 'Workshops'];
+const categories = ['ALL', 'EVENTS', 'WORKSHOPS', 'TRAINING'];
 
 function Gallery() {
-  const [filter, setFilter] = useState('All');
+  const [filter, setFilter] = useState('ALL');
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(null);
+
+  const fetchGallery = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('gallery')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setGalleryItems(data || []);
+    } catch (err) {
+      console.error('Error fetching gallery:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGallery();
+
+    const channel = supabase
+      .channel('public-gallery-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'gallery' },
+        () => {
+          fetchGallery();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const filteredImages = useMemo(
-    () => (filter === 'All' ? images : images.filter((item) => item.category === filter)),
-    [filter]
+    () => (filter === 'ALL' ? galleryItems : galleryItems.filter((item) => item.category === filter)),
+    [filter, galleryItems]
   );
 
   return (
@@ -38,24 +69,34 @@ function Gallery() {
           ))}
         </div>
 
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredImages.map((image) => (
-            <button
-              key={image.src}
-              onClick={() => setActiveImage(image)}
-              className="group overflow-hidden rounded-[28px] border border-[var(--border)] bg-card text-left shadow-sm transition hover:-translate-y-1"
-            >
-              <div className="relative h-72 overflow-hidden">
-                <img src={image.src} alt={image.caption} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 text-left">
-                  <p className="text-sm uppercase tracking-[0.28em] text-amber">{image.category}</p>
-                  <p className="mt-2 text-lg font-semibold text-white">{image.caption}</p>
+        {loading ? (
+          <div className="mt-12 flex min-h-[30vh] items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber border-t-transparent"></div>
+          </div>
+        ) : filteredImages.length === 0 ? (
+          <div className="mt-12 text-center rounded-[28px] border border-[var(--border)] bg-card p-12 shadow-sm">
+            <p className="text-lg text-[var(--text-muted)]">புகைப்படங்கள் ஏதும் இல்லை / No gallery images found</p>
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {filteredImages.map((image) => (
+              <button
+                key={image.id}
+                onClick={() => setActiveImage(image)}
+                className="group overflow-hidden rounded-[28px] border border-[var(--border)] bg-card text-left shadow-sm transition hover:-translate-y-1"
+              >
+                <div className="relative h-72 overflow-hidden">
+                  <img src={image.image_url} alt={image.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4 text-left">
+                    <p className="text-sm uppercase tracking-[0.28em] text-amber">{image.category}</p>
+                    <p className="mt-2 text-lg font-semibold text-white">{image.title}</p>
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {activeImage && (
@@ -64,10 +105,13 @@ function Gallery() {
             <button className="absolute right-4 top-4 rounded-full bg-secondary px-3 py-2 text-sm text-primary hover:bg-card" onClick={() => setActiveImage(null)}>
               Close
             </button>
-            <img src={activeImage.src} alt={activeImage.caption} className="h-[70vh] w-full rounded-3xl object-cover" />
+            <img src={activeImage.image_url} alt={activeImage.title} className="h-[70vh] w-full rounded-3xl object-cover" />
             <div className="mt-4 rounded-3xl border border-[var(--border)] bg-card p-6">
               <p className="text-sm uppercase tracking-[0.28em] text-amber">{activeImage.category}</p>
-              <p className="mt-2 text-2xl font-semibold text-primary">{activeImage.caption}</p>
+              <p className="mt-2 text-2xl font-semibold text-primary">{activeImage.title}</p>
+              {activeImage.description && (
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">{activeImage.description}</p>
+              )}
             </div>
           </div>
         </div>

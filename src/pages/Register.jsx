@@ -83,14 +83,35 @@ function formatDateDisplay() {
 }
 
 function Register() {
-  const { currentUser, userProfile, refreshProfile } = useAuth();
+  const { currentUser, userProfile, refreshProfile, loading } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !currentUser) {
+      navigate('/login', {
+        state: {
+          message: 'பதிவு செய்ய முதலில் உள்நுழையவும் / Please login to register',
+          redirectTo: '/register'
+        }
+      });
+    }
+  }, [currentUser, loading, navigate]);
 
   useEffect(() => {
     if (currentUser && userProfile?.has_registered) {
       navigate('/profile');
     }
   }, [currentUser, userProfile, navigate]);
+
+  if (loading) return (
+    <div style={{
+      display: 'flex', justifyContent: 'center',
+      alignItems: 'center', height: '60vh',
+      color: '#FF6B00', fontSize: '16px'
+    }}>Loading...</div>
+  );
+
+  if (!currentUser) return null;
 
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
@@ -396,7 +417,7 @@ NEW MEMBER REGISTRATION DETAILS
                     <input
                       value={form.fullName}
                       onChange={handleChange('fullName')}
-                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('fullName'), width: '100%', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: "'Catamaran', sans-serif", outline: 'none' }}
+                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('fullName'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
                       className="focus:border-amber"
                     />
                   </div>
@@ -410,7 +431,7 @@ NEW MEMBER REGISTRATION DETAILS
                       rows="2"
                       value={form.address}
                       onChange={handleChange('address')}
-                      style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('address'), width: '100%', resize: 'vertical', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: "'Catamaran', sans-serif", outline: 'none', minHeight: '44px' }}
+                      style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('address'), width: '100%', resize: 'vertical', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', minHeight: '44px', WebkitTextFillColor: 'var(--text-primary)' }}
                       className="focus:border-amber"
                     />
                   </div>
@@ -424,7 +445,7 @@ NEW MEMBER REGISTRATION DETAILS
                       rows="2"
                       value={form.companyAddress}
                       onChange={handleChange('companyAddress')}
-                      style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('companyAddress'), width: '100%', resize: 'vertical', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: "'Catamaran', sans-serif", outline: 'none', minHeight: '44px' }}
+                      style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('companyAddress'), width: '100%', resize: 'vertical', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', minHeight: '44px', WebkitTextFillColor: 'var(--text-primary)' }}
                       className="focus:border-amber"
                     />
                   </div>
@@ -438,7 +459,7 @@ NEW MEMBER REGISTRATION DETAILS
                       <select
                         value={form.bloodGroup}
                         onChange={handleChange('bloodGroup')}
-                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('bloodGroup'), width: '100%', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: "'Catamaran', sans-serif", outline: 'none' }}
+                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('bloodGroup'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', appearance: 'auto' }}
                         className="focus:border-amber"
                       >
                         <option value="">Select</option>
@@ -455,7 +476,7 @@ NEW MEMBER REGISTRATION DETAILS
                         type="date"
                         value={form.dob}
                         onChange={handleChange('dob')}
-                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('dob'), width: '100%', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: "'Catamaran', sans-serif", outline: 'none' }}
+                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('dob'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
                         className="focus:border-amber"
                       />
                     </div>
@@ -473,7 +494,7 @@ NEW MEMBER REGISTRATION DETAILS
                         maxLength={12}
                         onChange={handleChange('aadhaar')}
                         placeholder="12 digits"
-                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('aadhaar'), width: '100%', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: "'Catamaran', sans-serif", outline: 'none' }}
+                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('aadhaar'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
                         className="focus:border-amber"
                       />
                     </div>
@@ -489,7 +510,7 @@ NEW MEMBER REGISTRATION DETAILS
                         maxLength={10}
                         onChange={handleChange('mobile')}
                         placeholder="10 digits"
-                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('mobile'), width: '100%', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: "'Catamaran', sans-serif", outline: 'none' }}
+                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('mobile'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
                         className="focus:border-amber"
                       />
                     </div>
@@ -503,7 +524,7 @@ NEW MEMBER REGISTRATION DETAILS
                     <input
                       value={form.nomineeName}
                       onChange={handleChange('nomineeName')}
-                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('nomineeName'), width: '100%', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: "'Catamaran', sans-serif", outline: 'none' }}
+                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('nomineeName'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
                       className="focus:border-amber"
                     />
                   </div>
@@ -519,7 +540,7 @@ NEW MEMBER REGISTRATION DETAILS
                       maxLength={10}
                       onChange={handleChange('nomineeMobile')}
                       placeholder="10 digits"
-                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('nomineeMobile'), width: '100%', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: "'Catamaran', sans-serif", outline: 'none' }}
+                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('nomineeMobile'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
                       className="focus:border-amber"
                     />
                   </div>
@@ -566,12 +587,12 @@ NEW MEMBER REGISTRATION DETAILS
                       onChange={handleChange('pledgeDistrict')}
                       style={{
                         height: '44px',
-                        background: 'var(--input-bg)',
-                        border: errors.pledgeDistrict ? '1.5px solid #E53E3E' : '1.5px solid #D1C8BC',
+                        background: 'var(--bg-card)',
+                        border: errors.pledgeDistrict ? '1.5px solid #E53E3E' : '1.5px solid var(--border)',
                         borderRadius: '8px',
                         padding: '10px 14px',
                         fontSize: '14px',
-                        color: 'var(--input-text)',
+                        color: 'var(--text-primary)',
                         fontFamily: 'Catamaran, sans-serif',
                         width: '100%',
                         outline: 'none',
@@ -597,11 +618,11 @@ NEW MEMBER REGISTRATION DETAILS
                 </div>
                 <p className="text-[13px] leading-[1.8] md:text-sm" style={{ color: '#1A1A2E' }}>
                   ஐயா,
-                  <input value={form.pledgeName} onChange={handleChange('pledgeName')} placeholder="Name" style={{ background: 'transparent', border: 'none', borderBottom: '1.5px solid #003366', color: '#1A1A2E', fontFamily: 'inherit', fontSize: 'inherit', padding: '0 4px', width: '180px', borderRadius: '0', display: 'inline', outline: 'none' }} />
+                  <input value={form.pledgeName} onChange={handleChange('pledgeName')} placeholder="Name" style={{ background: 'transparent', border: 'none', borderBottom: '1.5px solid #003366', color: '#1A1A2E', WebkitTextFillColor: '#1A1A2E', fontFamily: 'inherit', fontSize: 'inherit', padding: '0 4px', width: '180px', borderRadius: '0', display: 'inline', outline: 'none' }} />
                   ஆகிய நான் தென் இந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கத்தின்
                   {' '}<strong>{form.pledgeDistrict || '___________'}</strong>{' '}
                   மாவட்டம்
-                  <input value={form.pledgeBranch} onChange={handleChange('pledgeBranch')} placeholder="Branch" style={{ background: 'transparent', border: 'none', borderBottom: '1.5px solid #003366', color: '#1A1A2E', fontFamily: 'inherit', fontSize: 'inherit', padding: '0 4px', width: '140px', borderRadius: '0', display: 'inline', outline: 'none' }} />
+                  <input value={form.pledgeBranch} onChange={handleChange('pledgeBranch')} placeholder="Branch" style={{ background: 'transparent', border: 'none', borderBottom: '1.5px solid #003366', color: '#1A1A2E', WebkitTextFillColor: '#1A1A2E', fontFamily: 'inherit', fontSize: 'inherit', padding: '0 4px', width: '140px', borderRadius: '0', display: 'inline', outline: 'none' }} />
                   கிளைசங்கத்தில் உறுப்பினராக சேர்ந்து பணியாற்ற சம்மதிக்கின்றேன்.
                 </p>
                 <p className="mt-4 text-[13px] leading-[1.8] md:text-sm" style={{ color: '#1A1A2E' }}>
@@ -622,7 +643,7 @@ NEW MEMBER REGISTRATION DETAILS
                 <div className="flex flex-col gap-3 rounded-[12px] p-4" style={{ border: '1.5px solid #E5DDD0' }}>
                   <div className="flex items-center gap-3 text-sm">
                     <span className="font-semibold" style={{ color: '#2C3E6B' }}>பரிந்துரை:</span>
-                    <input value={form.referral} onChange={handleChange('referral')} placeholder="Referrer" style={{ border: 'none', background: 'transparent', color: '#1A1A2E', padding: '0', outline: 'none', fontFamily: 'inherit', fontSize: 'inherit', flex: 1 }} />
+                    <input value={form.referral} onChange={handleChange('referral')} placeholder="Referrer" style={{ border: 'none', background: 'transparent', color: '#1A1A2E', WebkitTextFillColor: '#1A1A2E', padding: '0', outline: 'none', fontFamily: 'inherit', fontSize: 'inherit', flex: 1 }} />
                   </div>
                   <div className="mt-3 pt-3 text-sm" style={{ borderTop: '1px solid #E5DDD0' }}>
                     <div className="font-semibold" style={{ color: '#2C3E6B' }}>உறுப்பினர் கையொப்பம்</div>
