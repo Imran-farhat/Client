@@ -35,6 +35,7 @@ const NAV = [
   { id: 'register', icon: '📝', label: 'Register Member' },
   { id: 'users',    icon: '🙍', label: 'All Users' },
   { id: 'district', icon: '🗺️', label: 'By District' },
+  { id: 'gallery',  icon: '🖼️', label: 'Gallery' },
 ];
 
 function AdminDashboard() {
@@ -53,6 +54,13 @@ function AdminDashboard() {
   const [regErrors, setRegErrors]           = useState({});
   const [regSubmitting, setRegSubmitting]   = useState(false);
   const [regSuccess, setRegSuccess]         = useState(null);
+  const [galleryItems, setGalleryItems]     = useState([]);
+  const [showGalleryForm, setShowGalleryForm] = useState(false);
+  const [newGalleryItem, setNewGalleryItem] = useState({
+    title: '', category: 'EVENTS', image_url: '', description: ''
+  });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState('');
   const joiningDate = useMemo(() => formatDateDisplay(), []);
 
   const { logout } = useAuth();
@@ -66,9 +74,13 @@ function AdminDashboard() {
     const { data } = await supabase.from('users').select('*').order('created_at', { ascending: false });
     if (data) setUsers(data);
   };
+  const loadGallery = async () => {
+    const { data } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
+    if (data) setGalleryItems(data);
+  };
 
   useEffect(() => {
-    Promise.all([loadMembers(), loadUsers()]).finally(() => setLoadingData(false));
+    Promise.all([loadMembers(), loadUsers(), loadGallery()]).finally(() => setLoadingData(false));
     const sub = supabase.channel('admin-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, () => loadMembers())
       .subscribe();
@@ -218,6 +230,123 @@ NEW MEMBER REGISTRATION DETAILS
     await loadMembers();
   };
   const resetRegForm = () => { setRegForm(EMPTY_REGISTER_FORM); setRegErrors({}); setRegSuccess(null); };
+
+  // ── Gallery actions ──────────────────────────────────────────
+  const handleGalleryImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      alert('படக் கோப்பு மட்டுமே / Only image files allowed')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('5MB-க்கு கீழ் இருக்க வேண்டும் / Max 5MB')
+      return
+    }
+
+    setUploadingImage(true)
+
+    try {
+      // Create unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `gallery_${Date.now()}_${
+        Math.random().toString(36).substring(2)
+      }.${fileExt}`
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase
+        .storage
+        .from('gallery-images')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) throw error
+
+      // Get public URL
+      const { data: urlData } = supabase
+        .storage
+        .from('gallery-images')
+        .getPublicUrl(data.path)
+
+      const publicUrl = urlData.publicUrl
+      setUploadedImageUrl(publicUrl)
+      setNewGalleryItem(prev => ({
+        ...prev,
+        image_url: publicUrl
+      }))
+
+      console.log('Uploaded:', publicUrl)
+
+    } catch (err) {
+      console.error('Upload error:', err)
+      alert('பதிவேற்றம் தோல்வி / Upload failed: ' +
+        err.message)
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  // Delete image from storage when gallery item deleted
+  const deleteGalleryItem = async (id, imageUrl) => {
+    if (!window.confirm(
+      'இந்த படத்தை நீக்கவா? / Delete this item?'
+    )) return
+
+    // Delete from storage if uploaded to Supabase
+    if (imageUrl?.includes('supabase')) {
+      const fileName = imageUrl.split('/').pop()
+      await supabase
+        .storage
+        .from('gallery-images')
+        .remove([fileName])
+    }
+
+    // Delete from database
+    const { error } = await supabase
+      .from('gallery')
+      .delete()
+      .eq('id', id)
+
+    if (!error) await loadGallery()
+    else alert('Error: ' + error.message)
+  }
+
+  const closeGalleryForm = () => {
+    setUploadedImageUrl('')
+    setNewGalleryItem({
+      title: '', category: 'EVENTS',
+      image_url: '', description: ''
+    })
+    setShowGalleryForm(false)
+  }
+
+  const handleGallerySubmit = async (e) => {
+    if (e) e.preventDefault()
+    if (!newGalleryItem.title.trim() || !newGalleryItem.image_url) {
+      alert('தலைப்பு மற்றும் படம் அவசியம் / Title and image are required')
+      return
+    }
+
+    const { error } = await supabase
+      .from('gallery')
+      .insert({
+        title: newGalleryItem.title,
+        category: newGalleryItem.category,
+        image_url: newGalleryItem.image_url,
+        description: newGalleryItem.description || ''
+      })
+
+    if (error) {
+      alert('Error: ' + error.message)
+    } else {
+      await loadGallery()
+      closeGalleryForm()
+    }
+  }
 
   // ── Nav helper ───────────────────────────────────────────────
   const goTab = (id) => { setActiveTab(id); setSidebarOpen(false); };
@@ -612,6 +741,43 @@ NEW MEMBER REGISTRATION DETAILS
             </div>
           )}
 
+          {/* ── GALLERY MANAGEMENT ── */}
+          {activeTab === 'gallery' && (
+            <div className="space-y-4 md:space-y-6 max-w-6xl">
+              <div className="flex flex-wrap gap-3 items-center justify-between">
+                <h2 className="text-xl md:text-2xl font-bold text-[#003366]">Gallery Management</h2>
+                <button onClick={() => setShowGalleryForm(true)} className="bg-[#003366] text-white px-3 py-2 rounded font-semibold text-xs md:text-sm shadow-sm hover:opacity-90">
+                  ➕ Add Photo
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {galleryItems.map((item) => (
+                  <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col justify-between">
+                    <div>
+                      <img src={item.image_url} alt={item.title} className="w-full h-40 object-cover" />
+                      <div className="p-3">
+                        <span className="text-[10px] uppercase tracking-wider bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">
+                          {item.category}
+                        </span>
+                        <h4 className="font-semibold text-gray-800 text-sm mt-2 line-clamp-1">{item.title}</h4>
+                        {item.description && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.description}</p>}
+                      </div>
+                    </div>
+                    <div className="p-3 border-t border-gray-50 flex justify-end">
+                      <button onClick={() => deleteGalleryItem(item.id, item.image_url)} className="text-xs font-semibold text-red-500 hover:text-red-700 transition">
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {galleryItems.length === 0 && (
+                  <p className="col-span-full p-8 text-center text-gray-400 text-sm">No images in gallery yet.</p>
+                )}
+              </div>
+            </div>
+          )}
+
         </main>
       </div>
 
@@ -693,6 +859,189 @@ NEW MEMBER REGISTRATION DETAILS
               <button onClick={saveEditMember} className="flex-1 rounded-lg bg-[#FFB347] text-black py-2.5 font-semibold hover:opacity-90 transition text-sm">Save Changes</button>
               <button onClick={() => setEditMember(null)} className="flex-1 rounded-lg border border-gray-300 py-2.5 text-gray-600 hover:bg-gray-50 transition text-sm">Cancel</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── GALLERY ADD FORM MODAL ── */}
+      {showGalleryForm && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 p-0 md:p-4">
+          <div className="relative w-full max-w-lg bg-white rounded-t-3xl md:rounded-2xl shadow-2xl p-5 md:p-8 overflow-y-auto max-h-[90vh]">
+            <button onClick={closeGalleryForm} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-black hover:bg-gray-200 text-sm">✕</button>
+            <h3 className="text-lg md:text-xl font-bold text-[#003366] mb-4">Add Gallery Photo</h3>
+            
+            <form onSubmit={handleGallerySubmit} className="space-y-4 text-sm">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Title / தலைப்பு</label>
+                <input
+                  type="text"
+                  required
+                  value={newGalleryItem.title}
+                  onChange={e => setNewGalleryItem(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-black focus:outline-none focus:border-[#FFB347] text-sm"
+                  placeholder="e.g. Workshop event"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Category / வகை</label>
+                <select
+                  value={newGalleryItem.category}
+                  onChange={e => setNewGalleryItem(prev => ({ ...prev, category: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-black focus:outline-none focus:border-[#FFB347] text-sm"
+                >
+                  <option value="EVENTS">Events / நிகழ்ச்சிகள்</option>
+                  <option value="WORKSHOPS">Workshops / பயிற்சி வகுப்புகள்</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Description / விளக்கம் (Optional)</label>
+                <textarea
+                  rows={2}
+                  value={newGalleryItem.description || ''}
+                  onChange={e => setNewGalleryItem(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-black focus:outline-none focus:border-[#FFB347] text-sm resize-none"
+                  placeholder="Brief description..."
+                />
+              </div>
+
+              {/* IMAGE UPLOAD UI SECTION */}
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{
+                  fontSize: '12px', fontWeight: '600',
+                  color: 'var(--text-muted)',
+                  display: 'block', marginBottom: '4px'
+                }}>படம் பதிவேற்று / Upload Image</label>
+
+                {/* Upload box */}
+                <div style={{
+                  border: '2px dashed var(--border)',
+                  borderRadius: '10px',
+                  padding: '1.5rem',
+                  textAlign: 'center',
+                  background: 'var(--bg-secondary)',
+                  position: 'relative',
+                  cursor: 'pointer',
+                  transition: 'border 0.2s'
+                }}
+                  onMouseEnter={e =>
+                    e.currentTarget.style.borderColor = '#FF6B00'}
+                  onMouseLeave={e =>
+                    e.currentTarget.style.borderColor =
+                      'var(--border)'}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleGalleryImageUpload}
+                    disabled={uploadingImage}
+                    style={{
+                      position: 'absolute', inset: 0,
+                      opacity: 0, cursor: 'pointer',
+                      width: '100%', height: '100%'
+                    }}
+                  />
+
+                  {uploadingImage ? (
+                    <div>
+                      <div style={{
+                        fontSize: '2rem', marginBottom: '8px'
+                      }}>⏳</div>
+                      <div style={{
+                        fontSize: '13px',
+                        color: 'var(--text-muted)'
+                      }}>
+                        பதிவேற்றுகிறது... / Uploading...
+                      </div>
+                      {/* Progress bar */}
+                      <div style={{
+                        width: '100%', height: '4px',
+                        background: 'var(--border)',
+                        borderRadius: '2px',
+                        marginTop: '12px',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{
+                          width: '60%', height: '100%',
+                          background: '#FF6B00',
+                          borderRadius: '2px',
+                          animation: 'pulse 1s infinite'
+                        }} />
+                      </div>
+                    </div>
+                  ) : uploadedImageUrl ? (
+                    <div>
+                      <img
+                        src={uploadedImageUrl}
+                        alt="uploaded"
+                        style={{
+                          width: '100%', maxHeight: '200px',
+                          objectFit: 'cover',
+                          borderRadius: '8px',
+                          marginBottom: '8px'
+                        }}
+                      />
+                      <div style={{
+                        fontSize: '12px', color: '#22C55E',
+                        fontWeight: '700'
+                      }}>✅ பதிவேற்றம் வெற்றி / Upload successful!</div>
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.stopPropagation()
+                          setUploadedImageUrl('')
+                          setNewGalleryItem(prev => ({
+                            ...prev, image_url: ''
+                          }))
+                        }}
+                        style={{
+                          marginTop: '8px',
+                          background: 'transparent',
+                          border: '1px solid #E53E3E',
+                          color: '#E53E3E',
+                          borderRadius: '6px',
+                          padding: '4px 12px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}>
+                        மாற்று / Change Image
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{
+                        fontSize: '2.5rem', marginBottom: '8px'
+                      }}>📷</div>
+                      <div style={{
+                        fontSize: '14px', fontWeight: '600',
+                        color: 'var(--text-primary)',
+                        marginBottom: '4px'
+                      }}>
+                        படத்தை இங்கே இழுக்கவும் அல்லது
+                        கிளிக் செய்யவும்
+                      </div>
+                      <div style={{
+                        fontSize: '12px',
+                        color: 'var(--text-muted)'
+                      }}>
+                        Drag & drop or click to upload
+                        <br/>PNG, JPG, WEBP · Max 5MB
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-5 flex gap-3">
+                <button type="submit" disabled={uploadingImage || !newGalleryItem.image_url} className="flex-1 rounded-lg bg-[#FF6B00] text-white py-2.5 font-semibold hover:opacity-90 transition text-sm disabled:opacity-50">
+                  Save Photo
+                </button>
+                <button type="button" onClick={closeGalleryForm} className="flex-1 rounded-lg border border-gray-300 py-2.5 text-gray-600 hover:bg-gray-50 transition text-sm">
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
