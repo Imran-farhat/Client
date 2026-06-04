@@ -5,7 +5,6 @@ import OrgLogo from '../components/OrgLogo';
 import { supabase } from '../supabase/client';
 
 const STATIC_STATS = [
-  { label: 'சான்றிதழ் பெற்றவர்கள்', suffix: '+', staticNum: 3800 },
   { label: 'செயல்பாட்டு ஆண்டுகள்', suffix: '+', staticNum: 6 },
   { label: 'கிளைகள்', suffix: '', staticNum: 38 },
 ];
@@ -18,7 +17,7 @@ const testimonials = [
 
 function Home() {
   const [memberCount, setMemberCount] = useState(null);
-  const [count, setCount] = useState([0, 0, 0, 0]); // [members, certified, years, branches]
+  const [count, setCount] = useState([0, 0, 0]); // [members, years, branches]
 
   // Fetch live member count from Supabase
   useEffect(() => {
@@ -44,7 +43,6 @@ function Home() {
       memberCount ?? 0,
       STATIC_STATS[0].staticNum,
       STATIC_STATS[1].staticNum,
-      STATIC_STATS[2].staticNum,
     ];
     const duration = 2000;
     const steps = 60;
@@ -70,9 +68,8 @@ function Home() {
 
   const displayStats = [
     { num: count[0], label: 'மொத்த உறுப்பினர்கள்', suffix: '', live: true },
-    { num: count[1], label: 'சான்றிதழ் பெற்றவர்கள்', suffix: '+' },
-    { num: count[2], label: 'செயல்பாட்டு ஆண்டுகள்', suffix: '+' },
-    { num: count[3], label: 'கிளைகள்', suffix: '' },
+    { num: count[1], label: 'செயல்பாட்டு ஆண்டுகள்', suffix: '+' },
+    { num: count[2], label: 'கிளைகள்', suffix: '' },
   ];
 
   return (
@@ -110,7 +107,7 @@ function Home() {
           </div>
 
           <div className="rounded-[32px] border border-[var(--border)] bg-card p-8" style={{ boxShadow: 'var(--card-shadow)' }}>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {displayStats.map((stat, index) => (
                 <div key={stat.label} className="rounded-3xl p-6 text-center" style={{
                   backgroundColor: 'var(--bg-primary)',
