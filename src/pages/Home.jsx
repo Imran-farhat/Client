@@ -42,9 +42,9 @@ function Home() {
   useEffect(() => {
     const stats = [
       memberCount ?? 0,
-      3800,
-      15,
-      38,
+      STATIC_STATS[0].staticNum,
+      STATIC_STATS[1].staticNum,
+      STATIC_STATS[2].staticNum,
     ];
     const duration = 2000;
     const steps = 60;
