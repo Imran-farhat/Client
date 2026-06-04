@@ -5,6 +5,7 @@ import IDCard from '../components/IDCard';
 import OrgLogo from '../components/OrgLogo';
 import { supabase } from '../supabase/client';
 import { useAuth } from '../context/AuthContext';
+import { generateMemberId } from '../utils/memberIdUtils';
 
 const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
@@ -159,9 +160,6 @@ function Register() {
       localStorage.removeItem('tiwtn_registered');
       localStorage.removeItem('tiwtn_member_data');
 
-      // Send admin email notification via Web3Forms
-      await sendAdminNotification(formData, memberId);
-
       return true;
     } catch (err) {
       console.error('Save error:', err);
@@ -172,31 +170,52 @@ function Register() {
 
   const sendAdminNotification = async (formData, memberId) => {
     try {
-      const key = 'fecf7859-db02-4db0-9e17-08fedad22e49';
-      const payload = new FormData();
-      payload.append('access_key', key);
-      payload.append('subject', `புதிய உறுப்பினர் பதிவு / New Member Registered — ${memberId}`);
-      payload.append('from_name', 'TIWTN Website');
-      payload.append('message',
-        `புதிய உறுப்பினர் பதிவு செய்யப்பட்டது:\n\n` +
-        `Member ID : ${memberId}\n` +
-        `Name      : ${formData.fullName}\n` +
-        `Mobile    : ${formData.mobile}\n` +
-        `District  : ${formData.pledgeDistrict}\n` +
-        `Blood Grp : ${formData.bloodGroup}\n` +
-        `DOB       : ${formData.dob}\n` +
-        `Address   : ${formData.address}\n` +
-        `Nominee   : ${formData.nomineeName} (${formData.nomineeMobile})\n` +
-        `Branch    : ${formData.pledgeBranch}\n` +
-        `Referral  : ${formData.referral || '-'}\n` +
-        `Registered: ${new Date().toLocaleString('en-IN')}`
-      );
-      const res = await fetch('https://api.web3forms.com/submit', { method: 'POST', body: payload });
-      const json = await res.json();
-      if (!json.success) console.warn('Web3Forms notice:', json.message);
+      const payload = new FormData()
+      payload.append(
+        'access_key',
+        import.meta.env.VITE_WEB3FORMS_KEY
+      )
+      payload.append(
+        'subject',
+        `புதிய உறுப்பினர் பதிவு: ${formData.fullName} | ${memberId}`
+      )
+      payload.append('from_name', 'TIWTN Registration System')
+      payload.append('email', 'idhreesufiyaidhreesufiya@gmail.com')
+      payload.append('message', `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+புதிய உறுப்பினர் பதிவு விவரங்கள்
+NEW MEMBER REGISTRATION DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+உறுப்பினர் எண் / Member ID : ${memberId}
+பெயர் / Full Name          : ${formData.fullName}
+பிறந்த தேதி / DOB          : ${formData.dob}
+இரத்த பிரிவு / Blood Group : ${formData.bloodGroup}
+கைபேசி / Mobile           : ${formData.mobile}
+ஆதார் எண் / Aadhar        : ${formData.aadhaar}
+மாவட்டம் / District        : ${formData.pledgeDistrict}
+முகவரி / Address           : ${formData.address}
+கிளை / Branch              : ${formData.pledgeBranch || '-'}
+வாரிசுதாரர் / Nominee      : ${formData.nomineeName || '-'}
+பரிந்துரை / Referrer        : ${formData.referral || '-'}
+இணைந்த தேதி / Joined       : ${joiningDate}
+பதிவு நேரம் / Registered   : ${
+  new Date().toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata'
+  })
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    `)
+
+      const res = await fetch(
+        'https://api.web3forms.com/submit',
+        { method: 'POST', body: payload }
+      )
+      const result = await res.json()
+      console.log('Email sent:', result)
     } catch (err) {
-      // Non-blocking — just log
-      console.warn('Admin notification failed:', err.message);
+      console.error('Email error:', err)
     }
   };
 
@@ -261,7 +280,7 @@ function Register() {
       setTimeout(() => setSubmitting(false), 400);
       return;
     }
-    const generatedId = createMemberId();
+    const generatedId = await generateMemberId(form.pledgeDistrict);
     const memberData = {
       ...form,
       joiningDate,
@@ -271,6 +290,10 @@ function Register() {
     // Await save so errors surface before showing card
     const saved = await saveToSupabase(form, generatedId);
     console.log('Save result:', saved);
+
+    if (saved) {
+      await sendAdminNotification(form, generatedId);
+    }
 
     // Show card regardless (don't block on save error)
     setErrors({});

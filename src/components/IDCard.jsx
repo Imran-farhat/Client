@@ -228,41 +228,23 @@ function CardBack({ member }) {
       {/* 4. Content body */}
       <div style={{ minHeight: '285px', padding: '10px 8px 10px 13px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
 
-        {/* QR + address */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-          <div style={{ flexShrink: 0, textAlign: 'center' }}>
-            <svg width="60" height="60" viewBox="0 0 60 60" style={{ border: '1px solid #CCC', borderRadius: '3px', padding: '3px' }}>
-              <rect x="2" y="2" width="16" height="16" fill="none" stroke="#003366" strokeWidth="2" />
-              <rect x="6" y="6" width="8" height="8" fill="#003366" />
-              <rect x="42" y="2" width="16" height="16" fill="none" stroke="#003366" strokeWidth="2" />
-              <rect x="46" y="6" width="8" height="8" fill="#003366" />
-              <rect x="2" y="42" width="16" height="16" fill="none" stroke="#003366" strokeWidth="2" />
-              <rect x="6" y="46" width="8" height="8" fill="#003366" />
-              <rect x="24" y="4" width="4" height="4" fill="#003366" />
-              <rect x="30" y="4" width="4" height="4" fill="#003366" />
-              <rect x="24" y="10" width="4" height="4" fill="#003366" />
-              <rect x="4" y="24" width="4" height="4" fill="#003366" />
-              <rect x="10" y="30" width="4" height="4" fill="#003366" />
-              <rect x="24" y="24" width="4" height="4" fill="#003366" />
-              <rect x="30" y="30" width="4" height="4" fill="#003366" />
-              <rect x="36" y="24" width="4" height="4" fill="#003366" />
-              <rect x="42" y="30" width="4" height="4" fill="#003366" />
-              <rect x="48" y="24" width="4" height="4" fill="#003366" />
-              <rect x="24" y="42" width="4" height="4" fill="#003366" />
-              <rect x="30" y="48" width="4" height="4" fill="#003366" />
-              <rect x="36" y="42" width="4" height="4" fill="#003366" />
-            </svg>
-            <div style={{ fontSize: '6px', color: '#888', marginTop: '2px' }}>Scan to verify</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '6px', color: '#888', letterSpacing: '0.5px', marginBottom: '3px' }}>அலுவல முகவரி / OFFICE ADDRESS</div>
-            <div style={{ fontSize: '8px', fontWeight: '700', color: '#003366', lineHeight: '1.5' }}>
-              தென்னிந்திய வெல்டிங்<br />
-              தொழிலாளர்கள் நலச்சங்கம்<br />
-              133/34, 1A, 1A பெங்களூர்<br />
-              ஹைவே, சென்னை – 600124,<br />
-              தமிழ்நாடு.
-            </div>
+        {/* Office address (full width) */}
+        <div style={{
+          padding: '10px 8px 10px 13px',
+          borderBottom: '1px solid #E0E0E0'
+        }}>
+          <div style={{
+            fontSize: '7px', color: '#888',
+            letterSpacing: '0.5px', marginBottom: '4px',
+            textTransform: 'uppercase'
+          }}>அலுவல முகவரி / OFFICE ADDRESS</div>
+          <div style={{
+            fontSize: '9px', fontWeight: '700',
+            color: '#003366', lineHeight: '1.6'
+          }}>
+            தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்<br/>
+            133/34, 1A, 1A பெங்களூர் ஹைவே,<br/>
+            சென்னை – 600124, தமிழ்நாடு.
           </div>
         </div>
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabase/client';
 import IDCard from '../components/IDCard';
+import { generateMemberId } from '../utils/memberIdUtils';
 
 const TAMIL_NADU_DISTRICTS = [
   'அரியலூர்', 'சேலம்', 'சென்னை', 'கோயம்புத்தூர்', 'கடலூர்', 'தர்மபுரி', 'திண்டுக்கல்',
@@ -142,11 +143,62 @@ function AdminDashboard() {
     if (!regForm.pledgeBranch.trim())      e.pledgeBranch = 'Required';
     return e;
   };
+  const sendAdminNotification = async (formData, memberId) => {
+    try {
+      const payload = new FormData();
+      payload.append(
+        'access_key',
+        import.meta.env.VITE_WEB3FORMS_KEY
+      );
+      payload.append(
+        'subject',
+        `புதிய உறுப்பினர் பதிவு: ${formData.fullName} | ${memberId}`
+      );
+      payload.append('from_name', 'TIWTN Registration System');
+      payload.append('email', 'idhreesufiyaidhreesufiya@gmail.com');
+      payload.append('message', `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+புதிய உறுப்பினர் பதிவு விவரங்கள்
+NEW MEMBER REGISTRATION DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+உறுப்பினர் எண் / Member ID : ${memberId}
+பெயர் / Full Name          : ${formData.fullName}
+பிறந்த தேதி / DOB          : ${formData.dob}
+இரத்த பிரிவு / Blood Group : ${formData.bloodGroup}
+கைபேசி / Mobile           : ${formData.mobile}
+ஆதார் எண் / Aadhar        : ${formData.aadhaar}
+மாவட்டம் / District        : ${formData.pledgeDistrict}
+முகவரி / Address           : ${formData.address}
+கிளை / Branch              : ${formData.pledgeBranch || '-'}
+வாரிசுதாரர் / Nominee      : ${formData.nomineeName || '-'}
+பரிந்துரை / Referrer        : ${formData.referral || '-'}
+இணைந்த தேதி / Joined       : ${joiningDate}
+பதிவு நேரம் / Registered   : ${
+  new Date().toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata'
+  })
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    `);
+
+      const res = await fetch(
+        'https://api.web3forms.com/submit',
+        { method: 'POST', body: payload }
+      );
+      const result = await res.json();
+      console.log('Email sent:', result);
+    } catch (err) {
+      console.error('Email error:', err);
+    }
+  };
+
   const handleRegSubmit = async () => {
     const errs = validateReg();
     if (Object.keys(errs).length) { setRegErrors(errs); return; }
     setRegSubmitting(true);
-    const memberId = `TIWTN-${new Date().getFullYear()}-${String(Math.floor(10000 + Math.random() * 90000)).padStart(5,'0')}`;
+    const memberId = await generateMemberId(regForm.pledgeDistrict);
     const record = {
       member_id: memberId, user_id: null, full_name: regForm.fullName, dob: regForm.dob,
       blood_group: regForm.bloodGroup, mobile: regForm.mobile, aadhar: regForm.aadhaar,
@@ -159,6 +211,9 @@ function AdminDashboard() {
     const { data, error } = await supabase.from('members').insert(record).select().single();
     setRegSubmitting(false);
     if (error) { alert('Error: ' + error.message); return; }
+    
+    await sendAdminNotification(regForm, memberId);
+
     setRegSuccess(data);
     await loadMembers();
   };
