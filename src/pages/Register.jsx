@@ -172,8 +172,7 @@ function Register() {
 
   const sendAdminNotification = async (formData, memberId) => {
     try {
-      const key = import.meta.env.VITE_WEB3FORMS_KEY;
-      if (!key || key === 'YOUR_WEB3FORMS_ACCESS_KEY_HERE') return; // skip if key not set
+      const key = 'fecf7859-db02-4db0-9e17-08fedad22e49';
       const payload = new FormData();
       payload.append('access_key', key);
       payload.append('subject', `புதிய உறுப்பினர் பதிவு / New Member Registered — ${memberId}`);
