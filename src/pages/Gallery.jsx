@@ -100,18 +100,30 @@ function Gallery() {
       </div>
 
       {activeImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6">
-          <div className="relative w-full max-w-4xl rounded-3xl bg-primary p-4 shadow-2xl shadow-black/70">
-            <button className="absolute right-4 top-4 rounded-full bg-secondary px-3 py-2 text-sm text-primary hover:bg-card" onClick={() => setActiveImage(null)}>
-              Close
-            </button>
-            <img src={activeImage.image_url} alt={activeImage.title} className="h-[70vh] w-full rounded-3xl object-cover" />
-            <div className="mt-4 rounded-3xl border border-[var(--border)] bg-card p-6">
-              <p className="text-sm uppercase tracking-[0.28em] text-amber">{activeImage.category}</p>
-              <p className="mt-2 text-2xl font-semibold text-primary">{activeImage.title}</p>
-              {activeImage.description && (
-                <p className="mt-2 text-sm text-[var(--text-secondary)]">{activeImage.description}</p>
-              )}
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/90 p-4 md:p-6">
+          <div className="flex min-h-full items-center justify-center">
+            <div className="relative w-full max-w-3xl rounded-3xl bg-primary p-3 md:p-4 shadow-2xl my-4">
+              <button
+                className="absolute right-4 top-4 z-10 rounded-full bg-black/60 hover:bg-black/80 text-white w-9 h-9 flex items-center justify-center text-sm font-bold shadow-lg transition"
+                onClick={() => setActiveImage(null)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+              <div className="overflow-hidden rounded-2xl bg-black/5">
+                <img
+                  src={activeImage.image_url}
+                  alt={activeImage.title}
+                  className="max-h-[45vh] md:max-h-[60vh] w-full object-contain mx-auto"
+                />
+              </div>
+              <div className="mt-3 rounded-2xl border border-[var(--border)] bg-card p-4 md:p-6">
+                <p className="text-xs md:text-sm uppercase tracking-[0.28em] text-amber font-semibold">{activeImage.category}</p>
+                <p className="mt-1 text-lg md:text-2xl font-bold text-primary leading-snug">{activeImage.title}</p>
+                {activeImage.description && (
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">{activeImage.description}</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
