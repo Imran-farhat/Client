@@ -6,7 +6,7 @@ import { supabase } from '../supabase/client';
 
 const STATIC_STATS = [
   { label: 'சான்றிதழ் பெற்றவர்கள்', suffix: '+', staticNum: 3800 },
-  { label: 'செயல்பாட்டு ஆண்டுகள்', suffix: '+', staticNum: 15 },
+  { label: 'செயல்பாட்டு ஆண்டுகள்', suffix: '+', staticNum: 6 },
   { label: 'கிளைகள்', suffix: '', staticNum: 38 },
 ];
 
