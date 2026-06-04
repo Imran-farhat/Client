@@ -423,3 +423,56 @@ html.dark .register-form select {
   caret-color: #1A1A2E !important;
 }
 
+/* Force light-theme styling variables inside the Admin Dashboard even in dark mode */
+html.dark .admin-dashboard {
+  --bg-primary: #FFFFFF !important;
+  --bg-secondary: #F7F3EE !important;
+  --bg-card: #FFFFFF !important;
+  --text-primary: #1A1A2E !important;
+  --text-secondary: #2C3E6B !important;
+  --text-muted: #6B7280 !important;
+  --border: #E5DDD0 !important;
+  --input-bg: #FFFFFF !important;
+  --input-border: #D1C8BC !important;
+  --input-text: #1A1A2E !important;
+  --input-placeholder: #6B7280 !important;
+}
+
+/* Force light style for select dropdown options inside admin dashboard */
+html.dark .admin-dashboard select option {
+  background-color: #FFFFFF !important;
+  color: #1A1A2E !important;
+}
+
+/* Force autofill styling rules to match light theme inside the admin dashboard */
+html.dark .admin-dashboard input:-webkit-autofill,
+html.dark .admin-dashboard input:-webkit-autofill:hover,
+html.dark .admin-dashboard input:-webkit-autofill:focus,
+html.dark .admin-dashboard textarea:-webkit-autofill,
+html.dark .admin-dashboard textarea:-webkit-autofill:hover,
+html.dark .admin-dashboard textarea:-webkit-autofill:focus,
+html.dark .admin-dashboard select:-webkit-autofill,
+html.dark .admin-dashboard select:-webkit-autofill:hover,
+html.dark .admin-dashboard select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #1A1A2E !important;
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Enforce select background-image colors for dropdown arrows inside admin dashboard in dark mode */
+html.dark .admin-dashboard select {
+  background-image: linear-gradient(45deg, transparent 50%, #1A1A2E 50%),
+    linear-gradient(135deg, #1A1A2E 50%, transparent 50%) !important;
+}
+
+/* Enforce input text colors in admin dashboard inputs to avoid theme conflicts */
+html.dark .admin-dashboard input,
+html.dark .admin-dashboard select,
+html.dark .admin-dashboard textarea {
+  color: #1A1A2E !important;
+  background-color: #FFFFFF !important;
+  border-color: #e5e7eb !important;
+  caret-color: #1A1A2E !important;
+}
+
+

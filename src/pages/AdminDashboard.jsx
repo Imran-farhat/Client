@@ -364,7 +364,7 @@ NEW MEMBER REGISTRATION DETAILS
 
   // ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#F4F7FA]">
+    <div className="min-h-screen bg-[#F4F7FA] admin-dashboard">
 
       {/* ── MOBILE TOP BAR ── */}
       <div className="sticky top-0 z-30 flex items-center justify-between bg-[#003366] px-4 py-3 md:hidden shadow-lg">
