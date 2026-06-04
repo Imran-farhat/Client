@@ -151,17 +151,28 @@ function CardFront({ member }) {
       }}>
         {AUTHORITIES.map((auth, i) => (
           <div key={i} style={{ width: '32%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+            {/* Signature image — shown above the line */}
+            <img
+              src={auth.sign}
+              alt={auth.nameTamil}
+              crossOrigin="anonymous"
+              style={{
+                width: '66px',
+                height: '28px',
+                objectFit: 'contain',
+                objectPosition: 'center bottom',
+                display: 'block',
+                mixBlendMode: 'multiply',
+              }}
+            />
+            {/* Signature line */}
+            <div style={{ width: '100%', borderTop: '1px solid #333', marginBottom: '3px' }} />
             {/* Name */}
-            <div style={{ fontSize: '6.5px', fontWeight: '800', color: '#003366', lineHeight: '1.3', wordBreak: 'keep-all', whiteSpace: 'normal' }}>{auth.nameTamil}</div>
+            <div style={{ fontSize: '6.5px', fontWeight: '800', color: '#003366', lineHeight: '1.3' }}>{auth.nameTamil}</div>
             {/* Tamil role */}
             <div style={{ fontSize: '6px', color: '#444', lineHeight: '1.3' }}>{auth.role}</div>
             {/* English role */}
-            <div style={{ fontSize: '5px', color: '#888', marginBottom: '4px' }}>{auth.roleEn}</div>
-            {/* Signature image */}
-            <img src={auth.sign} alt="" crossOrigin="anonymous"
-              style={{ width: '66px', height: '24px', objectFit: 'contain', display: 'block', filter: 'brightness(0)', opacity: 1 }} />
-            {/* Signature line */}
-            <div style={{ width: '100%', borderTop: '1px solid #444', marginTop: '2px' }} />
+            <div style={{ fontSize: '5px', color: '#888' }}>{auth.roleEn}</div>
           </div>
         ))}
       </div>
