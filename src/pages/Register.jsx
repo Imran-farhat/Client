@@ -159,11 +159,45 @@ function Register() {
       localStorage.removeItem('tiwtn_registered');
       localStorage.removeItem('tiwtn_member_data');
 
+      // Send admin email notification via Web3Forms
+      await sendAdminNotification(formData, memberId);
+
       return true;
     } catch (err) {
       console.error('Save error:', err);
       alert('பிழை: ' + err.message);
       return false;
+    }
+  };
+
+  const sendAdminNotification = async (formData, memberId) => {
+    try {
+      const key = import.meta.env.VITE_WEB3FORMS_KEY;
+      if (!key || key === 'YOUR_WEB3FORMS_ACCESS_KEY_HERE') return; // skip if key not set
+      const payload = new FormData();
+      payload.append('access_key', key);
+      payload.append('subject', `புதிய உறுப்பினர் பதிவு / New Member Registered — ${memberId}`);
+      payload.append('from_name', 'TIWTN Website');
+      payload.append('message',
+        `புதிய உறுப்பினர் பதிவு செய்யப்பட்டது:\n\n` +
+        `Member ID : ${memberId}\n` +
+        `Name      : ${formData.fullName}\n` +
+        `Mobile    : ${formData.mobile}\n` +
+        `District  : ${formData.pledgeDistrict}\n` +
+        `Blood Grp : ${formData.bloodGroup}\n` +
+        `DOB       : ${formData.dob}\n` +
+        `Address   : ${formData.address}\n` +
+        `Nominee   : ${formData.nomineeName} (${formData.nomineeMobile})\n` +
+        `Branch    : ${formData.pledgeBranch}\n` +
+        `Referral  : ${formData.referral || '-'}\n` +
+        `Registered: ${new Date().toLocaleString('en-IN')}`
+      );
+      const res = await fetch('https://api.web3forms.com/submit', { method: 'POST', body: payload });
+      const json = await res.json();
+      if (!json.success) console.warn('Web3Forms notice:', json.message);
+    } catch (err) {
+      // Non-blocking — just log
+      console.warn('Admin notification failed:', err.message);
     }
   };
 

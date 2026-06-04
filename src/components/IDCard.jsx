@@ -301,7 +301,7 @@ function CardBack({ member }) {
   );
 }
 
-function IDCard({ member, onReset }) {
+function IDCard({ member, onReset, showReset = true }) {
   const frontRef = useRef(null);
   const backRef = useRef(null);
 
@@ -544,9 +544,11 @@ function IDCard({ member, onReset }) {
         <button type="button" onClick={downloadBoth} style={{ height: '52px', padding: '0 28px', borderRadius: '12px', border: '1.5px solid #FF6B00', background: '#FFFFFF', color: '#FF6B00', fontSize: '14px', fontWeight: 600, cursor: 'pointer', minWidth: '220px' }}>
           இரு பக்கமும் பதிவிறக்கு / Download Both Sides
         </button>
-        <button type="button" onClick={onReset} style={{ height: '52px', padding: '0 28px', borderRadius: '12px', border: '1.5px solid #CCCCCC', background: '#FFFFFF', color: '#003366', fontSize: '14px', fontWeight: 600, cursor: 'pointer', minWidth: '200px' }}>
-          மேலும் ஒருவரை பதிவு / Register Another
-        </button>
+        {showReset && (
+          <button type="button" onClick={onReset} style={{ height: '52px', padding: '0 28px', borderRadius: '12px', border: '1.5px solid #CCCCCC', background: '#FFFFFF', color: '#003366', fontSize: '14px', fontWeight: 600, cursor: 'pointer', minWidth: '200px' }}>
+            மேலும் ஒருவரை பதிவு / Register Another
+          </button>
+        )}
       </div>
 
       <style>{`

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabase/client';
 import IDCard from '../components/IDCard';
@@ -13,22 +13,51 @@ const TAMIL_NADU_DISTRICTS = [
   'திருப்பூர்', 'வேலூர்', 'விழுப்புரம்', 'விருதுநகர்'
 ];
 
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 const ITEMS_PER_PAGE = 10;
 
+const EMPTY_REGISTER_FORM = {
+  fullName: '', address: '', companyAddress: '', bloodGroup: '',
+  dob: '', aadhaar: '', mobile: '', nomineeName: '', nomineeMobile: '',
+  pledgeDistrict: '', pledgeBranch: '', referral: '', pledgeName: '',
+  photoPreview: null,
+};
+
+function formatDateDisplay() {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+}
+
+// ── Sidebar nav items ────────────────────────────────────────
+const NAV = [
+  { id: 'overview', icon: '📊', label: 'Overview' },
+  { id: 'members',  icon: '👥', label: 'All Members' },
+  { id: 'register', icon: '📝', label: 'Register Member' },
+  { id: 'users',    icon: '🙍', label: 'All Users' },
+  { id: 'district', icon: '🗺️', label: 'By District' },
+];
+
 function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [members, setMembers] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [loadingData, setLoadingData] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab]       = useState('overview');
+  const [members, setMembers]           = useState([]);
+  const [users, setUsers]               = useState([]);
+  const [loadingData, setLoadingData]   = useState(true);
+  const [searchQuery, setSearchQuery]   = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
   const [selectedMember, setSelectedMember] = useState(null);
-  const [editMember, setEditMember] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [editMember, setEditMember]     = useState(null);
+  const [currentPage, setCurrentPage]   = useState(1);
+
+  // Register-on-behalf state
+  const [regForm, setRegForm]           = useState(EMPTY_REGISTER_FORM);
+  const [regErrors, setRegErrors]       = useState({});
+  const [regSubmitting, setRegSubmitting] = useState(false);
+  const [regSuccess, setRegSuccess]     = useState(null); // saved member row
+  const joiningDate = useMemo(() => formatDateDisplay(), []);
 
   const { logout } = useAuth();
 
-  // ── Data loaders ────────────────────────────────────────────
+  // ── Data loaders ─────────────────────────────────────────────
   const loadMembers = async () => {
     const { data } = await supabase
       .from('members')
@@ -47,25 +76,20 @@ function AdminDashboard() {
 
   useEffect(() => {
     Promise.all([loadMembers(), loadUsers()]).finally(() => setLoadingData(false));
-
-    // Real-time updates for members table
     const sub = supabase
       .channel('admin-changes')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'members' },
-        () => loadMembers()
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, () => loadMembers())
       .subscribe();
-
     return () => supabase.removeChannel(sub);
   }, []);
 
-  // ── Derived data ────────────────────────────────────────────
+  // ── Derived data ─────────────────────────────────────────────
   const filteredMembers = members.filter(m => {
-    const matchSearch = !searchQuery ||
-      m.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.mobile?.includes(searchQuery) ||
-      m.member_id?.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = searchQuery.toLowerCase();
+    const matchSearch = !q ||
+      m.full_name?.toLowerCase().includes(q) ||
+      m.mobile?.includes(q) ||
+      m.member_id?.toLowerCase().includes(q);
     const matchDistrict = !districtFilter || m.district === districtFilter;
     return matchSearch && matchDistrict;
   });
@@ -86,7 +110,7 @@ function AdminDashboard() {
   }));
   const activeDistricts = districtsCount.filter(d => d.count > 0).length;
 
-  // ── Actions ─────────────────────────────────────────────────
+  // ── CRUD actions ─────────────────────────────────────────────
   const deleteMember = async (memberId, userId) => {
     if (!window.confirm('இந்த உறுப்பினரை நீக்கவா? / Delete this member?')) return;
     await supabase.from('members').delete().eq('member_id', memberId);
@@ -102,12 +126,12 @@ function AdminDashboard() {
   const saveEditMember = async () => {
     if (!editMember) return;
     await supabase.from('members').update({
-      full_name: editMember.full_name,
-      mobile: editMember.mobile,
-      district: editMember.district,
-      address: editMember.address,
+      full_name:   editMember.full_name,
+      mobile:      editMember.mobile,
+      district:    editMember.district,
+      address:     editMember.address,
       blood_group: editMember.blood_group,
-      dob: editMember.dob
+      dob:         editMember.dob,
     }).eq('member_id', editMember.member_id);
     setEditMember(null);
     await loadMembers();
@@ -118,18 +142,16 @@ function AdminDashboard() {
     await loadUsers();
   };
 
+  // ── CSV Export ───────────────────────────────────────────────
   const exportCSV = () => {
     const headers = [
-      'Member ID', 'Full Name', 'DOB', 'Blood Group',
-      'Mobile', 'Aadhar', 'District', 'Address',
-      'Nominee', 'Branch', 'Joined Date', 'Registered At'
+      'Member ID','Full Name','DOB','Blood Group','Mobile','Aadhar',
+      'District','Address','Nominee','Branch','Joined Date','Registered At'
     ];
     const rows = members.map(m => [
-      m.member_id, m.full_name, m.dob,
-      m.blood_group, m.mobile, m.aadhar,
-      m.district, m.address, m.nominee_name,
-      m.branch, m.join_date,
-      new Date(m.registered_at).toLocaleDateString('en-IN')
+      m.member_id, m.full_name, m.dob, m.blood_group, m.mobile,
+      m.aadhar, m.district, m.address, m.nominee_name, m.branch,
+      m.join_date, new Date(m.registered_at).toLocaleDateString('en-IN')
     ]);
     const csv = [headers, ...rows]
       .map(r => r.map(v => `"${v || ''}"`).join(','))
@@ -141,24 +163,98 @@ function AdminDashboard() {
     a.click();
   };
 
-  // Map Supabase member row → IDCard prop shape
+  // ── Map DB row → IDCard prop shape ────────────────────────────
   const toIdCardShape = (m) => m ? ({
-    memberId: m.member_id,
-    fullName: m.full_name,
-    dob: m.dob,
-    bloodGroup: m.blood_group,
-    mobile: m.mobile,
-    district: m.district,
-    address: m.address,
-    nomineeName: m.nominee_name,
-    joinDate: m.join_date,
-    pledgeDistrict: m.district,
-    pledgeBranch: m.branch,
-    photoPreview: m.photo_base64,
+    memberId: m.member_id, fullName: m.full_name, dob: m.dob,
+    bloodGroup: m.blood_group, mobile: m.mobile, district: m.district,
+    address: m.address, nomineeName: m.nominee_name, joinDate: m.join_date,
+    pledgeDistrict: m.district, pledgeBranch: m.branch, photoPreview: m.photo_base64,
   }) : null;
 
+  // ── Register-on-behalf logic ──────────────────────────────────
+  const handleRegChange = (field) => (e) => {
+    setRegForm(prev => ({ ...prev, [field]: e.target.value }));
+    if (regErrors[field]) setRegErrors(prev => { const n = {...prev}; delete n[field]; return n; });
+  };
+
+  const handleRegPhoto = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setRegForm(prev => ({ ...prev, photoPreview: reader.result }));
+    reader.readAsDataURL(file);
+  };
+
+  const validateReg = () => {
+    const e = {};
+    if (!regForm.fullName.trim())       e.fullName = 'Required';
+    if (!regForm.address.trim())        e.address = 'Required';
+    if (!regForm.bloodGroup)            e.bloodGroup = 'Required';
+    if (!regForm.dob)                   e.dob = 'Required';
+    if (!/^\d{12}$/.test(regForm.aadhaar)) e.aadhaar = '12 digits required';
+    if (!/^\d{10}$/.test(regForm.mobile))  e.mobile = '10 digits required';
+    if (!regForm.nomineeName.trim())    e.nomineeName = 'Required';
+    if (!regForm.pledgeDistrict)        e.pledgeDistrict = 'Select district';
+    if (!regForm.pledgeBranch.trim())   e.pledgeBranch = 'Required';
+    return e;
+  };
+
+  const handleRegSubmit = async () => {
+    const errs = validateReg();
+    if (Object.keys(errs).length) { setRegErrors(errs); return; }
+    setRegSubmitting(true);
+    const memberId = `TIWTN-${new Date().getFullYear()}-${String(Math.floor(10000 + Math.random() * 90000)).padStart(5,'0')}`;
+    const record = {
+      member_id:     memberId,
+      user_id:       null,
+      full_name:     regForm.fullName,
+      dob:           regForm.dob,
+      blood_group:   regForm.bloodGroup,
+      mobile:        regForm.mobile,
+      aadhar:        regForm.aadhaar,
+      address:       regForm.address,
+      org_address:   regForm.companyAddress || '',
+      district:      regForm.pledgeDistrict,
+      branch:        regForm.pledgeBranch || '',
+      nominee_name:  regForm.nomineeName || '',
+      nominee_phone: regForm.nomineeMobile || '',
+      join_date:     joiningDate,
+      referrer:      regForm.referral || '',
+      photo_base64:  regForm.photoPreview || null,
+      registered_at: new Date().toISOString(),
+    };
+    const { data, error } = await supabase.from('members').insert(record).select().single();
+    setRegSubmitting(false);
+    if (error) { alert('Error: ' + error.message); return; }
+    setRegSuccess(data);
+    await loadMembers();
+  };
+
+  const resetRegForm = () => {
+    setRegForm(EMPTY_REGISTER_FORM);
+    setRegErrors({});
+    setRegSuccess(null);
+  };
+
+  // ── Input helper ─────────────────────────────────────────────
+  const inp = (field, label, type = 'text', extra = {}) => (
+    <div>
+      <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">{label}</label>
+      <input
+        type={type}
+        value={regForm[field] || ''}
+        onChange={handleRegChange(field)}
+        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${regErrors[field] ? 'border-red-400' : 'border-gray-200'}`}
+        {...extra}
+      />
+      {regErrors[field] && <p className="mt-0.5 text-xs text-red-500">{regErrors[field]}</p>}
+    </div>
+  );
+
+  // ─────────────────────────────────────────────────────────────
   return (
     <div className="flex min-h-screen bg-[#F4F7FA]">
+
       {/* SIDEBAR */}
       <div className="w-[220px] bg-[#003366] text-white flex flex-col fixed h-full z-10">
         <div className="p-6 border-b border-white/10 flex items-center gap-3">
@@ -166,19 +262,18 @@ function AdminDashboard() {
           <span className="font-bold text-lg tracking-wide text-white">Admin Panel</span>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2">
-          {[
-            { id: 'overview', label: '📊 Overview' },
-            { id: 'members', label: '👥 All Members' },
-            { id: 'users',   label: '🙍 All Users' },
-            { id: 'district', label: '🗺️ By District' },
-          ].map(tab => (
+        <nav className="flex-1 p-4 space-y-1">
+          {NAV.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`w-full text-left px-4 py-3 rounded text-sm transition ${activeTab === tab.id ? 'bg-white/10 text-[#FFB347] border-l-4 border-[#FFB347]' : 'text-gray-300 hover:bg-white/5 hover:text-white'}`}
+              className={`w-full text-left px-4 py-3 rounded text-sm transition ${
+                activeTab === tab.id
+                  ? 'bg-white/10 text-[#FFB347] border-l-4 border-[#FFB347]'
+                  : 'text-gray-300 hover:bg-white/5 hover:text-white'
+              }`}
             >
-              {tab.label}
+              {tab.icon} {tab.label}
             </button>
           ))}
           <button onClick={exportCSV} className="w-full text-left px-4 py-3 rounded text-sm text-gray-300 hover:bg-white/5 hover:text-white transition">
@@ -200,54 +295,53 @@ function AdminDashboard() {
         {activeTab === 'overview' && (
           <div className="space-y-6 max-w-5xl">
             <h2 className="text-2xl font-bold text-[#003366]">Dashboard Overview</h2>
-
             <div className="grid grid-cols-4 gap-4">
-              <div className="bg-white p-5 rounded-lg border-l-4 border-[#FFB347] shadow-sm border border-gray-100">
-                <p className="text-sm text-gray-500 font-semibold uppercase tracking-wider">Total Members</p>
-                <p className="text-4xl font-display text-[#003366] mt-2">{loadingData ? '…' : members.length}</p>
-              </div>
-              <div className="bg-white p-5 rounded-lg border-l-4 border-[#FFB347] shadow-sm border border-gray-100">
-                <p className="text-sm text-gray-500 font-semibold uppercase tracking-wider">Today Registered</p>
-                <p className="text-4xl font-display text-[#003366] mt-2">{loadingData ? '…' : todayCount}</p>
-              </div>
-              <div className="bg-white p-5 rounded-lg border-l-4 border-[#FFB347] shadow-sm border border-gray-100">
-                <p className="text-sm text-gray-500 font-semibold uppercase tracking-wider">Districts Covered</p>
-                <p className="text-4xl font-display text-[#003366] mt-2">{loadingData ? '…' : activeDistricts}</p>
-              </div>
-              <div className="bg-white p-5 rounded-lg border-l-4 border-[#FFB347] shadow-sm border border-gray-100">
-                <p className="text-sm text-gray-500 font-semibold uppercase tracking-wider">Registered Users</p>
-                <p className="text-4xl font-display text-[#003366] mt-2">{loadingData ? '…' : users.length}</p>
-              </div>
+              {[
+                { label: 'Total Members',    value: members.length,         color: '#FFB347' },
+                { label: 'Today Registered', value: todayCount,             color: '#22C55E' },
+                { label: 'Districts Covered',value: activeDistricts,        color: '#3B82F6' },
+                { label: 'Registered Users', value: users.length,           color: '#A855F7' },
+              ].map(card => (
+                <div key={card.label} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm" style={{ borderLeft: `4px solid ${card.color}` }}>
+                  <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">{card.label}</p>
+                  <p className="text-4xl font-display mt-2" style={{ color: '#003366' }}>
+                    {loadingData ? '…' : card.value}
+                  </p>
+                </div>
+              ))}
             </div>
 
-            <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-5 border-b border-gray-100 bg-gray-50/50">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
                 <h3 className="font-semibold text-[#003366]">Recent Registrations</h3>
+                <button onClick={() => setActiveTab('members')} className="text-xs text-[#FF6B00] hover:underline">View All →</button>
               </div>
-              <div className="p-0">
-                {loadingData ? (
-                  <p className="p-6 text-gray-400 text-sm text-center">Loading...</p>
-                ) : members.slice(0, 5).map((m, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-4 border-b border-gray-50 hover:bg-gray-50 transition">
-                    <div className="flex items-center gap-3">
+              {loadingData ? (
+                <p className="p-6 text-gray-400 text-sm text-center">Loading...</p>
+              ) : members.slice(0, 8).map((m, idx) => (
+                <div key={idx} className="flex items-center justify-between p-4 border-b border-gray-50 hover:bg-gray-50 transition">
+                  <div className="flex items-center gap-3">
+                    {m.photo_base64 ? (
+                      <img src={m.photo_base64} alt="" className="w-10 h-10 rounded-full object-cover border border-[#FFB347]/30" />
+                    ) : (
                       <div className="w-10 h-10 rounded-full bg-[#FFB347]/20 text-[#FF6B00] flex items-center justify-center font-bold text-sm">
                         {m.full_name?.charAt(0)}
                       </div>
-                      <div>
-                        <p className="font-semibold text-gray-800 text-sm">{m.full_name}</p>
-                        <p className="text-xs text-gray-500">{m.district}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-mono text-[#003366]">{m.member_id}</p>
-                      <p className="text-xs text-gray-500">{m.join_date}</p>
+                    )}
+                    <div>
+                      <p className="font-semibold text-gray-800 text-sm">{m.full_name}</p>
+                      <p className="text-xs text-gray-500">{m.district}</p>
                     </div>
                   </div>
-                ))}
-                {!loadingData && members.length === 0 && (
-                  <p className="p-6 text-gray-400 text-sm text-center">No registrations yet.</p>
-                )}
-              </div>
+                  <div className="text-right">
+                    <p className="text-sm font-mono text-[#003366]">{m.member_id}</p>
+                    <p className="text-xs text-gray-500">{m.join_date}</p>
+                  </div>
+                </div>
+              ))}
+              {!loadingData && members.length === 0 && (
+                <p className="p-6 text-gray-400 text-sm text-center">No registrations yet.</p>
+              )}
             </div>
           </div>
         )}
@@ -257,23 +351,28 @@ function AdminDashboard() {
           <div className="space-y-6 max-w-6xl">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-[#003366]">All Members</h2>
-              <button onClick={exportCSV} className="bg-[#FFB347] text-black px-4 py-2 rounded font-semibold text-sm shadow-sm hover:opacity-90">
-                📥 Export CSV
-              </button>
+              <div className="flex gap-3">
+                <button onClick={() => setActiveTab('register')} className="bg-[#003366] text-white px-4 py-2 rounded font-semibold text-sm shadow-sm hover:opacity-90">
+                  ➕ Register Member
+                </button>
+                <button onClick={exportCSV} className="bg-[#FFB347] text-black px-4 py-2 rounded font-semibold text-sm shadow-sm hover:opacity-90">
+                  📥 Export CSV
+                </button>
+              </div>
             </div>
 
-            <div className="flex gap-4 mb-6">
+            <div className="flex gap-4">
               <input
                 type="text"
-                placeholder="பெயர், மொபைல் அல்லது உறுப்பினர் எண் தேடுக..."
+                placeholder="Search name, mobile, member ID…"
                 value={searchQuery}
                 onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                className="flex-1 p-3 rounded-lg border border-gray-200 text-black focus:outline-none focus:border-[#FFB347] focus:ring-1 focus:ring-[#FFB347] shadow-sm"
+                className="flex-1 p-3 rounded-lg border border-gray-200 text-black focus:outline-none focus:border-[#FFB347] shadow-sm text-sm"
               />
               <select
                 value={districtFilter}
                 onChange={e => { setDistrictFilter(e.target.value); setCurrentPage(1); }}
-                className="w-64 p-3 rounded-lg border border-gray-200 text-black focus:outline-none focus:border-[#FFB347] shadow-sm"
+                className="w-56 p-3 rounded-lg border border-gray-200 text-black focus:outline-none focus:border-[#FFB347] shadow-sm text-sm"
               >
                 <option value="">All Districts</option>
                 {TAMIL_NADU_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
@@ -291,7 +390,7 @@ function AdminDashboard() {
                     <th className="p-4 font-semibold">District</th>
                     <th className="p-4 font-semibold">Mobile</th>
                     <th className="p-4 font-semibold">Joined</th>
-                    <th className="p-4 font-semibold text-center">Action</th>
+                    <th className="p-4 font-semibold text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
@@ -299,12 +398,12 @@ function AdminDashboard() {
                     <tr><td colSpan="8" className="p-8 text-center text-gray-400">Loading...</td></tr>
                   ) : paginatedMembers.map((m, idx) => (
                     <tr key={m.member_id} className="border-b border-gray-100 hover:bg-gray-50 hover:border-l-4 hover:border-l-[#FFB347] transition-all group">
-                      <td className="p-4 text-gray-500 group-hover:pl-3">{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
+                      <td className="p-4 text-gray-500">{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
                       <td className="p-4">
                         {m.photo_base64 ? (
                           <img src={m.photo_base64} alt="" className="w-9 h-9 rounded-full object-cover border border-[#FFB347]/30" />
                         ) : (
-                          <div className="w-9 h-9 rounded-full bg-[#FFB347]/20 text-[#FF6B00] flex items-center justify-center font-bold text-xs border border-[#FFB347]/30">
+                          <div className="w-9 h-9 rounded-full bg-[#FFB347]/20 text-[#FF6B00] flex items-center justify-center font-bold text-xs">
                             {m.full_name?.charAt(0)}
                           </div>
                         )}
@@ -314,10 +413,12 @@ function AdminDashboard() {
                       <td className="p-4 text-gray-600">{m.district}</td>
                       <td className="p-4 text-gray-600">{m.mobile}</td>
                       <td className="p-4 text-gray-600">{m.join_date}</td>
-                      <td className="p-4 text-center flex gap-1 justify-center">
-                        <button onClick={() => setSelectedMember(m)} className="p-2 text-blue-600 hover:bg-blue-50 rounded transition" title="View">👁️</button>
-                        <button onClick={() => setEditMember({ ...m })} className="p-2 text-yellow-600 hover:bg-yellow-50 rounded transition" title="Edit">✏️</button>
-                        <button onClick={() => deleteMember(m.member_id, m.user_id)} className="p-2 text-red-500 hover:bg-red-50 rounded transition" title="Delete">🗑️</button>
+                      <td className="p-4 text-center">
+                        <div className="flex gap-1 justify-center">
+                          <button onClick={() => setSelectedMember(m)} className="p-2 text-blue-600 hover:bg-blue-50 rounded transition" title="View">👁️</button>
+                          <button onClick={() => setEditMember({ ...m })} className="p-2 text-yellow-600 hover:bg-yellow-50 rounded transition" title="Edit">✏️</button>
+                          <button onClick={() => deleteMember(m.member_id, m.user_id)} className="p-2 text-red-500 hover:bg-red-50 rounded transition" title="Delete">🗑️</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -329,14 +430,131 @@ function AdminDashboard() {
 
               <div className="p-4 border-t border-gray-100 flex items-center justify-between bg-gray-50">
                 <span className="text-sm text-gray-600">
-                  Showing {filteredMembers.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredMembers.length)} of {filteredMembers.length} members
+                  Showing {filteredMembers.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredMembers.length)} of {filteredMembers.length}
                 </span>
                 <div className="flex gap-2">
-                  <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="px-3 py-1 border border-gray-300 rounded text-sm text-black disabled:opacity-50 hover:bg-white transition">Prev</button>
-                  <button disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)} className="px-3 py-1 border border-gray-300 rounded text-sm text-black disabled:opacity-50 hover:bg-white transition">Next</button>
+                  <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="px-3 py-1 border border-gray-300 rounded text-sm text-black disabled:opacity-40 hover:bg-white transition">Prev</button>
+                  <button disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)} className="px-3 py-1 border border-gray-300 rounded text-sm text-black disabled:opacity-40 hover:bg-white transition">Next</button>
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ── REGISTER ON BEHALF ── */}
+        {activeTab === 'register' && (
+          <div className="max-w-3xl space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-[#003366]">📝 Register Member on Behalf</h2>
+              {regSuccess && (
+                <button onClick={resetRegForm} className="text-sm border border-gray-300 px-4 py-2 rounded hover:bg-gray-50 transition text-gray-600">
+                  + Register Another
+                </button>
+              )}
+            </div>
+
+            {regSuccess ? (
+              /* ── SUCCESS: show ID Card ─────────────── */
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 space-y-6">
+                <div className="flex items-center gap-3 text-green-600">
+                  <span className="text-2xl">✅</span>
+                  <div>
+                    <p className="font-bold text-lg">Successfully Registered!</p>
+                    <p className="text-sm text-gray-500">Member ID: <span className="font-mono font-bold text-[#003366]">{regSuccess.member_id}</span></p>
+                  </div>
+                </div>
+                <div className="flex justify-center">
+                  <div className="transform scale-90 origin-top">
+                    <IDCard member={toIdCardShape(regSuccess)} showReset={false} />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* ── FORM ─────────────────────────────── */
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  {inp('fullName',      'Full Name / முழு பெயர்')}
+                  {inp('mobile',        'Mobile / செல் நம்பர்', 'text', { maxLength: 10, inputMode: 'numeric', placeholder: '10 digits' })}
+                  {inp('dob',           'Date of Birth / பிறந்த தேதி', 'date')}
+                  {inp('aadhaar',       'Aadhaar / ஆதார் எண்', 'text', { maxLength: 12, inputMode: 'numeric', placeholder: '12 digits' })}
+                  {inp('nomineeName',   'Nominee Name / வாரிசுதாரர் பெயர்')}
+                  {inp('nomineeMobile', 'Nominee Mobile', 'text', { maxLength: 10, inputMode: 'numeric', placeholder: '10 digits' })}
+                  {inp('pledgeBranch',  'Branch / கிளை')}
+                  {inp('referral',      'Referral / பரிந்துரை')}
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Blood Group / இரத்த பிரிவு</label>
+                  <select
+                    value={regForm.bloodGroup}
+                    onChange={handleRegChange('bloodGroup')}
+                    className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${regErrors.bloodGroup ? 'border-red-400' : 'border-gray-200'}`}
+                  >
+                    <option value="">-- Select --</option>
+                    {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
+                  </select>
+                  {regErrors.bloodGroup && <p className="mt-0.5 text-xs text-red-500">{regErrors.bloodGroup}</p>}
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">District / மாவட்டம்</label>
+                  <select
+                    value={regForm.pledgeDistrict}
+                    onChange={handleRegChange('pledgeDistrict')}
+                    className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${regErrors.pledgeDistrict ? 'border-red-400' : 'border-gray-200'}`}
+                  >
+                    <option value="">-- Select District --</option>
+                    {TAMIL_NADU_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                  {regErrors.pledgeDistrict && <p className="mt-0.5 text-xs text-red-500">{regErrors.pledgeDistrict}</p>}
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Address / முகவரி</label>
+                  <textarea
+                    rows={2}
+                    value={regForm.address}
+                    onChange={handleRegChange('address')}
+                    className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] resize-none ${regErrors.address ? 'border-red-400' : 'border-gray-200'}`}
+                  />
+                  {regErrors.address && <p className="mt-0.5 text-xs text-red-500">{regErrors.address}</p>}
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Company Address / நிறுவன முகவரி</label>
+                  <textarea
+                    rows={2}
+                    value={regForm.companyAddress}
+                    onChange={handleRegChange('companyAddress')}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] resize-none"
+                  />
+                </div>
+
+                {/* Photo upload */}
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Member Photo</label>
+                  <div className="flex items-center gap-4">
+                    <label className="cursor-pointer">
+                      {regForm.photoPreview ? (
+                        <img src={regForm.photoPreview} alt="Preview" className="w-20 h-24 object-cover rounded border-2 border-[#003366]" />
+                      ) : (
+                        <div className="w-20 h-24 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400 text-2xl">📷</div>
+                      )}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleRegPhoto} />
+                    </label>
+                    <p className="text-xs text-gray-500">Click to upload member photo<br />(Optional but recommended)</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleRegSubmit}
+                  disabled={regSubmitting}
+                  className="w-full rounded-lg bg-[#003366] text-white py-3 font-bold text-sm hover:opacity-90 transition disabled:opacity-60"
+                >
+                  {regSubmitting ? 'Registering…' : '📝 Register Member'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -396,16 +614,25 @@ function AdminDashboard() {
         {/* ── BY DISTRICT ── */}
         {activeTab === 'district' && (
           <div className="max-w-6xl">
-            <h2 className="text-2xl font-bold text-[#003366] mb-6">Members by District</h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-[#003366]">Members by District</h2>
+              <button onClick={exportCSV} className="bg-[#FFB347] text-black px-4 py-2 rounded font-semibold text-sm shadow-sm hover:opacity-90">
+                📥 Export All CSV
+              </button>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {districtsCount.map(d => (
                 <button
                   key={d.name}
                   onClick={() => { setDistrictFilter(d.name); setActiveTab('members'); setCurrentPage(1); }}
                   disabled={d.count === 0}
-                  className={`p-4 rounded-xl border text-left transition ${d.count > 0 ? 'bg-white border-[#FFB347] shadow-sm hover:-translate-y-1' : 'bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed'}`}
+                  className={`p-4 rounded-xl border text-left transition ${
+                    d.count > 0
+                      ? 'bg-white border-[#FFB347] shadow-sm hover:-translate-y-1 hover:shadow-md'
+                      : 'bg-gray-50 border-gray-200 opacity-50 cursor-not-allowed'
+                  }`}
                 >
-                  <p className={`font-semibold ${d.count > 0 ? 'text-[#003366]' : 'text-gray-500'}`}>{d.name}</p>
+                  <p className={`font-semibold text-sm ${d.count > 0 ? 'text-[#003366]' : 'text-gray-500'}`}>{d.name}</p>
                   <div className="mt-2 flex justify-between items-center">
                     <span className="text-xs text-gray-500">Members</span>
                     <span className={`text-sm font-bold px-2 py-0.5 rounded-full ${d.count > 0 ? 'bg-[#FFB347]/20 text-[#FF6B00]' : 'bg-gray-200 text-gray-500'}`}>{d.count}</span>
@@ -428,18 +655,18 @@ function AdminDashboard() {
               <h3 className="text-2xl font-bold text-[#003366] mb-6 border-b pb-2">Member Details</h3>
               <div className="grid grid-cols-2 gap-y-4 gap-x-6 text-sm">
                 {[
-                  ['Full Name', selectedMember.full_name],
-                  ['Member ID', selectedMember.member_id],
-                  ['Mobile', selectedMember.mobile],
-                  ['Date of Birth', selectedMember.dob],
+                  ['Full Name',    selectedMember.full_name],
+                  ['Member ID',   selectedMember.member_id],
+                  ['Mobile',      selectedMember.mobile],
+                  ['Date of Birth',selectedMember.dob],
                   ['Blood Group', selectedMember.blood_group],
-                  ['District', selectedMember.district],
-                  ['Aadhar', selectedMember.aadhar],
-                  ['Branch', selectedMember.branch],
-                  ['Nominee Name', selectedMember.nominee_name],
-                  ['Nominee Phone', selectedMember.nominee_phone],
+                  ['District',    selectedMember.district],
+                  ['Aadhar',      selectedMember.aadhar],
+                  ['Branch',      selectedMember.branch],
+                  ['Nominee Name',selectedMember.nominee_name],
+                  ['Nominee Phone',selectedMember.nominee_phone],
                   ['Joined Date', selectedMember.join_date],
-                  ['Referrer', selectedMember.referrer],
+                  ['Referrer',    selectedMember.referrer],
                 ].map(([label, val]) => (
                   <div key={label}>
                     <p className="text-gray-500 text-xs uppercase mb-1">{label}</p>
@@ -451,17 +678,25 @@ function AdminDashboard() {
                   <p className="font-semibold text-gray-900">{selectedMember.address || '-'}</p>
                 </div>
               </div>
-              <button
-                onClick={() => deleteMember(selectedMember.member_id, selectedMember.user_id)}
-                className="mt-6 w-full rounded-lg border border-red-300 py-2 text-sm text-red-500 hover:bg-red-50 transition"
-              >
-                🗑️ Delete Member
-              </button>
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => { setEditMember({ ...selectedMember }); setSelectedMember(null); }}
+                  className="flex-1 rounded-lg bg-[#FFB347] text-black py-2 font-semibold text-sm hover:opacity-90 transition"
+                >
+                  ✏️ Edit Member
+                </button>
+                <button
+                  onClick={() => deleteMember(selectedMember.member_id, selectedMember.user_id)}
+                  className="flex-1 rounded-lg border border-red-300 py-2 text-sm text-red-500 hover:bg-red-50 transition"
+                >
+                  🗑️ Delete Member
+                </button>
+              </div>
             </div>
 
-            <div className="p-8 bg-gray-50 flex items-center justify-center min-w-[350px]">
+            <div className="p-8 bg-gray-50 flex items-center justify-center min-w-[350px] overflow-y-auto">
               <div className="transform scale-90 origin-center">
-                <IDCard member={toIdCardShape(selectedMember)} />
+                <IDCard member={toIdCardShape(selectedMember)} showReset={false} />
               </div>
             </div>
           </div>
@@ -476,11 +711,11 @@ function AdminDashboard() {
             <h3 className="text-xl font-bold text-[#003366] mb-6">Edit Member</h3>
             <div className="space-y-4 text-sm">
               {[
-                ['full_name', 'Full Name', 'text'],
-                ['mobile', 'Mobile', 'text'],
-                ['dob', 'DOB', 'date'],
+                ['full_name',   'Full Name',   'text'],
+                ['mobile',      'Mobile',      'text'],
+                ['dob',         'DOB',         'date'],
                 ['blood_group', 'Blood Group', 'text'],
-                ['address', 'Address', 'text'],
+                ['address',     'Address',     'text'],
               ].map(([key, label, type]) => (
                 <div key={key}>
                   <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">{label}</label>

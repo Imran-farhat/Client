@@ -217,7 +217,7 @@ function Profile() {
               {idCardMember && (
                 <div className="mb-6 flex justify-center">
                   <div className="transform scale-[0.85] origin-top">
-                    <IDCard member={idCardMember} />
+                    <IDCard member={idCardMember} showReset={false} />
                   </div>
                 </div>
               )}
@@ -241,12 +241,7 @@ function Profile() {
                 </div>
               ))}
 
-              <button
-                className="button-amber mt-6 w-full text-black py-3 rounded-xl font-bold"
-                onClick={() => alert('Download coming soon!')}
-              >
-                Download ID Card
-              </button>
+
             </div>
           ) : (
             <div style={{ textAlign: 'center', paddingTop: '2rem', paddingBottom: '2rem' }}>

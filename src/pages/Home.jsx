@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ParticleBackground from '../components/ParticleBackground';
 import OrgLogo from '../components/OrgLogo';
+import { supabase } from '../supabase/client';
 
-const stats = [
-  { num: 5200, label: 'மொத்த உறுப்பினர்கள்', suffix: '+' },
-  { num: 3800, label: 'சான்றிதழ் பெற்றவர்கள்', suffix: '+' },
-  { num: 15,   label: 'செயல்பாட்டு ஆண்டுகள்', suffix: '+' },
-  { num: 38,   label: 'கிளைகள்', suffix: '' },
+const STATIC_STATS = [
+  { label: 'சான்றிதழ் பெற்றவர்கள்', suffix: '+', staticNum: 3800 },
+  { label: 'செயல்பாட்டு ஆண்டுகள்', suffix: '+', staticNum: 15 },
+  { label: 'கிளைகள்', suffix: '', staticNum: 38 },
 ];
 
 const testimonials = [
@@ -17,20 +17,46 @@ const testimonials = [
 ];
 
 function Home() {
-  const [count, setCount] = useState([0, 0, 0, 0]);
+  const [memberCount, setMemberCount] = useState(null);
+  const [count, setCount] = useState([0, 0, 0, 0]); // [members, certified, years, branches]
 
+  // Fetch live member count from Supabase
   useEffect(() => {
+    const fetchCount = async () => {
+      const { count: total } = await supabase
+        .from('members')
+        .select('*', { count: 'exact', head: true });
+      setMemberCount(total ?? 0);
+    };
+    fetchCount();
+
+    // Real-time subscription so count updates as new members register
+    const sub = supabase
+      .channel('home-member-count')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, fetchCount)
+      .subscribe();
+    return () => supabase.removeChannel(sub);
+  }, []);
+
+  // Animate counters
+  useEffect(() => {
+    const stats = [
+      memberCount ?? 0,
+      3800,
+      15,
+      38,
+    ];
     const duration = 2000;
     const steps = 60;
     const interval = duration / steps;
 
-    stats.forEach((stat, index) => {
+    stats.forEach((target, index) => {
       let current = 0;
-      const increment = stat.num / steps;
+      const increment = target / steps;
       const timer = setInterval(() => {
         current += increment;
-        if (current >= stat.num) {
-          current = stat.num;
+        if (current >= target) {
+          current = target;
           clearInterval(timer);
         }
         setCount((prev) => {
@@ -40,7 +66,14 @@ function Home() {
         });
       }, interval);
     });
-  }, []);
+  }, [memberCount]); // re-run once memberCount arrives
+
+  const displayStats = [
+    { num: count[0], label: 'மொத்த உறுப்பினர்கள்', suffix: '', live: true },
+    { num: count[1], label: 'சான்றிதழ் பெற்றவர்கள்', suffix: '+' },
+    { num: count[2], label: 'செயல்பாட்டு ஆண்டுகள்', suffix: '+' },
+    { num: count[3], label: 'கிளைகள்', suffix: '' },
+  ];
 
   return (
     <section className="relative overflow-hidden bg-hero px-6 py-16 md:px-10">
@@ -78,17 +111,20 @@ function Home() {
 
           <div className="rounded-[32px] border border-[var(--border)] bg-card p-8" style={{ boxShadow: 'var(--card-shadow)' }}>
             <div className="grid grid-cols-2 gap-6">
-              {stats.map((stat, index) => (
+              {displayStats.map((stat, index) => (
                 <div key={stat.label} className="rounded-3xl p-6 text-center" style={{
                   backgroundColor: 'var(--bg-primary)',
                   borderLeft: '3px solid var(--amber)',
                   boxShadow: 'var(--card-shadow)',
                 }}>
                   <p className="font-display" style={{ fontSize: '2.8rem', color: 'var(--navy)' }}>
-                    {count[index]}
+                    {stat.num}
                     <span style={{ color: 'var(--amber)' }}>{stat.suffix}</span>
                   </p>
                   <p className="mt-2" style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{stat.label}</p>
+                  {stat.live && (
+                    <p style={{ fontSize: '10px', color: '#22C55E', marginTop: '2px', fontWeight: 600 }}>🟢 Live</p>
+                  )}
                 </div>
               ))}
             </div>
