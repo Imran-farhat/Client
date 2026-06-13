@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabase/client';
 import IDCard from '../components/IDCard';
 import { generateMemberId } from '../utils/memberIdUtils';
+import { printMemberForm } from '../utils/printMemberForm';
 
 const TAMIL_NADU_DISTRICTS = [
   'அரியலூர்', 'சேலம்', 'சென்னை', 'கோயம்புத்தூர்', 'கடலூர்', 'தர்மபுரி', 'திண்டுக்கல்',
@@ -32,11 +33,246 @@ function formatDateDisplay() {
 const NAV = [
   { id: 'overview', icon: '📊', label: 'Overview' },
   { id: 'members',  icon: '👥', label: 'All Members' },
+  { id: 'verify',   icon: '✅', label: 'Verify Members' },
   { id: 'register', icon: '📝', label: 'Register Member' },
   { id: 'users',    icon: '🙍', label: 'All Users' },
   { id: 'district', icon: '🗺️', label: 'By District' },
   { id: 'gallery',  icon: '🖼️', label: 'Gallery' },
 ];
+
+function VerifyTabContent({ members, verifyMember, unverifyMember, setEditMember, printMemberForm }) {
+  const [verifyFilter, setVerifyFilter] = useState('pending')
+
+  const filteredForVerify = members.filter(m =>
+    verifyFilter === 'all' ? true
+    : verifyFilter === 'pending' ? !m.verified
+    : m.verified
+  )
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+        {[
+          { id: 'pending', label: '⏳ நிலுவை / Pending' },
+          { id: 'verified', label: '✅ சரிபார்க்கப்பட்டது / Verified' },
+          { id: 'all', label: '📋 அனைத்தும் / All' }
+        ].map(f => (
+          <button
+            key={f.id}
+            onClick={() => setVerifyFilter(f.id)}
+            style={{
+              padding: '6px 16px',
+              borderRadius: '20px',
+              border: '1px solid #e5e7eb',
+              background: verifyFilter === f.id ? '#FF6B00' : '#fff',
+              color: verifyFilter === f.id ? '#000' : '#333',
+              fontWeight: '700',
+              cursor: 'pointer',
+              fontSize: '12px'
+            }}
+          >{f.label}</button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {filteredForVerify.map(member => (
+          <div key={member.member_id} style={{
+            background: '#fff',
+            border: `1px solid ${member.verified ? '#22C55E' : '#e5e7eb'}`,
+            borderRadius: '12px',
+            padding: '1.2rem',
+            display: 'flex',
+            gap: '1rem',
+            alignItems: 'flex-start',
+            flexWrap: 'wrap'
+          }}>
+            {/* Photo */}
+            <div style={{ flexShrink: 0 }}>
+              {member.photo_base64 ? (
+                <img
+                  src={member.photo_base64}
+                  alt={member.full_name}
+                  style={{
+                    width: '70px', height: '85px',
+                    objectFit: 'cover',
+                    borderRadius: '6px',
+                    border: '2px solid #003366'
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: '70px', height: '85px',
+                  borderRadius: '6px',
+                  background: '#FF6B00',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.8rem',
+                  color: '#fff',
+                  fontWeight: '800'
+                }}>
+                  {member.full_name?.charAt(0)?.toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            {/* Details */}
+            <div style={{ flex: 1, minWidth: '200px' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '6px',
+                flexWrap: 'wrap'
+              }}>
+                <span style={{
+                  fontSize: '16px', fontWeight: '800',
+                  color: '#1A1A2E'
+                }}>{member.full_name}</span>
+                {member.verified ? (
+                  <span style={{
+                    background: '#F0FDF4',
+                    color: '#15803D',
+                    padding: '2px 8px',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    fontWeight: '700'
+                  }}>✅ Verified</span>
+                ) : (
+                  <span style={{
+                    background: '#FEF3C7',
+                    color: '#92400E',
+                    padding: '2px 8px',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    fontWeight: '700'
+                  }}>⏳ Pending</span>
+                )}
+              </div>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '4px 16px',
+                fontSize: '12px'
+              }}>
+                {[
+                  ['Member ID', member.member_id],
+                  ['மாவட்டம்', member.district],
+                  ['கைபேசி', member.mobile],
+                  ['இரத்த பிரிவு', member.blood_group],
+                  ['DOB', member.dob],
+                  ['இணைந்த தேதி', member.join_date],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <span style={{ color: '#6B7280' }}>{label}: </span>
+                    <span style={{ fontWeight: '700', color: '#1A1A2E' }}>{value || '-'}</span>
+                  </div>
+                ))}
+              </div>
+
+              {member.verified && member.verified_at && (
+                <div style={{
+                  marginTop: '6px',
+                  fontSize: '11px',
+                  color: '#15803D'
+                }}>
+                  Verified on {new Date(member.verified_at).toLocaleDateString('en-IN')}
+                  {' '}by {member.verified_by}
+                </div>
+              )}
+            </div>
+
+            {/* Action buttons */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              flexShrink: 0
+            }}>
+              <button
+                onClick={() => printMemberForm(member)}
+                style={{
+                  padding: '8px 16px',
+                  background: '#003366',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  whiteSpace: 'nowrap'
+                }}>
+                🖨️ படிவம் பதிவிறக்கு
+              </button>
+
+              {member.verified ? (
+                <button
+                  onClick={() => unverifyMember(member.member_id)}
+                  style={{
+                    padding: '8px 16px',
+                    background: 'transparent',
+                    color: '#E53E3E',
+                    border: '1px solid #E53E3E',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '700'
+                  }}>
+                  ❌ Unverify
+                </button>
+              ) : (
+                <button
+                  onClick={() => verifyMember(member.member_id)}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#22C55E',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '700'
+                  }}>
+                  ✅ சரிபார்க்க / Verify
+                </button>
+              )}
+
+              <button
+                onClick={() => setEditMember({...member})}
+                style={{
+                  padding: '8px 16px',
+                  background: 'transparent',
+                  color: '#3B82F6',
+                  border: '1px solid #3B82F6',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: '700'
+                }}>
+                ✏️ திருத்து / Edit
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {filteredForVerify.length === 0 && (
+          <div style={{
+            textAlign: 'center',
+            padding: '3rem',
+            color: '#6B7280',
+            fontSize: '14px'
+          }}>
+            {verifyFilter === 'pending'
+              ? '✅ நிலுவையில் உறுப்பினர்கள் இல்லை / No pending members'
+              : 'உறுப்பினர்கள் இல்லை / No members found'
+            }
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 function AdminDashboard() {
   const [activeTab, setActiveTab]           = useState('overview');
@@ -63,7 +299,7 @@ function AdminDashboard() {
   const [uploadedImageUrl, setUploadedImageUrl] = useState('');
   const joiningDate = useMemo(() => formatDateDisplay(), []);
 
-  const { logout } = useAuth();
+  const { logout, userProfile } = useAuth();
 
   // ── Data loaders ─────────────────────────────────────────────
   const loadMembers = async () => {
@@ -99,6 +335,7 @@ function AdminDashboard() {
   const todayCount = members.filter(m => new Date(m.registered_at).toDateString() === new Date().toDateString()).length;
   const districtsCount = TAMIL_NADU_DISTRICTS.map(dist => ({ name: dist, count: members.filter(m => m.district === dist).length }));
   const activeDistricts = districtsCount.filter(d => d.count > 0).length;
+  const pendingCount = members.filter(m => !m.verified).length;
 
   // ── Actions ──────────────────────────────────────────────────
   const deleteMember = async (memberId, userId) => {
@@ -108,6 +345,35 @@ function AdminDashboard() {
     await loadMembers();
     setSelectedMember(null);
   };
+
+  const verifyMember = async (memberId) => {
+    const { error } = await supabase
+      .from('members')
+      .update({
+        verified: true,
+        verified_at: new Date().toISOString(),
+        verified_by: userProfile?.name || 'Admin'
+      })
+      .eq('member_id', memberId)
+
+    if (!error) {
+      await loadMembers()
+      alert('✅ உறுப்பினர் சரிபார்க்கப்பட்டார் / Member verified!')
+    }
+  }
+
+  const unverifyMember = async (memberId) => {
+    const { error } = await supabase
+      .from('members')
+      .update({
+        verified: false,
+        verified_at: null,
+        verified_by: null
+      })
+      .eq('member_id', memberId)
+
+    if (!error) await loadMembers()
+  }
   const saveEditMember = async () => {
     if (!editMember) return;
     await supabase.from('members').update({
@@ -401,12 +667,23 @@ NEW MEMBER REGISTRATION DETAILS
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {NAV.map(tab => (
               <button key={tab.id} onClick={() => goTab(tab.id)}
-                className={`w-full text-left px-4 py-3 rounded text-sm transition ${
+                className={`w-full text-left px-4 py-3 rounded text-sm transition flex items-center ${
                   activeTab === tab.id
                     ? 'bg-white/10 text-[#FFB347] border-l-4 border-[#FFB347]'
                     : 'text-gray-300 hover:bg-white/5 hover:text-white'
                 }`}>
                 {tab.icon} {tab.label}
+                {tab.id === 'verify' && pendingCount > 0 && (
+                  <span style={{
+                    background: '#E53E3E',
+                    color: '#fff',
+                    borderRadius: '20px',
+                    padding: '1px 7px',
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    marginLeft: 'auto'
+                  }}>{pendingCount}</span>
+                )}
               </button>
             ))}
             <button onClick={() => { exportCSV(); setSidebarOpen(false); }}
@@ -543,6 +820,7 @@ NEW MEMBER REGISTRATION DETAILS
                               <div className="flex gap-1 justify-center">
                                 <button onClick={() => setSelectedMember(m)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition text-sm" title="View">👁️</button>
                                 <button onClick={() => setEditMember({ ...m })} className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded transition text-sm" title="Edit">✏️</button>
+                                <button onClick={() => printMemberForm(m)} style={{ background: 'transparent', border: '1px solid #003366', color: '#003366', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', fontSize: '11px' }} title="Print Form">🖨️</button>
                                 <button onClick={() => deleteMember(m.member_id, m.user_id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded transition text-sm" title="Delete">🗑️</button>
                               </div>
                             </td>
@@ -775,6 +1053,49 @@ NEW MEMBER REGISTRATION DETAILS
                   <p className="col-span-full p-8 text-center text-gray-400 text-sm">No images in gallery yet.</p>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* ── VERIFY MEMBERS ── */}
+          {activeTab === 'verify' && (
+            <div className="space-y-4 md:space-y-6 max-w-5xl">
+              <div style={{
+                display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center', marginBottom: '1.5rem',
+                flexWrap: 'wrap', gap: '1rem'
+              }}>
+                <h2 className="text-xl md:text-2xl font-bold text-[#003366]">
+                  ✅ உறுப்பினர் சரிபார்ப்பு / Member Verification
+                </h2>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <span style={{
+                    background: '#FEF3C7',
+                    color: '#92400E',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px', fontWeight: '700'
+                  }}>
+                    ⏳ Pending: {members.filter(m => !m.verified).length}
+                  </span>
+                  <span style={{
+                    background: '#F0FDF4',
+                    color: '#15803D',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px', fontWeight: '700'
+                  }}>
+                    ✅ Verified: {members.filter(m => m.verified).length}
+                  </span>
+                </div>
+              </div>
+
+              <VerifyTabContent
+                members={members}
+                verifyMember={verifyMember}
+                unverifyMember={unverifyMember}
+                setEditMember={setEditMember}
+                printMemberForm={printMemberForm}
+              />
             </div>
           )}
 
