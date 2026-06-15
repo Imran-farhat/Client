@@ -3,6 +3,8 @@ import { SITE_URL } from '../config/constants'
 export const printMemberForm = (member) => {
   const printWindow = window.open('', '_blank')
 
+  const logoSrc = `${window.location.origin}/logo.png`
+
   printWindow.document.write(`
 <!DOCTYPE html>
 <html lang="ta">
@@ -232,7 +234,7 @@ export const printMemberForm = (member) => {
       font-weight: 600;
     }
 
-    /* ── PRINT BUTTON ── */
+    /* ── DOWNLOAD BUTTON ── */
     .no-print {
       text-align: center;
       margin-bottom: 20px;
@@ -240,7 +242,7 @@ export const printMemberForm = (member) => {
       gap: 12px;
       justify-content: center;
     }
-    .btn-print {
+    .btn-download {
       padding: 10px 32px;
       background: #FF6B00;
       color: #fff;
@@ -270,10 +272,10 @@ export const printMemberForm = (member) => {
 </head>
 <body>
 
-<!-- PRINT / CLOSE BUTTONS -->
+<!-- DOWNLOAD / CLOSE BUTTONS -->
 <div class="no-print">
-  <button class="btn-print" onclick="window.print()">
-    🖨️ Print / Download PDF
+  <button class="btn-download" onclick="window.print()">
+    ⬇️ Download PDF
   </button>
   <button class="btn-close" onclick="window.close()">
     Close
@@ -284,7 +286,7 @@ export const printMemberForm = (member) => {
 <div class="header">
   <img
     class="logo"
-    src="${SITE_URL}/logo.png"
+    src="${logoSrc}"
     alt="TIWTN Logo"
     onerror="this.style.display='none'"
   />
