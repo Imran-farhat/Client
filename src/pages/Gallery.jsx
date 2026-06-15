@@ -3,7 +3,7 @@ import { supabase } from '../supabase/client';
 import SEO from '../components/SEO';
 import PageLoader from '../components/PageLoader';
 
-const categories = ['ALL', 'EVENTS', 'WORKSHOPS', 'TRAINING'];
+const categories = ['ALL', 'EVENTS', 'WORKSHOPS'];
 
 function Gallery() {
   const [filter, setFilter] = useState('ALL');
@@ -71,7 +71,7 @@ function Gallery() {
             {categories.map((category) => (
               <button
                 key={category}
-                className={`rounded-full px-5 py-2 text-sm uppercase tracking-[0.26em] transition min-h-[44px] ${category === 'TRAINING' ? 'hidden sm:block' : ''} ${filter === category ? 'bg-amber text-black' : 'border border-[var(--border)] bg-card text-secondary hover:text-primary'}`}
+                className={`rounded-full px-5 py-2 text-sm uppercase tracking-[0.26em] transition min-h-[44px] ${filter === category ? 'bg-amber text-black' : 'border border-[var(--border)] bg-card text-secondary hover:text-primary'}`}
                 onClick={() => setFilter(category)}
               >
                 {category}
