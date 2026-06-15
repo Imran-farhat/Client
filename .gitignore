@@ -42,3 +42,5 @@ vite.config.js.timestamp-*
 # ── Project-specific ───────────────────────────────────────────
 process-output.txt
 public/signatures/
+
+.vercel
