@@ -24,6 +24,10 @@ function Contact() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!form.name.trim() || !form.email.trim() || !form.subject.trim() || !form.message.trim()) {
+      setStatus('error');
+      return;
+    }
     setStatus('sending');
     try {
       const res = await fetch('https://api.web3forms.com/submit', {
@@ -31,10 +35,10 @@ function Contact() {
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
           access_key: 'fecf7859-db02-4db0-9e17-08fedad22e49',
-          name: form.name,
-          email: form.email,
-          subject: form.subject,
-          message: form.message,
+          name: form.name.trim(),
+          email: form.email.trim(),
+          subject: form.subject.trim(),
+          message: form.message.trim(),
          }),
       });
       const data = await res.json();
@@ -75,19 +79,19 @@ function Contact() {
               <form onSubmit={handleSubmit} className="mt-8 space-y-5">
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-primary">Name</span>
-                  <input value={form.name} onChange={handleChange('name')} placeholder="Your name" />
+                  <input required value={form.name} onChange={handleChange('name')} placeholder="Your name" />
                 </label>
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-primary">Email</span>
-                  <input type="email" value={form.email} onChange={handleChange('email')} placeholder="you@example.com" />
+                  <input required type="email" value={form.email} onChange={handleChange('email')} placeholder="you@example.com" />
                 </label>
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-primary">Subject</span>
-                  <input value={form.subject} onChange={handleChange('subject')} placeholder="Subject" />
+                  <input required value={form.subject} onChange={handleChange('subject')} placeholder="Subject" />
                 </label>
                 <label className="block space-y-2">
                   <span className="text-sm font-medium text-primary">Message</span>
-                  <textarea rows="5" value={form.message} onChange={handleChange('message')} placeholder="Your message" />
+                  <textarea required rows="5" value={form.message} onChange={handleChange('message')} placeholder="Your message" />
                 </label>
                 <button
                   type="submit"
