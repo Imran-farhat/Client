@@ -18,261 +18,29 @@ const TAMIL_NADU_DISTRICTS = [
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 const ITEMS_PER_PAGE = 10;
 
-const EMPTY_REGISTER_FORM = {
-  fullName: '', address: '', companyAddress: '', bloodGroup: '',
-  dob: '', aadhaar: '', mobile: '', nomineeName: '', nomineeMobile: '',
-  pledgeDistrict: '', pledgeBranch: '', referral: '', pledgeName: '',
-  photoPreview: null,
-};
-
 function formatDateDisplay() {
   const d = new Date();
   return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
 }
 
+const EMPTY_REGISTER_FORM = {
+  fullName: '', address: '', companyAddress: '', bloodGroup: '',
+  dob: '', aadhaar: '', mobile: '', nomineeName: '', nomineeMobile: '',
+  pledgeDistrict: '', pledgeBranch: '', referral: '', pledgeName: '',
+  photoPreview: null,
+  joinDate: formatDateDisplay(),
+};
+
 const NAV = [
   { id: 'overview', icon: '📊', label: 'Overview' },
   { id: 'members',  icon: '👥', label: 'All Members' },
-  { id: 'verify',   icon: '✅', label: 'Verify Members' },
+  { id: 'district', icon: '🗺️', label: 'By District' },
   { id: 'register', icon: '📝', label: 'Register Member' },
   { id: 'users',    icon: '🙍', label: 'All Users' },
-  { id: 'district', icon: '🗺️', label: 'By District' },
   { id: 'gallery',  icon: '🖼️', label: 'Gallery' },
 ];
 
-function VerifyTabContent({ members, verifyMember, unverifyMember, setEditMember, printMemberForm }) {
-  const [verifyFilter, setVerifyFilter] = useState('pending')
-
-  const filteredForVerify = members.filter(m =>
-    verifyFilter === 'all' ? true
-    : verifyFilter === 'pending' ? !m.verified
-    : m.verified
-  )
-
-  return (
-    <div>
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        {[
-          { id: 'pending', label: '⏳ நிலுவை / Pending' },
-          { id: 'verified', label: '✅ சரிபார்க்கப்பட்டது / Verified' },
-          { id: 'all', label: '📋 அனைத்தும் / All' }
-        ].map(f => (
-          <button
-            key={f.id}
-            onClick={() => setVerifyFilter(f.id)}
-            style={{
-              padding: '6px 16px',
-              borderRadius: '20px',
-              border: '1px solid #e5e7eb',
-              background: verifyFilter === f.id ? '#FF6B00' : '#fff',
-              color: verifyFilter === f.id ? '#000' : '#333',
-              fontWeight: '700',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-          >{f.label}</button>
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {filteredForVerify.map(member => (
-          <div key={member.member_id} style={{
-            background: '#fff',
-            border: `1px solid ${member.verified ? '#22C55E' : '#e5e7eb'}`,
-            borderRadius: '12px',
-            padding: '1.2rem',
-            display: 'flex',
-            gap: '1rem',
-            alignItems: 'flex-start',
-            flexWrap: 'wrap'
-          }}>
-            {/* Photo */}
-            <div style={{ flexShrink: 0 }}>
-              {member.photo_base64 ? (
-                <img
-                  src={member.photo_base64}
-                  alt={member.full_name}
-                  style={{
-                    width: '70px', height: '85px',
-                    objectFit: 'cover',
-                    borderRadius: '6px',
-                    border: '2px solid #003366'
-                  }}
-                />
-              ) : (
-                <div style={{
-                  width: '70px', height: '85px',
-                  borderRadius: '6px',
-                  background: '#FF6B00',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.8rem',
-                  color: '#fff',
-                  fontWeight: '800'
-                }}>
-                  {member.full_name?.charAt(0)?.toUpperCase()}
-                </div>
-              )}
-            </div>
-
-            {/* Details */}
-            <div style={{ flex: 1, minWidth: '200px' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: '6px',
-                flexWrap: 'wrap'
-              }}>
-                <span style={{
-                  fontSize: '16px', fontWeight: '800',
-                  color: '#1A1A2E'
-                }}>{member.full_name}</span>
-                {member.verified ? (
-                  <span style={{
-                    background: '#F0FDF4',
-                    color: '#15803D',
-                    padding: '2px 8px',
-                    borderRadius: '20px',
-                    fontSize: '11px',
-                    fontWeight: '700'
-                  }}>✅ Verified</span>
-                ) : (
-                  <span style={{
-                    background: '#FEF3C7',
-                    color: '#92400E',
-                    padding: '2px 8px',
-                    borderRadius: '20px',
-                    fontSize: '11px',
-                    fontWeight: '700'
-                  }}>⏳ Pending</span>
-                )}
-              </div>
-
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '4px 16px',
-                fontSize: '12px'
-              }}>
-                {[
-                  ['Member ID', member.member_id],
-                  ['மாவட்டம்', member.district],
-                  ['கைபேசி', member.mobile],
-                  ['இரத்த பிரிவு', member.blood_group],
-                  ['DOB', member.dob],
-                  ['இணைந்த தேதி', member.join_date],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <span style={{ color: '#6B7280' }}>{label}: </span>
-                    <span style={{ fontWeight: '700', color: '#1A1A2E' }}>{value || '-'}</span>
-                  </div>
-                ))}
-              </div>
-
-              {member.verified && member.verified_at && (
-                <div style={{
-                  marginTop: '6px',
-                  fontSize: '11px',
-                  color: '#15803D'
-                }}>
-                  Verified on {new Date(member.verified_at).toLocaleDateString('en-IN')}
-                  {' '}by {member.verified_by}
-                </div>
-              )}
-            </div>
-
-            {/* Action buttons */}
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-              flexShrink: 0
-            }}>
-              <button
-                onClick={() => printMemberForm(member)}
-                style={{
-                  padding: '8px 16px',
-                  background: '#003366',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  whiteSpace: 'nowrap'
-                }}>
-                🖨️ படிவம் பதிவிறக்கு
-              </button>
-
-              {member.verified ? (
-                <button
-                  onClick={() => unverifyMember(member.member_id)}
-                  style={{
-                    padding: '8px 16px',
-                    background: 'transparent',
-                    color: '#E53E3E',
-                    border: '1px solid #E53E3E',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: '700'
-                  }}>
-                  ❌ Unverify
-                </button>
-              ) : (
-                <button
-                  onClick={() => verifyMember(member.member_id)}
-                  style={{
-                    padding: '8px 16px',
-                    background: '#22C55E',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: '700'
-                  }}>
-                  ✅ சரிபார்க்க / Verify
-                </button>
-              )}
-
-              <button
-                onClick={() => setEditMember({...member})}
-                style={{
-                  padding: '8px 16px',
-                  background: 'transparent',
-                  color: '#3B82F6',
-                  border: '1px solid #3B82F6',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: '700'
-                }}>
-                ✏️ திருத்து / Edit
-              </button>
-            </div>
-          </div>
-        ))}
-
-        {filteredForVerify.length === 0 && (
-          <div style={{
-            textAlign: 'center',
-            padding: '3rem',
-            color: '#6B7280',
-            fontSize: '14px'
-          }}>
-            {verifyFilter === 'pending'
-              ? '✅ நிலுவையில் உறுப்பினர்கள் இல்லை / No pending members'
-              : 'உறுப்பினர்கள் இல்லை / No members found'
-            }
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+// Verify section removed
 
 function AdminDashboard() {
   const [activeTab, setActiveTab]           = useState('overview');
@@ -286,7 +54,8 @@ function AdminDashboard() {
   const [editMember, setEditMember]         = useState(null);
   const [currentPage, setCurrentPage]       = useState(1);
 
-  const [regForm, setRegForm]               = useState(EMPTY_REGISTER_FORM);
+  const [newMember, setNewMember]               = useState(EMPTY_REGISTER_FORM);
+  const [adminPhotoPreview, setAdminPhotoPreview] = useState(null);
   const [regErrors, setRegErrors]           = useState({});
   const [regSubmitting, setRegSubmitting]   = useState(false);
   const [regSuccess, setRegSuccess]         = useState(null);
@@ -335,7 +104,6 @@ function AdminDashboard() {
   const todayCount = members.filter(m => new Date(m.registered_at).toDateString() === new Date().toDateString()).length;
   const districtsCount = TAMIL_NADU_DISTRICTS.map(dist => ({ name: dist, count: members.filter(m => m.district === dist).length }));
   const activeDistricts = districtsCount.filter(d => d.count > 0).length;
-  const pendingCount = members.filter(m => !m.verified).length;
 
   // ── Actions ──────────────────────────────────────────────────
   const deleteMember = async (memberId, userId) => {
@@ -346,34 +114,6 @@ function AdminDashboard() {
     setSelectedMember(null);
   };
 
-  const verifyMember = async (memberId) => {
-    const { error } = await supabase
-      .from('members')
-      .update({
-        verified: true,
-        verified_at: new Date().toISOString(),
-        verified_by: userProfile?.name || 'Admin'
-      })
-      .eq('member_id', memberId)
-
-    if (!error) {
-      await loadMembers()
-      alert('✅ உறுப்பினர் சரிபார்க்கப்பட்டார் / Member verified!')
-    }
-  }
-
-  const unverifyMember = async (memberId) => {
-    const { error } = await supabase
-      .from('members')
-      .update({
-        verified: false,
-        verified_at: null,
-        verified_by: null
-      })
-      .eq('member_id', memberId)
-
-    if (!error) await loadMembers()
-  }
   const saveEditMember = async () => {
     if (!editMember) return;
     await supabase.from('members').update({
@@ -398,27 +138,33 @@ function AdminDashboard() {
 
   // ── Register on behalf ───────────────────────────────────────
   const handleRegChange = (field) => (e) => {
-    setRegForm(prev => ({ ...prev, [field]: e.target.value }));
+    setNewMember(prev => ({ ...prev, [field]: e.target.value }));
     if (regErrors[field]) setRegErrors(prev => { const n = {...prev}; delete n[field]; return n; });
   };
-  const handleRegPhoto = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => setRegForm(prev => ({ ...prev, photoPreview: reader.result }));
-    reader.readAsDataURL(file);
-  };
+
+  const handleAdminPhoto = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setAdminPhotoPreview(reader.result)
+      setNewMember(prev => ({
+        ...prev,
+        photoPreview: reader.result
+      }))
+    }
+    reader.readAsDataURL(file)
+  }
+
   const validateReg = () => {
     const e = {};
-    if (!regForm.fullName.trim())          e.fullName = 'Required';
-    if (!regForm.address.trim())           e.address = 'Required';
-    if (!regForm.bloodGroup)               e.bloodGroup = 'Required';
-    if (!regForm.dob)                      e.dob = 'Required';
-    if (!/^\d{12}$/.test(regForm.aadhaar)) e.aadhaar = '12 digits required';
-    if (!/^\d{10}$/.test(regForm.mobile))  e.mobile = '10 digits required';
-    if (!regForm.nomineeName.trim())       e.nomineeName = 'Required';
-    if (!regForm.pledgeDistrict)           e.pledgeDistrict = 'Select district';
-    if (!regForm.pledgeBranch.trim())      e.pledgeBranch = 'Required';
+    if (!newMember.fullName.trim()) e.fullName = 'இந்த தகவல் அவசியம்';
+    if (!newMember.address.trim()) e.address = 'இந்த தகவல் அவசியம்';
+    if (!newMember.bloodGroup) e.bloodGroup = 'இந்த தகவல் அவசியம்';
+    if (!newMember.dob) e.dob = 'இந்த தகவல் அவசியம்';
+    if (!newMember.aadhaar || !newMember.aadhaar.match(/^\d{12}$/)) e.aadhaar = 'சரியான ஆதார் எண் உள்ளிடுக';
+    if (!newMember.mobile || !newMember.mobile.match(/^\d{10}$/)) e.mobile = 'சரியான செல் நம்பர் உள்ளிடுக';
+    if (!newMember.pledgeDistrict || newMember.pledgeDistrict === '') e.pledgeDistrict = 'மாவட்டம் தேர்வு செய்க';
     return e;
   };
   const sendAdminNotification = async (formData, memberId) => {
@@ -673,17 +419,6 @@ NEW MEMBER REGISTRATION DETAILS
                     : 'text-gray-300 hover:bg-white/5 hover:text-white'
                 }`}>
                 {tab.icon} {tab.label}
-                {tab.id === 'verify' && pendingCount > 0 && (
-                  <span style={{
-                    background: '#E53E3E',
-                    color: '#fff',
-                    borderRadius: '20px',
-                    padding: '1px 7px',
-                    fontSize: '10px',
-                    fontWeight: '700',
-                    marginLeft: 'auto'
-                  }}>{pendingCount}</span>
-                )}
               </button>
             ))}
             <button onClick={() => { exportCSV(); setSidebarOpen(false); }}
@@ -848,7 +583,7 @@ NEW MEMBER REGISTRATION DETAILS
 
           {/* ── REGISTER ON BEHALF ── */}
           {activeTab === 'register' && (
-            <div className="max-w-2xl space-y-4 md:space-y-6">
+            <div className="max-w-4xl space-y-4 md:space-y-6">
               <div className="flex flex-wrap gap-3 items-center justify-between">
                 <h2 className="text-xl md:text-2xl font-bold text-[#003366]">📝 Register Member</h2>
                 {regSuccess && (
@@ -874,69 +609,263 @@ NEW MEMBER REGISTRATION DETAILS
                   </div>
                 </div>
               ) : (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 md:p-8 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {inp('fullName',      'Full Name / முழு பெயர்')}
-                    {inp('mobile',        'Mobile / செல் நம்பர்', 'text', { maxLength: 10, inputMode: 'numeric', placeholder: '10 digits' })}
-                    {inp('dob',           'Date of Birth / பிறந்த தேதி', 'date')}
-                    {inp('aadhaar',       'Aadhaar / ஆதார் எண்', 'text', { maxLength: 12, inputMode: 'numeric', placeholder: '12 digits' })}
-                    {inp('nomineeName',   'Nominee Name / வாரிசுதாரர் பெயர்')}
-                    {inp('nomineeMobile', 'Nominee Mobile', 'text', { maxLength: 10, inputMode: 'numeric', placeholder: '10 digits' })}
-                    {inp('pledgeBranch',  'Branch / கிளை')}
-                    {inp('referral',      'Referral / பரிந்துரை')}
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Blood Group</label>
-                    <select value={regForm.bloodGroup} onChange={handleRegChange('bloodGroup')}
-                      className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${regErrors.bloodGroup ? 'border-red-400' : 'border-gray-200'}`}>
-                      <option value="">-- Select --</option>
-                      {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
-                    </select>
-                    {regErrors.bloodGroup && <p className="mt-0.5 text-xs text-red-500">{regErrors.bloodGroup}</p>}
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">District / மாவட்டம்</label>
-                    <select value={regForm.pledgeDistrict} onChange={handleRegChange('pledgeDistrict')}
-                      className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${regErrors.pledgeDistrict ? 'border-red-400' : 'border-gray-200'}`}>
-                      <option value="">-- Select District --</option>
-                      {TAMIL_NADU_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                    {regErrors.pledgeDistrict && <p className="mt-0.5 text-xs text-red-500">{regErrors.pledgeDistrict}</p>}
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Address / முகவரி</label>
-                    <textarea rows={2} value={regForm.address} onChange={handleRegChange('address')}
-                      className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] resize-none ${regErrors.address ? 'border-red-400' : 'border-gray-200'}`} />
-                    {regErrors.address && <p className="mt-0.5 text-xs text-red-500">{regErrors.address}</p>}
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Company Address (Optional)</label>
-                    <textarea rows={2} value={regForm.companyAddress} onChange={handleRegChange('companyAddress')}
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] resize-none" />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Member Photo</label>
-                    <div className="flex items-center gap-4">
-                      <label className="cursor-pointer">
-                        {regForm.photoPreview
-                          ? <img src={regForm.photoPreview} alt="Preview" className="w-16 h-20 object-cover rounded border-2 border-[#003366]" />
-                          : <div className="w-16 h-20 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400 text-2xl">📷</div>
-                        }
-                        <input type="file" accept="image/*" className="hidden" onChange={handleRegPhoto} />
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 md:p-8 space-y-6">
+                  
+                  {/* Grid for form inputs */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    {/* 1. Full Name */}
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-[#003366] mb-1">
+                        முழு பெயர் / Full Name <span className="text-red-500">*</span>
                       </label>
-                      <p className="text-xs text-gray-500">Tap to upload photo<br />(Optional)</p>
+                      <input
+                        type="text"
+                        value={newMember.fullName}
+                        onChange={handleRegChange('fullName')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
+                          regErrors.fullName ? 'border-red-400' : 'border-gray-200'
+                        }`}
+                      />
+                      {regErrors.fullName && <p className="mt-0.5 text-xs text-red-500">{regErrors.fullName}</p>}
                     </div>
+
+                    {/* 2. Address */}
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-[#003366] mb-1">
+                        சரியான முகவரி / Address <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={newMember.address}
+                        onChange={handleRegChange('address')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] resize-none ${
+                          regErrors.address ? 'border-red-400' : 'border-gray-200'
+                        }`}
+                      />
+                      {regErrors.address && <p className="mt-0.5 text-xs text-red-500">{regErrors.address}</p>}
+                    </div>
+
+                    {/* 3. Company Address */}
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-[#003366] mb-1">
+                        நிறுவனத்தின் முகவரி / Org Address
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={newMember.companyAddress}
+                        onChange={handleRegChange('companyAddress')}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] resize-none"
+                      />
+                    </div>
+
+                    {/* 4. Blood Group */}
+                    <div>
+                      <label className="block text-sm font-semibold text-[#003366] mb-1">
+                        இரத்த பிரிவு / Blood Group <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={newMember.bloodGroup}
+                        onChange={handleRegChange('bloodGroup')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
+                          regErrors.bloodGroup ? 'border-red-400' : 'border-gray-200'
+                        }`}
+                      >
+                        <option value="">-- Select --</option>
+                        {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
+                      </select>
+                      {regErrors.bloodGroup && <p className="mt-0.5 text-xs text-red-500">{regErrors.bloodGroup}</p>}
+                    </div>
+
+                    {/* 5. DOB */}
+                    <div>
+                      <label className="block text-sm font-semibold text-[#003366] mb-1">
+                        வயது / பிறந்த தேதி / DOB <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={newMember.dob}
+                        onChange={handleRegChange('dob')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
+                          regErrors.dob ? 'border-red-400' : 'border-gray-200'
+                        }`}
+                      />
+                      {regErrors.dob && <p className="mt-0.5 text-xs text-red-500">{regErrors.dob}</p>}
+                    </div>
+
+                    {/* 6. Aadhaar */}
+                    <div>
+                      <label className="block text-sm font-semibold text-[#003366] mb-1">
+                        ஆதார் எண் / Aadhaar <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={12}
+                        placeholder="12 digits"
+                        inputMode="numeric"
+                        value={newMember.aadhaar}
+                        onChange={handleRegChange('aadhaar')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
+                          regErrors.aadhaar ? 'border-red-400' : 'border-gray-200'
+                        }`}
+                      />
+                      {regErrors.aadhaar && <p className="mt-0.5 text-xs text-red-500">{regErrors.aadhaar}</p>}
+                    </div>
+
+                    {/* 7. Mobile */}
+                    <div>
+                      <label className="block text-sm font-semibold text-[#003366] mb-1">
+                        செல் நம்பர் / Mobile <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={10}
+                        placeholder="10 digits"
+                        inputMode="numeric"
+                        value={newMember.mobile}
+                        onChange={handleRegChange('mobile')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
+                          regErrors.mobile ? 'border-red-400' : 'border-gray-200'
+                        }`}
+                      />
+                      {regErrors.mobile && <p className="mt-0.5 text-xs text-red-500">{regErrors.mobile}</p>}
+                    </div>
+
+                    {/* 8. Nominee Name */}
+                    <div>
+                      <label className="block text-sm font-semibold text-[#003366] mb-1">
+                        வாரிசுதாரர் பெயர் / Nominee Name
+                      </label>
+                      <input
+                        type="text"
+                        value={newMember.nomineeName}
+                        onChange={handleRegChange('nomineeName')}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347]"
+                      />
+                    </div>
+
+                    {/* 9. Nominee Mobile */}
+                    <div>
+                      <label className="block text-sm font-semibold text-[#003366] mb-1">
+                        வாரிசுதாரர் செல்நம்பர் / Nominee Mobile
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={10}
+                        placeholder="10 digits"
+                        inputMode="numeric"
+                        value={newMember.nomineeMobile}
+                        onChange={handleRegChange('nomineeMobile')}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347]"
+                      />
+                    </div>
+
+                    {/* 10. District */}
+                    <div>
+                      <label className="block text-sm font-semibold text-[#003366] mb-1">
+                        மாவட்டம் / District <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={newMember.pledgeDistrict}
+                        onChange={handleRegChange('pledgeDistrict')}
+                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
+                          regErrors.pledgeDistrict ? 'border-red-400' : 'border-gray-200'
+                        }`}
+                      >
+                        <option value="">-- Select District --</option>
+                        {TAMIL_NADU_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                      {regErrors.pledgeDistrict && <p className="mt-0.5 text-xs text-red-500">{regErrors.pledgeDistrict}</p>}
+                    </div>
+
+                    {/* 11. Branch */}
+                    <div>
+                      <label className="block text-sm font-semibold text-[#003366] mb-1">
+                        கிளை சங்கம் / Branch
+                      </label>
+                      <input
+                        type="text"
+                        value={newMember.pledgeBranch}
+                        onChange={handleRegChange('pledgeBranch')}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347]"
+                      />
+                    </div>
+
+                    {/* 12. Joined Date */}
+                    <div>
+                      <label className="block text-sm font-semibold text-[#003366] mb-1">
+                        இணைந்த தேதி / Joined Date (auto today, editable)
+                      </label>
+                      <input
+                        type="text"
+                        value={newMember.joinDate}
+                        onChange={handleRegChange('joinDate')}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347]"
+                      />
+                    </div>
+
+                    {/* 13. Referral */}
+                    <div>
+                      <label className="block text-sm font-semibold text-[#003366] mb-1">
+                        பரிந்துரை / Referral
+                      </label>
+                      <input
+                        type="text"
+                        value={newMember.referral}
+                        onChange={handleRegChange('referral')}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347]"
+                      />
+                    </div>
+
                   </div>
 
-                  <button onClick={handleRegSubmit} disabled={regSubmitting}
-                    className="w-full rounded-lg bg-[#003366] text-white py-3 font-bold text-sm hover:opacity-90 transition disabled:opacity-60">
-                    {regSubmitting ? 'Registering…' : '📝 Register Member'}
+                  {/* 14. Photo upload & Member ID Box */}
+                  <div className="flex flex-col sm:flex-row items-center gap-6 pt-4">
+                    
+                    {/* Photo Upload Box */}
+                    <div className="w-full sm:w-1/2 rounded-[12px] p-5 text-center" style={{ border: '1.5px solid #E5DDD0' }}>
+                      <p className="mb-3 text-sm font-semibold text-[#003366]">படம் / Photo upload</p>
+                      <label className="group relative mx-auto block cursor-pointer" style={{ width: '120px', height: '140px' }}>
+                        {adminPhotoPreview ? (
+                          <img
+                            src={adminPhotoPreview}
+                            alt="Member"
+                            className="w-full h-full object-cover rounded-lg border-2 border-[#003366]"
+                          />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', border: '2px dashed #CCCCCC', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#888888', fontSize: '12px' }}>
+                            <span style={{ fontSize: '24px' }}>📷</span>
+                            <span>படம் பதிவேற்று</span>
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-[2]"
+                          onChange={handleAdminPhoto}
+                        />
+                      </label>
+                    </div>
+
+                    {/* ID Preview Box */}
+                    <div className="w-full sm:w-1/2 rounded-[12px] p-6 text-center bg-[#F0F7FF] border border-[#003366]">
+                      <p className="mb-2 text-xs text-gray-400 uppercase tracking-wider">உறுப்பினர் பதிவு எண் Preview</p>
+                      <div className="font-mono text-sm font-bold text-[#003366] py-2 border-t border-[#003366] tracking-widest">
+                        TIWTN-2026-XXXXX
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Submit button */}
+                  <button
+                    onClick={handleRegSubmit}
+                    disabled={regSubmitting}
+                    className="w-full rounded-lg bg-[#FF6B00] text-white py-3 font-bold text-sm hover:opacity-90 transition disabled:opacity-60"
+                  >
+                    {regSubmitting ? 'Registering…' : '✅ உறுப்பினரை பதிவு செய்க / Register Member'}
                   </button>
+
                 </div>
               )}
             </div>
@@ -1056,48 +985,7 @@ NEW MEMBER REGISTRATION DETAILS
             </div>
           )}
 
-          {/* ── VERIFY MEMBERS ── */}
-          {activeTab === 'verify' && (
-            <div className="space-y-4 md:space-y-6 max-w-5xl">
-              <div style={{
-                display: 'flex', justifyContent: 'space-between',
-                alignItems: 'center', marginBottom: '1.5rem',
-                flexWrap: 'wrap', gap: '1rem'
-              }}>
-                <h2 className="text-xl md:text-2xl font-bold text-[#003366]">
-                  ✅ உறுப்பினர் சரிபார்ப்பு / Member Verification
-                </h2>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <span style={{
-                    background: '#FEF3C7',
-                    color: '#92400E',
-                    padding: '4px 12px',
-                    borderRadius: '20px',
-                    fontSize: '12px', fontWeight: '700'
-                  }}>
-                    ⏳ Pending: {members.filter(m => !m.verified).length}
-                  </span>
-                  <span style={{
-                    background: '#F0FDF4',
-                    color: '#15803D',
-                    padding: '4px 12px',
-                    borderRadius: '20px',
-                    fontSize: '12px', fontWeight: '700'
-                  }}>
-                    ✅ Verified: {members.filter(m => m.verified).length}
-                  </span>
-                </div>
-              </div>
-
-              <VerifyTabContent
-                members={members}
-                verifyMember={verifyMember}
-                unverifyMember={unverifyMember}
-                setEditMember={setEditMember}
-                printMemberForm={printMemberForm}
-              />
-            </div>
-          )}
+          {/* Verify section removed */}
 
         </main>
       </div>
