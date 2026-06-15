@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../supabase/client'
+import { SITE_URL } from '../config/constants'
 
 const AuthContext = createContext()
 
@@ -92,6 +93,22 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
         try {
+          if (event === 'TOKEN_REFRESHED') {
+            console.log('Session refreshed')
+          }
+
+          if (event === 'SIGNED_OUT') {
+            setCurrentUser(null)
+            setUserProfile(null)
+            setIsAdmin(false)
+            const protectedPaths = ['/profile', '/admin']
+            if (protectedPaths.some(p =>
+              window.location.pathname.startsWith(p)
+            )) {
+              window.location.href = '/login'
+            }
+          }
+
           if (session?.user) {
             setCurrentUser(session.user)
             await fetchProfile(session.user.id)
@@ -152,9 +169,7 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   const loginWithGoogle = async () => {
-    const redirectTo = window.location.hostname === 'localhost'
-      ? 'http://localhost:5173/profile'
-      : `${window.location.origin}/profile`
+    const redirectTo = `${SITE_URL}/profile`
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',

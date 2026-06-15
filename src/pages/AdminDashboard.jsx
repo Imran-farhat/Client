@@ -4,6 +4,7 @@ import { supabase } from '../supabase/client';
 import IDCard from '../components/IDCard';
 import { generateMemberId } from '../utils/memberIdUtils';
 import { printMemberForm } from '../utils/printMemberForm';
+import PageLoader from '../components/PageLoader';
 
 const TAMIL_NADU_DISTRICTS = [
   'அரியலூர்', 'சேலம்', 'சென்னை', 'கோயம்புத்தூர்', 'கடலூர்', 'தர்மபுரி', 'திண்டுக்கல்',
@@ -17,6 +18,12 @@ const TAMIL_NADU_DISTRICTS = [
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 const ITEMS_PER_PAGE = 10;
+
+const displayAadhar = (aadhar) => {
+  if (!aadhar) return '-'
+  const str = String(aadhar)
+  return 'XXXX XXXX ' + str.slice(-4)
+}
 
 function formatDateDisplay() {
   const d = new Date();
@@ -375,6 +382,10 @@ NEW MEMBER REGISTRATION DETAILS
   );
 
   // ─────────────────────────────────────────────────────────────
+  if (loadingData) {
+    return <PageLoader message="நிர்வாக பக்கத் தகவல்களை ஏற்றுகிறது..." />;
+  }
+
   return (
     <div className="min-h-screen bg-[#F4F7FA] admin-dashboard">
 
@@ -1006,7 +1017,7 @@ NEW MEMBER REGISTRATION DETAILS
                   ['Date of Birth', selectedMember.dob],
                   ['Blood Group', selectedMember.blood_group],
                   ['District', selectedMember.district],
-                  ['Aadhar', selectedMember.aadhar],
+                  ['Aadhar', displayAadhar(selectedMember.aadhar)],
                   ['Branch', selectedMember.branch],
                   ['Nominee Name', selectedMember.nominee_name],
                   ['Nominee Phone', selectedMember.nominee_phone],

@@ -17,6 +17,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import NotFound from './pages/NotFound';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 const pageTitles = {
   '/': 'Home | தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்',
@@ -89,6 +90,7 @@ function App() {
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/profile" element={
                   <ProtectedRoute><Profile /></ProtectedRoute>
                 } />

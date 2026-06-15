@@ -2,6 +2,7 @@ import OrgLogo from '../components/OrgLogo';
 import balajiPhoto from '../assets/balaji.png';
 import idhreesPhoto from '../assets/Idhrees.jpeg';
 import muraliPhoto from '../assets/murali.jpeg';
+import SEO from '../components/SEO';
 
 function About() {
   const team = [
@@ -36,7 +37,13 @@ function About() {
   ];
 
   return (
-    <section className="bg-secondary px-6 py-16 text-primary md:px-10">
+    <>
+      <SEO
+        title="எங்களை பற்றி / About"
+        description="தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம் பற்றி அறிக"
+        url="/about"
+      />
+      <section className="bg-secondary px-6 py-16 text-primary md:px-10">
       <div className="mx-auto max-w-6xl space-y-16">
         <div className="rounded-[32px] border border-[var(--border)] bg-primary p-10 shadow-sm md:p-12">
           <p className="text-sm uppercase tracking-[0.3em] text-amber">WHO WE ARE</p>
@@ -84,6 +91,7 @@ function About() {
         </div>
       </div>
     </section>
+    </>
   );
 }
 

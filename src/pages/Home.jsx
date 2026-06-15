@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import ParticleBackground from '../components/ParticleBackground';
 import OrgLogo from '../components/OrgLogo';
 import { supabase } from '../supabase/client';
+import SEO from '../components/SEO';
+import PageLoader from '../components/PageLoader';
 
 const STATIC_STATS = [
   { label: 'செயல்பாட்டு ஆண்டுகள்', suffix: '+', staticNum: 6 },
@@ -16,6 +18,7 @@ const testimonials = [
 ];
 
 function Home() {
+  const [loading, setLoading] = useState(true);
   const [memberCount, setMemberCount] = useState(null);
   const [count, setCount] = useState([0, 0, 0]); // [members, years, branches]
 
@@ -26,6 +29,7 @@ function Home() {
         .from('members')
         .select('*', { count: 'exact', head: true });
       setMemberCount(total ?? 0);
+      setLoading(false);
     };
     fetchCount();
 
@@ -72,8 +76,16 @@ function Home() {
     { num: count[2], label: 'கிளைகள்', suffix: '' },
   ];
 
+  if (loading) return <PageLoader message="முகப்பு ஏற்றுகிறது..." />;
+
   return (
-    <section className="relative overflow-hidden bg-hero px-6 py-16 md:px-10">
+    <>
+      <SEO
+        title="முகப்பு / Home"
+        description="தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம் - South India Welding Workers Welfare Association"
+        url="/"
+      />
+      <section className="relative overflow-hidden bg-hero px-6 py-16 md:px-10">
       <ParticleBackground />
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-4xl text-center">
@@ -129,6 +141,7 @@ function Home() {
         </div>
       </div>
     </section>
+  </>
   );
 }
 

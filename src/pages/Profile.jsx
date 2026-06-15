@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabase/client';
 import IDCard from '../components/IDCard';
+import SEO from '../components/SEO';
+import PageLoader from '../components/PageLoader';
 
 function Profile() {
   const { currentUser, userProfile, refreshProfile, logout } = useAuth();
@@ -141,127 +143,132 @@ function Profile() {
   } : null;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
-      <h1 className="mb-8 text-3xl font-bold text-[var(--text-primary)]">My Profile</h1>
+    <>
+      <SEO
+        title="சுயவிவரம் / Profile"
+        description="உறுப்பினர் சுயவிவரம் மற்றும் அடையாள அட்டை விவரங்கள் - South India Welding Workers Welfare Association Member Profile"
+        url="/profile"
+      />
+      <div className="mx-auto max-w-5xl px-4 py-12">
+        <h1 className="mb-8 text-3xl font-bold text-[var(--text-primary)]">My Profile</h1>
 
-      <div className="grid gap-8 md:grid-cols-2">
-        {/* SECTION A — Account Card */}
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-sm h-fit">
-          <div className="flex flex-col items-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#FF6B00] text-3xl font-bold text-white border-4 border-[#FFB347] overflow-hidden">
-              {photoUrl ? (
-                <img src={photoUrl} alt="Avatar" className="h-full w-full object-cover" />
-              ) : (
-                displayName?.charAt(0).toUpperCase()
-              )}
-            </div>
-            <div className="mt-4 flex gap-2">
-              {provider === 'google' && <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">🟢 Google</span>}
-              {provider === 'email' && <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">✉️ Email</span>}
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">Name</label>
-              <input
-                id="profile-name-input"
-                type="text"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-[var(--text-primary)] focus:border-amber focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">Email</label>
-              <input
-                type="email"
-                value={currentUser?.email || ''}
-                readOnly
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-3 text-[var(--text-primary)] opacity-70 cursor-not-allowed"
-              />
+        <div className="grid gap-8 md:grid-cols-2">
+          {/* SECTION A — Account Card */}
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-sm h-fit">
+            <div className="flex flex-col items-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#FF6B00] text-3xl font-bold text-white border-4 border-[#FFB347] overflow-hidden">
+                {photoUrl ? (
+                  <img src={photoUrl} alt="Avatar" className="h-full w-full object-cover" />
+                ) : (
+                  displayName?.charAt(0).toUpperCase()
+                )}
+              </div>
+              <div className="mt-4 flex gap-2">
+                {provider === 'google' && <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">🟢 Google</span>}
+                {provider === 'email' && <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">✉️ Email</span>}
+              </div>
             </div>
 
-            <button
-              id="profile-save-btn"
-              onClick={handleSaveName}
-              disabled={saving}
-              className="button-amber mt-4 w-full text-black py-3 rounded-xl font-bold disabled:opacity-60"
-            >
-              {saving ? 'சேமிக்கிறது...' : 'Save Changes'}
-            </button>
-
-            <button
-              onClick={logout}
-              className="mt-2 w-full rounded-xl border border-red-300 py-2 text-sm text-red-500 hover:bg-red-50 transition"
-            >
-              🚪 Logout
-            </button>
-          </div>
-        </div>
-
-        {/* SECTION B — Membership Status */}
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-sm">
-          <h2 className="mb-6 text-xl font-bold text-[var(--text-primary)]">📋 உறுப்பினர் அட்டை</h2>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-12 text-[var(--text-muted)]">
-              Loading...
-            </div>
-          ) : memberData ? (
-            <div>
-              <div style={{ color: '#22C55E', fontSize: '14px', fontWeight: '700', marginBottom: '1rem' }}>
-                ✅ பதிவு செய்யப்பட்டது / Registered
+            <div className="mt-6 space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">Name</label>
+                <input
+                  id="profile-name-input"
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-[var(--text-primary)] focus:border-amber focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-[var(--text-secondary)]">Email</label>
+                <input
+                  type="email"
+                  value={currentUser?.email || ''}
+                  readOnly
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] px-4 py-3 text-[var(--text-primary)] opacity-70 cursor-not-allowed"
+                />
               </div>
 
-              {idCardMember && (
-                <div className="mb-6 flex justify-center">
-                  <div className="transform scale-[0.85] origin-top">
-                    <IDCard member={idCardMember} showReset={false} />
-                  </div>
-                </div>
-              )}
-
-              {[
-                ['Member ID', memberData.member_id],
-                ['Name', memberData.full_name],
-                ['District', memberData.district],
-                ['Mobile', memberData.mobile],
-                ['Blood Group', memberData.blood_group],
-                ['Joined', memberData.join_date],
-              ].map(([label, value]) => (
-                <div key={label} style={{
-                  display: 'flex',
-                  borderBottom: '1px solid var(--border)',
-                  padding: '8px 0',
-                  fontSize: '13px'
-                }}>
-                  <span style={{ width: '120px', color: 'var(--text-muted)', flexShrink: 0 }}>{label}</span>
-                  <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{value || '-'}</span>
-                </div>
-              ))}
-
-
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', paddingTop: '2rem', paddingBottom: '2rem' }}>
-              <div className="mb-2 text-lg font-semibold text-[var(--text-secondary)]">இன்னும் பதிவு செய்யவில்லை</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '1rem' }}>You haven't registered yet</div>
               <button
-                onClick={() => navigate('/register')}
-                style={{
-                  background: '#FF6B00', color: '#fff', border: 'none',
-                  borderRadius: '8px', padding: '12px 24px',
-                  fontSize: '14px', fontWeight: '700', cursor: 'pointer'
-                }}
+                id="profile-save-btn"
+                onClick={handleSaveName}
+                disabled={saving}
+                className="button-amber mt-4 w-full text-black py-3 rounded-xl font-bold disabled:opacity-60"
               >
-                பதிவு செய்க / Register Now
+                {saving ? 'சேமிக்கிறது...' : 'Save Changes'}
+              </button>
+
+              <button
+                onClick={logout}
+                className="mt-2 w-full rounded-xl border border-red-300 py-2 text-sm text-red-500 hover:bg-red-50 transition"
+              >
+                🚪 Logout
               </button>
             </div>
-          )}
+          </div>
+
+          {/* SECTION B — Membership Status */}
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-sm">
+            <h2 className="mb-6 text-xl font-bold text-[var(--text-primary)]">📋 உறுப்பினர் அட்டை</h2>
+
+            {loading ? (
+              <PageLoader message="உறுப்பினர் விவரங்களை ஏற்றுகிறது..." />
+            ) : memberData ? (
+              <div>
+                <div style={{ color: '#22C55E', fontSize: '14px', fontWeight: '700', marginBottom: '1rem' }}>
+                  ✅ பதிவு செய்யப்பட்டது / Registered
+                </div>
+
+                {idCardMember && (
+                  <div className="mb-6 flex justify-center">
+                    <div className="transform scale-[0.85] origin-top">
+                      <IDCard member={idCardMember} showReset={false} />
+                    </div>
+                  </div>
+                )}
+
+                {[
+                  ['Member ID', memberData.member_id],
+                  ['Name', memberData.full_name],
+                  ['District', memberData.district],
+                  ['Mobile', memberData.mobile],
+                  ['Blood Group', memberData.blood_group],
+                  ['Joined', memberData.join_date],
+                ].map(([label, value]) => (
+                  <div key={label} style={{
+                    display: 'flex',
+                    borderBottom: '1px solid var(--border)',
+                    padding: '8px 0',
+                    fontSize: '13px'
+                  }}>
+                    <span style={{ width: '120px', color: 'var(--text-muted)', flexShrink: 0 }}>{label}</span>
+                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{value || '-'}</span>
+                  </div>
+                ))}
+
+
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', paddingTop: '2rem', paddingBottom: '2rem' }}>
+                <div className="mb-2 text-lg font-semibold text-[var(--text-secondary)]">இன்னும் பதிவு செய்யவில்லை</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '1rem' }}>You haven't registered yet</div>
+                <button
+                  onClick={() => navigate('/register')}
+                  style={{
+                    background: '#FF6B00', color: '#fff', border: 'none',
+                    borderRadius: '8px', padding: '12px 24px',
+                    fontSize: '14px', fontWeight: '700', cursor: 'pointer'
+                  }}
+                >
+                  பதிவு செய்க / Register Now
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

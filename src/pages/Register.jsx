@@ -118,10 +118,17 @@ function Register() {
   const [member, setMember] = useState(null);
   const [memberId, setMemberId] = useState('TIWTN-2026-_____');
   const [cardReady, setCardReady] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const cardRef = useRef(null);
   const formRef = useRef(null);
   const joiningDate = useMemo(() => formatDateDisplay(), []);
+
+  const maskAadhar = (aadhar) => {
+    // Store last 4 digits only for display
+    // Store full number encrypted
+    return aadhar // keep full for now
+    // Note: implement proper encryption later
+  }
 
   const saveToSupabase = async (formData, memberId) => {
     try {
@@ -135,7 +142,7 @@ function Register() {
         dob: formData.dob,
         blood_group: formData.bloodGroup,
         mobile: formData.mobile,
-        aadhar: formData.aadhaar,
+        aadhar: maskAadhar(formData.aadhaar),
         address: formData.address,
         org_address: formData.companyAddress || '',
         district: formData.pledgeDistrict,
@@ -289,40 +296,79 @@ NEW MEMBER REGISTRATION DETAILS
     return `TIWTN-${new Date().getFullYear()}-${String(Math.floor(10000 + Math.random() * 90000)).padStart(5, '0')}`;
   };
 
+  const checkDuplicate = async (mobile, aadhar) => {
+    const { data: mobileCheck } = await supabase
+      .from('members')
+      .select('member_id')
+      .eq('mobile', mobile)
+      .maybeSingle()
+
+    if (mobileCheck) {
+      throw new Error(
+        'இந்த கைபேசி எண் ஏற்கனவே பதிவாகியுள்ளது / ' +
+        'This mobile number is already registered. ' +
+        'Member ID: ' + mobileCheck.member_id
+      )
+    }
+
+    const { data: aadharCheck } = await supabase
+      .from('members')
+      .select('member_id')
+      .eq('aadhar', aadhar)
+      .maybeSingle()
+
+    if (aadharCheck) {
+      throw new Error(
+        'இந்த ஆதார் எண் ஏற்கனவே பதிவாகியுள்ளது / ' +
+        'This Aadhaar is already registered.'
+      )
+    }
+  }
+
   const handleSubmit = async (event) => {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
     }
-    setSubmitting(true);
-    const nextErrors = validate();
-    if (Object.keys(nextErrors).length) {
-      setErrors(nextErrors);
-      setTimeout(() => setSubmitting(false), 400);
-      return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      const nextErrors = validate();
+      if (Object.keys(nextErrors).length) {
+        setErrors(nextErrors);
+        return;
+      }
+
+      await checkDuplicate(form.mobile, form.aadhaar);
+
+      const generatedId = await generateMemberId(form.pledgeDistrict);
+      const memberData = {
+        ...form,
+        joiningDate,
+        memberId: generatedId,
+      };
+
+      // Await save so errors surface before showing card
+      const saved = await saveToSupabase(form, generatedId);
+      console.log('Save result:', saved);
+
+      if (saved) {
+        await sendAdminNotification(form, generatedId);
+      }
+
+      // Show card regardless (don't block on save error)
+      setErrors({});
+      setMemberId(generatedId);
+      setMember(memberData);
+      setCardReady(false);
+      setTimeout(() => setCardReady(true), 300);
+    } catch (err) {
+      console.error('Submit error:', err);
+      alert('பிழை ஏற்பட்டது / Error: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
     }
-    const generatedId = await generateMemberId(form.pledgeDistrict);
-    const memberData = {
-      ...form,
-      joiningDate,
-      memberId: generatedId,
-    };
-
-    // Await save so errors surface before showing card
-    const saved = await saveToSupabase(form, generatedId);
-    console.log('Save result:', saved);
-
-    if (saved) {
-      await sendAdminNotification(form, generatedId);
-    }
-
-    // Show card regardless (don't block on save error)
-    setErrors({});
-    setMemberId(generatedId);
-    setMember(memberData);
-    setCardReady(false);
-    setTimeout(() => setCardReady(true), 300);
-    setSubmitting(false);
   };
 
   const handleReset = () => {
@@ -668,9 +714,26 @@ NEW MEMBER REGISTRATION DETAILS
               </div>
             </div>
 
-            <button type="button" onClick={handleSubmit} className="mt-8 inline-flex h-[52px] w-full items-center justify-center rounded-[12px] px-6 text-sm font-semibold transition-all hover:opacity-90" style={{ background: '#FF6B00', color: '#FFFFFF' }}>
-              பதிவு செய்க
-              <span className="ml-3 text-xs uppercase tracking-[0.2em]">Register Now</span>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="mt-8 inline-flex h-[52px] w-full items-center justify-center rounded-[12px] px-6 text-sm font-semibold transition-all"
+              style={{
+                background: '#FF6B00',
+                color: '#FFFFFF',
+                opacity: isSubmitting ? 0.7 : 1,
+                cursor: isSubmitting ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {isSubmitting ? (
+                'பதிவு செய்கிறது... / Registering...'
+              ) : (
+                <>
+                  பதிவு செய்க
+                  <span className="ml-3 text-xs uppercase tracking-[0.2em]">Register Now</span>
+                </>
+              )}
             </button>
           </div>
         ) : (

@@ -1,5 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { supabase } from '../supabase/client';
+import SEO from '../components/SEO';
+import PageLoader from '../components/PageLoader';
 
 const categories = ['ALL', 'EVENTS', 'WORKSHOPS', 'TRAINING'];
 
@@ -48,32 +50,36 @@ function Gallery() {
     [filter, galleryItems]
   );
 
+  if (loading) return <PageLoader message="புகைப்படங்களை ஏற்றுகிறது..." />;
+
   return (
-    <section className="bg-secondary px-6 py-16 text-primary md:px-10">
-      <div className="mx-auto max-w-7xl">
-        <div className="rounded-[32px] border border-[var(--border)] bg-primary p-10 shadow-sm">
-          <p className="text-sm uppercase tracking-[0.3em] text-amber">GALLERY</p>
-          <h1 className="mt-4 text-3xl font-display text-navy md:text-5xl">Welding scenes from workshops and events.</h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-secondary">Explore our gallery of certification moments, and networking experiences.</p>
-        </div>
-
-        <div className="mt-10 flex flex-wrap gap-3">
-          {categories.map((category) => (
-            <button
-              key={category}
-              className={`rounded-full px-5 py-2 text-sm uppercase tracking-[0.26em] transition min-h-[44px] ${filter === category ? 'bg-amber text-black' : 'border border-[var(--border)] bg-card text-secondary hover:text-primary'}`}
-              onClick={() => setFilter(category)}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-
-        {loading ? (
-          <div className="mt-12 flex min-h-[30vh] items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber border-t-transparent"></div>
+    <>
+      <SEO
+        title="புகைப்பட தொகுப்பு / Gallery"
+        description="தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்க புகைப்பட தொகுப்பு - South India Welding Workers Welfare Association Gallery"
+        url="/gallery"
+      />
+      <section className="bg-secondary px-6 py-16 text-primary md:px-10">
+        <div className="mx-auto max-w-7xl">
+          <div className="rounded-[32px] border border-[var(--border)] bg-primary p-10 shadow-sm">
+            <p className="text-sm uppercase tracking-[0.3em] text-amber">GALLERY</p>
+            <h1 className="mt-4 text-3xl font-display text-navy md:text-5xl">Welding scenes from workshops and events.</h1>
+            <p className="mt-6 max-w-3xl text-lg leading-8 text-secondary">Explore our gallery of certification moments, and networking experiences.</p>
           </div>
-        ) : filteredImages.length === 0 ? (
+
+          <div className="mt-10 flex flex-wrap gap-3">
+            {categories.map((category) => (
+              <button
+                key={category}
+                className={`rounded-full px-5 py-2 text-sm uppercase tracking-[0.26em] transition min-h-[44px] ${filter === category ? 'bg-amber text-black' : 'border border-[var(--border)] bg-card text-secondary hover:text-primary'}`}
+                onClick={() => setFilter(category)}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
+          {filteredImages.length === 0 ? (
           <div className="mt-12 text-center rounded-[28px] border border-[var(--border)] bg-card p-12 shadow-sm">
             <p className="text-lg text-[var(--text-muted)]">புகைப்படங்கள் ஏதும் இல்லை / No gallery images found</p>
           </div>
@@ -129,6 +135,7 @@ function Gallery() {
         </div>
       )}
     </section>
+    </>
   );
 }
 

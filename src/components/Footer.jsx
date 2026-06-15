@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import OrgLogo from './OrgLogo';
 
 const links = [
@@ -55,7 +55,12 @@ function Footer() {
         </div>
       </div>
       <div className="mt-10 pt-6 text-center text-sm" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', color: '#888888' }}>
-        © 2026 தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம். All Rights Reserved.
+        <div>© 2026 தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம். All Rights Reserved.</div>
+        <div className="mt-2">
+          <Link to="/privacy" style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
+            தனியுரிமை கொள்கை / Privacy Policy
+          </Link>
+        </div>
       </div>
     </footer>
   );

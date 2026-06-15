@@ -1,3 +1,5 @@
+import { SITE_URL } from '../config/constants'
+
 export const printMemberForm = (member) => {
   const printWindow = window.open('', '_blank')
 
@@ -282,7 +284,7 @@ export const printMemberForm = (member) => {
 <div class="header">
   <img
     class="logo"
-    src="https://client-five-gamma-62.vercel.app/logo.png"
+    src="${SITE_URL}/logo.png"
     alt="TIWTN Logo"
     onerror="this.style.display='none'"
   />
