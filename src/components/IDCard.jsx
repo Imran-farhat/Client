@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import balajiSign from '../assets/balaji_clean.png';
 import idhreesSign from '../assets/idhrees_clean.png';
@@ -73,7 +73,7 @@ function CardFront({ member }) {
   return (
     <div id="id-card-front" style={{
       width: '240px',
-      minHeight: '420px',
+      minHeight: '460px',
       height: 'auto',
       display: 'flex',
       flexDirection: 'column',
@@ -191,7 +191,7 @@ function CardBack({ member }) {
   return (
     <div id="id-card-back" style={{
       width: '240px',
-      minHeight: '420px',
+      minHeight: '460px',
       height: 'auto',
       display: 'flex',
       flexDirection: 'column',
@@ -303,6 +303,26 @@ function CardBack({ member }) {
 function IDCard({ member, onReset, showReset = true }) {
   const frontRef = useRef(null);
   const backRef = useRef(null);
+  const [syncedHeight, setSyncedHeight] = useState(null);
+
+  // After every render, measure both cards and force them to the same height
+  useEffect(() => {
+    const sync = () => {
+      const front = document.getElementById('id-card-front');
+      const back  = document.getElementById('id-card-back');
+      if (!front || !back) return;
+      // Reset so we get the natural content height
+      front.style.minHeight = '';
+      back.style.minHeight  = '';
+      const h = Math.max(front.scrollHeight, back.scrollHeight, 460);
+      front.style.minHeight = h + 'px';
+      back.style.minHeight  = h + 'px';
+      setSyncedHeight(h);
+    };
+    // Run after paint so layout is settled
+    const raf = requestAnimationFrame(sync);
+    return () => cancelAnimationFrame(raf);
+  }, [member]);
 
   const downloadOpts = {
     scale: 4,
