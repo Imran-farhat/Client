@@ -318,6 +318,12 @@ export const printMemberForm = (member) => {
     </div>
 
     <div class="field-row">
+      <span class="f-label">பதவி</span>
+      <span class="f-colon">:</span>
+      <span class="f-value">${member.posting || ''}</span>
+    </div>
+
+    <div class="field-row">
       <span class="f-label">சரியான முகவரி</span>
       <span class="f-colon">:</span>
       <span class="f-value">${member.address || ''}</span>
