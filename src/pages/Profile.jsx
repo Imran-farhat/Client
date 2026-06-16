@@ -129,6 +129,7 @@ function Profile() {
   const idCardMember = memberData ? {
     memberId: memberData.member_id,
     fullName: memberData.full_name,
+    posting: memberData.posting,
     dob: memberData.dob,
     bloodGroup: memberData.blood_group,
     mobile: memberData.mobile,
