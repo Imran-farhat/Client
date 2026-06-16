@@ -50,6 +50,7 @@ const TAMIL_NADU_DISTRICTS = [
 
 const initialForm = {
   fullName: '',
+  posting: '',
   address: '',
   companyAddress: '',
   bloodGroup: '',
@@ -65,6 +66,24 @@ const initialForm = {
   profilePhoto: null,
   photoPreview: null,
 };
+
+const BiLabel = ({ tamil, english, required }) => (
+  <label>
+    <span style={{
+      fontSize: '13px', fontWeight: '700',
+      color: 'var(--text-primary)'
+    }}>{tamil}</span>
+    <span style={{
+      fontSize: '11px', fontWeight: '400',
+      color: 'var(--text-muted)', marginLeft: '5px'
+    }}>/ {english}</span>
+    {required && (
+      <span style={{ color: '#FF6B00', marginLeft: '2px' }}>
+        *
+      </span>
+    )}
+  </label>
+);
 
 function formatDate(date) {
   const d = new Date(date);
@@ -139,6 +158,7 @@ function Register() {
         member_id: memberId,
         user_id: currentUser?.id || null,
         full_name: formData.fullName,
+        posting: formData.posting,
         dob: formData.dob,
         blood_group: formData.bloodGroup,
         mobile: formData.mobile,
@@ -217,6 +237,7 @@ NEW MEMBER REGISTRATION DETAILS
 
 உறுப்பினர் எண் / Member ID : ${memberId}
 பெயர் / Full Name          : ${formData.fullName}
+பதவி / Posting            : ${formData.posting}
 பிறந்த தேதி / DOB          : ${formData.dob}
 இரத்த பிரிவு / Blood Group : ${formData.bloodGroup}
 கைபேசி / Mobile           : ${formData.mobile}
@@ -275,6 +296,7 @@ NEW MEMBER REGISTRATION DETAILS
   const validate = () => {
     const nextErrors = {};
     if (!form.fullName.trim()) nextErrors.fullName = 'இந்த தகவல் அவசியம்';
+    if (!form.posting?.trim()) nextErrors.posting = 'பதவி அவசியம் / Posting required';
     if (!form.address.trim()) nextErrors.address = 'இந்த தகவல் அவசியம்';
     if (!form.companyAddress.trim()) nextErrors.companyAddress = 'இந்த தகவல் அவசியம்';
     if (!form.bloodGroup) nextErrors.bloodGroup = 'இந்த தகவல் அவசியம்';
@@ -458,11 +480,12 @@ NEW MEMBER REGISTRATION DETAILS
 
               <div className="space-y-4 rounded-[12px] p-5" style={{ border: '1.5px solid #E5DDD0' }}>
                 <label className="block">
-                  <span className="text-sm font-semibold" style={{ color: '#2C3E6B' }}>முழு பெயர் :</span>
+                  <BiLabel tamil="முழு பெயர்" english="Full Name" required />
                   <div className={`rounded-[8px] transition-all duration-200 ${errors.fullName ? 'animate-shake' : ''}`} style={{ marginTop: '4px' }}>
                     <input
                       value={form.fullName}
                       onChange={handleChange('fullName')}
+                      placeholder="பெயர் / Full Name"
                       style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('fullName'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
                       className="focus:border-amber"
                     />
@@ -471,12 +494,27 @@ NEW MEMBER REGISTRATION DETAILS
                 </label>
 
                 <label className="block">
-                  <span className="text-sm font-semibold" style={{ color: '#2C3E6B' }}>சரியான முகவரி :</span>
+                  <BiLabel tamil="பதவி" english="Posting" required />
+                  <div className={`rounded-[8px] transition-all duration-200 ${errors.posting ? 'animate-shake' : ''}`} style={{ marginTop: '4px' }}>
+                    <input
+                      value={form.posting}
+                      onChange={handleChange('posting')}
+                      placeholder="பதவி / Posting (வெல்டர் / Welder)"
+                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('posting'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
+                      className="focus:border-amber"
+                    />
+                  </div>
+                  {errors.posting && <p style={{ color: '#E53E3E', fontSize: '12px', marginTop: '4px' }}>{errors.posting}</p>}
+                </label>
+
+                <label className="block">
+                  <BiLabel tamil="சரியான முகவரி" english="Correct Address" required />
                   <div style={{ marginTop: '4px' }}>
                     <textarea
                       rows="2"
                       value={form.address}
                       onChange={handleChange('address')}
+                      placeholder="முகவரி / Address"
                       style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('address'), width: '100%', resize: 'vertical', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', minHeight: '44px', WebkitTextFillColor: 'var(--text-primary)' }}
                       className="focus:border-amber"
                     />
@@ -485,12 +523,13 @@ NEW MEMBER REGISTRATION DETAILS
                 </label>
 
                 <label className="block">
-                  <span className="text-sm font-semibold" style={{ color: '#2C3E6B' }}>நிறுவனத்தின் முகவரி :</span>
+                  <BiLabel tamil="நிறுவனத்தின் முகவரி" english="Organization Address" />
                   <div style={{ marginTop: '4px' }}>
                     <textarea
                       rows="2"
                       value={form.companyAddress}
                       onChange={handleChange('companyAddress')}
+                      placeholder="நிறுவன முகவரி / Organization Address"
                       style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('companyAddress'), width: '100%', resize: 'vertical', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', minHeight: '44px', WebkitTextFillColor: 'var(--text-primary)' }}
                       className="focus:border-amber"
                     />
@@ -500,7 +539,7 @@ NEW MEMBER REGISTRATION DETAILS
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block">
-                    <span className="text-sm font-semibold" style={{ color: '#2C3E6B' }}>இரத்த பிரிவு :</span>
+                    <BiLabel tamil="இரத்த பிரிவு" english="Blood Group" required />
                     <div style={{ marginTop: '4px' }}>
                       <select
                         value={form.bloodGroup}
@@ -516,7 +555,7 @@ NEW MEMBER REGISTRATION DETAILS
                   </label>
 
                   <label className="block">
-                    <span className="text-sm font-semibold" style={{ color: '#2C3E6B' }}>வயது பிறந்த தேதி :</span>
+                    <BiLabel tamil="பிறந்த தேதி" english="Date of Birth" required />
                     <div style={{ marginTop: '4px' }}>
                       <input
                         type="date"
@@ -532,14 +571,14 @@ NEW MEMBER REGISTRATION DETAILS
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block">
-                    <span className="text-sm font-semibold" style={{ color: '#2C3E6B' }}>ஆதார் எண் :</span>
+                    <BiLabel tamil="ஆதார் எண்" english="Aadhaar Number" required />
                     <div style={{ marginTop: '4px' }}>
                       <input
                         value={form.aadhaar}
                         inputMode="numeric"
                         maxLength={12}
                         onChange={handleChange('aadhaar')}
-                        placeholder="12 digits"
+                        placeholder="12 இலக்கங்கள் / 12 digits"
                         style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('aadhaar'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
                         className="focus:border-amber"
                       />
@@ -548,14 +587,14 @@ NEW MEMBER REGISTRATION DETAILS
                   </label>
 
                   <label className="block">
-                    <span className="text-sm font-semibold" style={{ color: '#2C3E6B' }}>செல் நம்பர் :</span>
+                    <BiLabel tamil="செல் நம்பர்" english="Mobile Number" required />
                     <div style={{ marginTop: '4px' }}>
                       <input
                         value={form.mobile}
                         inputMode="numeric"
                         maxLength={10}
                         onChange={handleChange('mobile')}
-                        placeholder="10 digits"
+                        placeholder="10 இலக்கங்கள் / 10 digits"
                         style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('mobile'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
                         className="focus:border-amber"
                       />
@@ -565,11 +604,12 @@ NEW MEMBER REGISTRATION DETAILS
                 </div>
 
                 <label className="block">
-                  <span className="text-sm font-semibold" style={{ color: '#2C3E6B' }}>வாரிசுதாரர் பெயர் :</span>
+                  <BiLabel tamil="வாரிசுதாரர் பெயர்" english="Nominee Name" />
                   <div style={{ marginTop: '4px' }}>
                     <input
                       value={form.nomineeName}
                       onChange={handleChange('nomineeName')}
+                      placeholder="வாரிசுதாரர் பெயர் / Nominee Name"
                       style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('nomineeName'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
                       className="focus:border-amber"
                     />
@@ -578,14 +618,14 @@ NEW MEMBER REGISTRATION DETAILS
                 </label>
 
                 <label className="block">
-                  <span className="text-sm font-semibold" style={{ color: '#2C3E6B' }}>வாரிசுதாரர் செல்நம்பர் :</span>
+                  <BiLabel tamil="வாரிசுதாரர் செல்நம்பர்" english="Nominee Mobile" />
                   <div style={{ marginTop: '4px' }}>
                     <input
                       value={form.nomineeMobile}
                       inputMode="numeric"
                       maxLength={10}
                       onChange={handleChange('nomineeMobile')}
-                      placeholder="10 digits"
+                      placeholder="10 இலக்கங்கள் / 10 digits"
                       style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('nomineeMobile'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
                       className="focus:border-amber"
                     />
@@ -623,10 +663,7 @@ NEW MEMBER REGISTRATION DETAILS
 
               <div className="rounded-[12px] p-4" style={{ border: '1.5px solid #E5DDD0', marginBottom: '8px' }}>
                 <label className="block">
-                  <span className="text-sm font-semibold" style={{ color: '#2C3E6B' }}>
-                    மாவட்டம் <span style={{ color: '#E53E3E' }}>*</span>
-                    <span style={{ fontSize: '10px', color: '#888', marginLeft: '4px' }}>(District)</span>
-                  </span>
+                  <BiLabel tamil="மாவட்டம்" english="District" required />
                   <div style={{ marginTop: '4px' }}>
                     <select
                       value={form.pledgeDistrict}
@@ -688,8 +725,8 @@ NEW MEMBER REGISTRATION DETAILS
                 </div>
                 <div className="flex flex-col gap-3 rounded-[12px] p-4" style={{ border: '1.5px solid #E5DDD0' }}>
                   <div className="flex items-center gap-3 text-sm">
-                    <span className="font-semibold" style={{ color: '#2C3E6B' }}>பரிந்துரை:</span>
-                    <input value={form.referral} onChange={handleChange('referral')} placeholder="Referrer" style={{ border: 'none', background: 'transparent', color: '#1A1A2E', WebkitTextFillColor: '#1A1A2E', padding: '0', outline: 'none', fontFamily: 'inherit', fontSize: 'inherit', flex: 1 }} />
+                    <span className="font-semibold" style={{ color: '#2C3E6B' }}>பரிந்துரை / Referral:</span>
+                    <input value={form.referral} onChange={handleChange('referral')} placeholder="பரிந்துரை / Referral name" style={{ border: 'none', background: 'transparent', color: '#1A1A2E', WebkitTextFillColor: '#1A1A2E', padding: '0', outline: 'none', fontFamily: 'inherit', fontSize: 'inherit', flex: 1 }} />
                   </div>
                   <div className="mt-3 pt-3 text-sm" style={{ borderTop: '1px solid #E5DDD0' }}>
                     <div className="font-semibold" style={{ color: '#2C3E6B' }}>உறுப்பினர் கையொப்பம்</div>

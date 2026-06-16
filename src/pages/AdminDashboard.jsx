@@ -31,7 +31,7 @@ function formatDateDisplay() {
 }
 
 const EMPTY_REGISTER_FORM = {
-  fullName: '', address: '', companyAddress: '', bloodGroup: '',
+  fullName: '', posting: '', address: '', companyAddress: '', bloodGroup: '',
   dob: '', aadhaar: '', mobile: '', nomineeName: '', nomineeMobile: '',
   pledgeDistrict: '', pledgeBranch: '', referral: '', pledgeName: '',
   photoPreview: null,
@@ -124,8 +124,17 @@ function AdminDashboard() {
   const saveEditMember = async () => {
     if (!editMember) return;
     await supabase.from('members').update({
-      full_name: editMember.full_name, mobile: editMember.mobile, district: editMember.district,
-      address: editMember.address, blood_group: editMember.blood_group, dob: editMember.dob,
+      full_name: editMember.full_name,
+      posting: editMember.posting,
+      mobile: editMember.mobile,
+      district: editMember.district,
+      address: editMember.address,
+      blood_group: editMember.blood_group,
+      dob: editMember.dob,
+      aadhar: editMember.aadhar,
+      branch: editMember.branch,
+      blood_group: editMember.blood_group,
+      nominee_name: editMember.nominee_name,
     }).eq('member_id', editMember.member_id);
     setEditMember(null);
     await loadMembers();
@@ -135,8 +144,8 @@ function AdminDashboard() {
     await loadUsers();
   };
   const exportCSV = () => {
-    const headers = ['Member ID','Full Name','DOB','Blood Group','Mobile','Aadhar','District','Address','Nominee','Branch','Joined Date','Registered At'];
-    const rows = members.map(m => [m.member_id, m.full_name, m.dob, m.blood_group, m.mobile, m.aadhar, m.district, m.address, m.nominee_name, m.branch, m.join_date, new Date(m.registered_at).toLocaleDateString('en-IN')]);
+    const headers = ['Member ID','Full Name','Posting','DOB','Blood Group','Mobile','Aadhar','District','Address','Nominee','Branch','Joined Date','Registered At'];
+    const rows = members.map(m => [m.member_id, m.full_name, m.posting, m.dob, m.blood_group, m.mobile, m.aadhar, m.district, m.address, m.nominee_name, m.branch, m.join_date, new Date(m.registered_at).toLocaleDateString('en-IN')]);
     const csv = [headers, ...rows].map(r => r.map(v => `"${v || ''}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `TIWTN_Members_${Date.now()}.csv`; a.click();
@@ -229,26 +238,28 @@ NEW MEMBER REGISTRATION DETAILS
     const errs = validateReg();
     if (Object.keys(errs).length) { setRegErrors(errs); return; }
     setRegSubmitting(true);
-    const memberId = await generateMemberId(regForm.pledgeDistrict);
+    const memberId = await generateMemberId(newMember.pledgeDistrict);
     const record = {
-      member_id: memberId, user_id: null, full_name: regForm.fullName, dob: regForm.dob,
-      blood_group: regForm.bloodGroup, mobile: regForm.mobile, aadhar: regForm.aadhaar,
-      address: regForm.address, org_address: regForm.companyAddress || '', district: regForm.pledgeDistrict,
-      branch: regForm.pledgeBranch || '', nominee_name: regForm.nomineeName || '',
-      nominee_phone: regForm.nomineeMobile || '', join_date: joiningDate,
-      referrer: regForm.referral || '', photo_base64: regForm.photoPreview || null,
+      member_id: memberId, user_id: null, full_name: newMember.fullName,
+      posting: newMember.posting,
+      dob: newMember.dob,
+      blood_group: newMember.bloodGroup, mobile: newMember.mobile, aadhar: newMember.aadhaar,
+      address: newMember.address, org_address: newMember.companyAddress || '', district: newMember.pledgeDistrict,
+      branch: newMember.pledgeBranch || '', nominee_name: newMember.nomineeName || '',
+      nominee_phone: newMember.nomineeMobile || '', join_date: joiningDate,
+      referrer: newMember.referral || '', photo_base64: newMember.photoPreview || null,
       registered_at: new Date().toISOString(),
     };
     const { data, error } = await supabase.from('members').insert(record).select().single();
     setRegSubmitting(false);
     if (error) { alert('Error: ' + error.message); return; }
     
-    await sendAdminNotification(regForm, memberId);
+    await sendAdminNotification(newMember, memberId);
 
     setRegSuccess(data);
     await loadMembers();
   };
-  const resetRegForm = () => { setRegForm(EMPTY_REGISTER_FORM); setRegErrors({}); setRegSuccess(null); };
+  const resetRegForm = () => { setNewMember(EMPTY_REGISTER_FORM); setRegErrors({}); setRegSuccess(null); };
 
   // ── Gallery actions ──────────────────────────────────────────
   const handleGalleryImageUpload = async (e) => {
@@ -639,6 +650,23 @@ NEW MEMBER REGISTRATION DETAILS
                         }`}
                       />
                       {regErrors.fullName && <p className="mt-0.5 text-xs text-red-500">{regErrors.fullName}</p>}
+                    </div>
+
+                    {/* 1b. Posting */}
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-[#003366] mb-1">
+                        பதவி / Posting <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={newMember.posting}
+                        onChange={handleRegChange('posting')}
+                        placeholder="பதவி / Posting (வெல்டர் / Welder)"
+                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
+                          regErrors.posting ? 'border-red-400' : 'border-gray-200'
+                        }`}
+                      />
+                      {regErrors.posting && <p className="mt-0.5 text-xs text-red-500">{regErrors.posting}</p>}
                     </div>
 
                     {/* 2. Address */}
@@ -1058,12 +1086,36 @@ NEW MEMBER REGISTRATION DETAILS
             <button onClick={() => setEditMember(null)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-black hover:bg-gray-200 text-sm">✕</button>
             <h3 className="text-lg md:text-xl font-bold text-[#003366] mb-4">Edit Member</h3>
             <div className="space-y-3 text-sm">
-              {[['full_name','Full Name','text'],['mobile','Mobile','text'],['dob','DOB','date'],['blood_group','Blood Group','text'],['address','Address','text']].map(([key, label, type]) => (
-                <div key={key}>
-                  <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">{label}</label>
-                  <input type={type} value={editMember[key] || ''}
-                    onChange={e => setEditMember(prev => ({ ...prev, [key]: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-black focus:outline-none focus:border-[#FFB347] text-sm" />
+              {[
+                { key: 'full_name', label: 'பெயர் / Name', type: 'text' },
+                { key: 'posting',   label: 'பதவி / Posting', type: 'text' },
+                { key: 'dob',       label: 'பிறந்த தேதி / DOB', type: 'date' },
+                { key: 'mobile',    label: 'கைபேசி / Mobile', type: 'tel' },
+                { key: 'aadhar',    label: 'ஆதார் / Aadhaar', type: 'text' },
+                { key: 'address',   label: 'முகவரி / Address', type: 'text' },
+                { key: 'branch',    label: 'கிளை / Branch', type: 'text' },
+                { key: 'nominee_name', label: 'வாரிசுதாரர் / Nominee', type: 'text' },
+              ].map(field => (
+                <div key={field.key} style={{ marginBottom: '12px' }}>
+                  <label style={{
+                    fontSize: '12px', fontWeight: '600',
+                    color: 'var(--text-muted)',
+                    display: 'block', marginBottom: '4px'
+                  }}>{field.label}</label>
+                  <input
+                    type={field.type}
+                    value={editMember[field.key] || ''}
+                    onChange={e => setEditMember(prev => ({
+                      ...prev, [field.key]: e.target.value
+                    }))}
+                    style={{
+                      width: '100%', padding: '8px 12px',
+                      borderRadius: '8px', fontSize: '14px',
+                      background: 'var(--bg-secondary)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text-primary)'
+                    }}
+                  />
                 </div>
               ))}
               <div>
