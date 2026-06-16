@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
@@ -11,7 +11,6 @@ import Gallery from './pages/Gallery';
 import Register from './pages/Register';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
-import Signup from './pages/Signup';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -89,7 +88,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
+                <Route path="/signup" element={<Navigate to="/login" replace />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/profile" element={
                   <ProtectedRoute><Profile /></ProtectedRoute>
