@@ -51,8 +51,31 @@ export const generateMemberId = async (district) => {
     .select('*', { count: 'exact', head: true })
     .eq('district', district);
 
-  const nextCount = (count || 0) + 1;
-  const paddedCount = String(nextCount).padStart(3, '0');
+  let nextCount = (count || 0) + 1;
+  let isUnique = false;
+  let generatedId = '';
 
-  return `TIWTN-${year}-${districtCode}-${paddedCount}`;
+  while (!isUnique) {
+    const paddedCount = String(nextCount).padStart(3, '0');
+    generatedId = `TIWTN-${year}-${districtCode}-${paddedCount}`;
+
+    // Check if this ID already exists in the database
+    const { data, error } = await supabase
+      .from('members')
+      .select('member_id')
+      .eq('member_id', generatedId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error("Error checking member ID uniqueness: " + error.message);
+    }
+
+    if (!data) {
+      isUnique = true;
+    } else {
+      nextCount++;
+    }
+  }
+
+  return generatedId;
 };

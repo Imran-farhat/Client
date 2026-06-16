@@ -377,14 +377,18 @@ NEW MEMBER REGISTRATION DETAILS
 
       if (saved) {
         await sendAdminNotification(form, generatedId);
+        
+        // Show card only on successful save
+        setErrors({});
+        setMemberId(generatedId);
+        setMember(memberData);
+        setCardReady(false);
+        setTimeout(() => setCardReady(true), 300);
+      } else {
+        // Registration failed (alert already shown inside saveToSupabase)
+        setIsSubmitting(false);
+        return;
       }
-
-      // Show card regardless (don't block on save error)
-      setErrors({});
-      setMemberId(generatedId);
-      setMember(memberData);
-      setCardReady(false);
-      setTimeout(() => setCardReady(true), 300);
     } catch (err) {
       console.error('Submit error:', err);
       alert('பிழை ஏற்பட்டது / Error: ' + err.message);
