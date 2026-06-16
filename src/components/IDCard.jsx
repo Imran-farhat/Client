@@ -272,6 +272,14 @@ function CardBack({ member }) {
           <div style={{ fontFamily: 'Courier Prime, monospace', fontSize: '10px', fontWeight: '700', color: '#003366', letterSpacing: '1px' }}>{member.aadhaar || '-'}</div>
         </div>
 
+        {/* Contact Numbers */}
+        <div style={{ borderTop: '1px solid #E0E0E0', paddingTop: '8px' }}>
+          <div style={{ fontSize: '6px', color: '#888', marginBottom: '2px' }}>தொடர்பு எண் / CONTACT NO</div>
+          <div style={{ fontSize: '9px', fontWeight: '800', color: '#003366', lineHeight: '1.4' }}>
+            +91 98765 43210, +91 86085 08342, +91 97861 11700
+          </div>
+        </div>
+
         {/* Disclaimer */}
         <div style={{ padding: '8px', background: '#FFF8F0', border: '1px solid #FFB347', borderRadius: '5px' }}>
           <div style={{ fontSize: '8px', color: '#333', lineHeight: '1.6' }}>
