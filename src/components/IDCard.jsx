@@ -46,12 +46,12 @@ function LogoFallback() {
 
 function CardFront({ member }) {
   const fields = [
-    { label: 'Name', value: member.fullName || '-' },
-    { label: 'D.O.B', value: member.dob || '-' },
-    { label: 'Mobile', value: member.mobile || '-' },
+    { label: 'Name',     value: member.fullName || '-' },
+    { label: 'Posting',  value: member.posting  || '-' },
+    { label: 'D.O.B',   value: member.dob       || '-' },
     { label: 'District', value: member.pledgeDistrict || member.district || '-' },
-    { label: 'Address', value: member.address || '-' },
-    { label: 'Joined', value: member.joiningDate || member.joinDate || '-' },
+    { label: 'Address',  value: member.address   || '-' },
+    { label: 'Phone No', value: member.mobile    || '-' },
   ];
 
   const fieldRow = (label, value, bg) => (
@@ -246,6 +246,12 @@ function CardBack({ member }) {
             133/34, 1A, 1A பெங்களூர் ஹைவே,<br/>
             சென்னை – 600124, தமிழ்நாடு.
           </div>
+        </div>
+
+        {/* Joined date */}
+        <div style={{ borderTop: '1px solid #E0E0E0', paddingTop: '8px' }}>
+          <div style={{ fontSize: '6px', color: '#888', marginBottom: '2px' }}>இணைந்த தேதி / DATE OF JOINED</div>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: '#003366' }}>{member.joiningDate || member.joinDate || '-'}</div>
         </div>
 
         {/* Nominee + blood row */}

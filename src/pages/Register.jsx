@@ -795,6 +795,7 @@ NEW MEMBER REGISTRATION DETAILS
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <tbody>
                   <tr><td style={{ padding: '8px 12px', fontWeight: 600, color: '#003366', width: '200px', borderBottom: '1px solid #CCCCCC' }}>முழு பெயர்</td><td style={{ padding: '8px 12px', color: '#003366', borderBottom: '1px solid #CCCCCC' }}>{form.fullName}</td></tr>
+                  <tr><td style={{ padding: '8px 12px', fontWeight: 600, color: '#003366', width: '200px', borderBottom: '1px solid #CCCCCC' }}>பதவி</td><td style={{ padding: '8px 12px', color: '#003366', borderBottom: '1px solid #CCCCCC' }}>{form.posting}</td></tr>
                   <tr><td style={{ padding: '8px 12px', fontWeight: 600, color: '#003366', width: '200px', borderBottom: '1px solid #CCCCCC' }}>சரியான முகவரி</td><td style={{ padding: '8px 12px', color: '#003366', borderBottom: '1px solid #CCCCCC' }}>{form.address}</td></tr>
                   <tr><td style={{ padding: '8px 12px', fontWeight: 600, color: '#003366', width: '200px', borderBottom: '1px solid #CCCCCC' }}>நிறுவனத்தின் முகவரி</td><td style={{ padding: '8px 12px', color: '#003366', borderBottom: '1px solid #CCCCCC' }}>{form.companyAddress}</td></tr>
                   <tr><td style={{ padding: '8px 12px', fontWeight: 600, color: '#003366', width: '200px', borderBottom: '1px solid #CCCCCC' }}>இரத்த பிரிவு</td><td style={{ padding: '8px 12px', color: '#003366', borderBottom: '1px solid #CCCCCC' }}>{form.bloodGroup}</td></tr>

@@ -133,7 +133,6 @@ function AdminDashboard() {
       dob: editMember.dob,
       aadhar: editMember.aadhar,
       branch: editMember.branch,
-      blood_group: editMember.blood_group,
       nominee_name: editMember.nominee_name,
     }).eq('member_id', editMember.member_id);
     setEditMember(null);
@@ -150,7 +149,7 @@ function AdminDashboard() {
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `TIWTN_Members_${Date.now()}.csv`; a.click();
   };
-  const toIdCardShape = (m) => m ? ({ memberId: m.member_id, fullName: m.full_name, dob: m.dob, bloodGroup: m.blood_group, mobile: m.mobile, district: m.district, address: m.address, nomineeName: m.nominee_name, joinDate: m.join_date, pledgeDistrict: m.district, pledgeBranch: m.branch, photoPreview: m.photo_base64 }) : null;
+  const toIdCardShape = (m) => m ? ({ memberId: m.member_id, fullName: m.full_name, posting: m.posting, dob: m.dob, bloodGroup: m.blood_group, mobile: m.mobile, district: m.district, address: m.address, nomineeName: m.nominee_name, joinDate: m.join_date, pledgeDistrict: m.district, pledgeBranch: m.branch, photoPreview: m.photo_base64 }) : null;
 
   // ── Register on behalf ───────────────────────────────────────
   const handleRegChange = (field) => (e) => {
