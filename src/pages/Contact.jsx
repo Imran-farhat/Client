@@ -12,13 +12,7 @@ const info = [
 function Contact() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [status, setStatus] = useState('idle'); // idle | sending | success | error
-  const [loading, setLoading] = useState(true);
   const formRef = useRef(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 300);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleChange = (field) => (event) => setForm((prev) => ({ ...prev, [field]: event.target.value }));
 
@@ -53,10 +47,6 @@ function Contact() {
       setStatus('error');
     }
   };
-
-  if (loading) {
-    return <PageLoader message="தொடர்பு பக்கத்தை ஏற்றுகிறது..." />;
-  }
 
   return (
     <>

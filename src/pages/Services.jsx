@@ -13,16 +13,6 @@ const services = [
 ];
 
 function Services() {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 300);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (loading) {
-    return <PageLoader message="சேவைகள் பக்கத்தை ஏற்றுகிறது..." />;
-  }
 
   return (
     <>

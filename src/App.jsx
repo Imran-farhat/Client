@@ -1,22 +1,24 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import Home from './pages/Home';
-import About from './pages/About';
-import Services from './pages/Services';
-import Gallery from './pages/Gallery';
-import Register from './pages/Register';
-import Contact from './pages/Contact';
-import Login from './pages/Login';
-import Profile from './pages/Profile';
-import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
-import NotFound from './pages/NotFound';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import PageLoader from './components/PageLoader';
+
+const Home = lazy(() => import('./pages/Home'));
+const About = lazy(() => import('./pages/About'));
+const Services = lazy(() => import('./pages/Services'));
+const Gallery = lazy(() => import('./pages/Gallery'));
+const Register = lazy(() => import('./pages/Register'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Login = lazy(() => import('./pages/Login'));
+const Profile = lazy(() => import('./pages/Profile'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 const pageTitles = {
   '/': 'Home | தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்',
@@ -80,24 +82,26 @@ function App() {
           <Navbar />
           <main className="relative overflow-hidden">
             <div className="route-transition">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/services" element={<Services />} />
-                <Route path="/gallery" element={<Gallery />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Navigate to="/login" replace />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/profile" element={
-                  <ProtectedRoute><Profile /></ProtectedRoute>
-                } />
-                <Route path="/admin" element={
-                  <AdminRoute><AdminDashboard /></AdminRoute>
-                } />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <Suspense fallback={<PageLoader message="ஏற்றுகிறது... / Loading..." />}>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/services" element={<Services />} />
+                  <Route path="/gallery" element={<Gallery />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Navigate to="/login" replace />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/profile" element={
+                    <ProtectedRoute><Profile /></ProtectedRoute>
+                  } />
+                  <Route path="/admin" element={
+                    <AdminRoute><AdminDashboard /></AdminRoute>
+                  } />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
             </div>
           </main>
           <Footer />

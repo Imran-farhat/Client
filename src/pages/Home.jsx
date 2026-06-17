@@ -18,18 +18,22 @@ const testimonials = [
 ];
 
 function Home() {
-  const [loading, setLoading] = useState(true);
   const [memberCount, setMemberCount] = useState(null);
   const [count, setCount] = useState([0, 0, 0]); // [members, years, branches]
 
   // Fetch live member count from Supabase
   useEffect(() => {
     const fetchCount = async () => {
-      const { count: total } = await supabase
-        .from('members')
-        .select('*', { count: 'exact', head: true });
-      setMemberCount(total ?? 0);
-      setLoading(false);
+      try {
+        const { count: total, error } = await supabase
+          .from('members')
+          .select('*', { count: 'exact', head: true });
+        if (error) throw error;
+        setMemberCount(total ?? 0);
+      } catch (err) {
+        console.error('Error fetching member count:', err);
+        setMemberCount(0);
+      }
     };
     fetchCount();
 
@@ -41,20 +45,21 @@ function Home() {
     return () => supabase.removeChannel(sub);
   }, []);
 
-  // Animate counters
+  // Animate static counters immediately on mount
   useEffect(() => {
-    const stats = [
-      memberCount ?? 0,
+    const staticTargets = [
       STATIC_STATS[0].staticNum,
       STATIC_STATS[1].staticNum,
     ];
     const duration = 2000;
     const steps = 60;
-    const interval = duration / steps;
 
-    stats.forEach((target, index) => {
+    staticTargets.forEach((target, index) => {
+      const countIndex = index + 1; // 1 for years, 2 for branches
       let current = 0;
       const increment = target / steps;
+      const interval = duration / steps;
+
       const timer = setInterval(() => {
         current += increment;
         if (current >= target) {
@@ -63,20 +68,43 @@ function Home() {
         }
         setCount((prev) => {
           const next = [...prev];
-          next[index] = Math.floor(current);
+          next[countIndex] = Math.floor(current);
           return next;
         });
       }, interval);
     });
-  }, [memberCount]); // re-run once memberCount arrives
+  }, []);
+
+  // Animate live member count once it is fetched
+  useEffect(() => {
+    if (memberCount === null) return;
+
+    const target = memberCount;
+    let current = 0;
+    const duration = 2000;
+    const steps = 60;
+    const increment = target / steps;
+    const interval = duration / steps;
+
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        current = target;
+        clearInterval(timer);
+      }
+      setCount((prev) => {
+        const next = [...prev];
+        next[0] = Math.floor(current);
+        return next;
+      });
+    }, interval);
+  }, [memberCount]);
 
   const displayStats = [
-    { num: count[0], label: 'மொத்த உறுப்பினர்கள்', suffix: '', live: true },
+    { num: memberCount === null ? '...' : count[0], label: 'மொத்த உறுப்பினர்கள்', suffix: '', live: true },
     { num: count[1], label: 'செயல்பாட்டு ஆண்டுகள்', suffix: '+' },
     { num: count[2], label: 'கிளைகள்', suffix: '' },
   ];
-
-  if (loading) return <PageLoader message="முகப்பு ஏற்றுகிறது..." />;
 
   return (
     <>
