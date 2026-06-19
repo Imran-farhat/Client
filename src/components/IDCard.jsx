@@ -90,20 +90,36 @@ function CardFront({ member }) {
         உறுப்பினர் அட்டை / MEMBER IDENTITY CARD
       </div>
 
-      {/* ── PHOTO (Centered with fix for html2canvas stretch) ── */}
+      {/* ── PHOTO (Centered with fix for html2canvas stretch and blurriness) ── */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0', borderBottom: '1px solid #E0E0E0', background: '#FFFFFF', flexShrink: 0 }}>
         {member.photoPreview ? (
           <div style={{
             width: '70px',
             height: '84px',
-            backgroundImage: `url(${member.photoPreview})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
             border: '1.5px solid #003366',
             borderRadius: '3px',
-            display: 'block',
-            margin: '0 auto'
-          }} />
+            position: 'relative',
+            overflow: 'hidden',
+            margin: '0 auto',
+            display: 'block'
+          }}>
+            <img
+              src={member.photoPreview}
+              alt="Member"
+              crossOrigin="anonymous"
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                minWidth: '100%',
+                minHeight: '100%',
+                width: 'auto',
+                height: 'auto',
+                objectFit: 'cover'
+              }}
+            />
+          </div>
         ) : (
           <div style={{ width: '70px', height: '84px', border: '1.5px dashed #003366', borderRadius: '3px', background: '#F0F4F8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: '8px', gap: '3px', margin: '0 auto' }}>
             <span style={{ fontSize: '16px' }}>👤</span>PHOTO
@@ -342,7 +358,7 @@ function IDCard({ member, onReset, showReset = true }) {
     await new Promise(r => setTimeout(r, 600));
 
     const canvas = await html2canvas(clone, {
-      scale: 3,
+      scale: 4,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#FFFFFF',
@@ -422,7 +438,7 @@ function IDCard({ member, onReset, showReset = true }) {
     const cardH = 480;
 
     const captureOpts = {
-      scale: 3,
+      scale: 4,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#FFFFFF',
@@ -439,7 +455,7 @@ function IDCard({ member, onReset, showReset = true }) {
     document.body.removeChild(wrap);
 
     // Both canvases are now guaranteed identical size — combine side-by-side
-    const gap = 60; // pixel gap at scale 3
+    const gap = 80; // pixel gap at scale 4
     const cw = frontCanvas.width;
     const ch = frontCanvas.height;
 
