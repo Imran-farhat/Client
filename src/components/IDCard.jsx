@@ -93,7 +93,7 @@ function CardFront({ member }) {
         உறுப்பினர் அட்டை / MEMBER IDENTITY CARD
       </div>
 
-      {/* ── PHOTO (Centered with fix for html2canvas stretch and blurriness) ── */}
+      {/* ── PHOTO (Centered with fix for html2canvas stretch and alignment) ── */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0', borderBottom: '1px solid #E0E0E0', background: '#FFFFFF', flexShrink: 0 }}>
         {member.photoPreview ? (
           <div style={{
@@ -101,24 +101,26 @@ function CardFront({ member }) {
             height: '84px',
             border: '1.5px solid #003366',
             borderRadius: '3px',
-            position: 'relative',
             overflow: 'hidden',
             margin: '0 auto',
-            display: 'block'
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#F0F4F8',
+            flexShrink: 0
           }}>
             <img
               src={member.photoPreview}
               alt="Member"
               crossOrigin="anonymous"
               style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
+                flexShrink: 0,
                 minWidth: '100%',
                 minHeight: '100%',
                 width: 'auto',
                 height: 'auto',
+                maxWidth: 'none',
+                maxHeight: 'none',
                 objectFit: 'cover'
               }}
             />
