@@ -66,6 +66,9 @@ function CardFront({ member }) {
       borderTop: '1px solid #CCCCCC',
       borderBottom: '1px solid #CCCCCC',
       fontFamily: 'Catamaran, sans-serif',
+      WebkitFontSmoothing: 'antialiased',
+      MozOsxFontSmoothing: 'grayscale',
+      textRendering: 'optimizeLegibility',
       flexShrink: 0,
       boxSizing: 'border-box'
     }}>
@@ -204,6 +207,9 @@ function CardBack({ member }) {
       borderTop: '1px solid #CCCCCC',
       borderBottom: '1px solid #CCCCCC',
       fontFamily: 'Catamaran, sans-serif',
+      WebkitFontSmoothing: 'antialiased',
+      MozOsxFontSmoothing: 'grayscale',
+      textRendering: 'optimizeLegibility',
       flexShrink: 0,
       boxSizing: 'border-box'
     }}>
