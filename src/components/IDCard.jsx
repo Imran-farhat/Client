@@ -93,38 +93,24 @@ function CardFront({ member }) {
         உறுப்பினர் அட்டை / MEMBER IDENTITY CARD
       </div>
 
-      {/* ── PHOTO (Centered with fix for html2canvas stretch and alignment) ── */}
+      {/* ── PHOTO (Cover-fit via direct fixed dimensions) ── */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0', borderBottom: '1px solid #E0E0E0', background: '#FFFFFF', flexShrink: 0 }}>
         {member.photoPreview ? (
-          <div style={{
-            width: '70px',
-            height: '84px',
-            border: '1.5px solid #003366',
-            borderRadius: '3px',
-            overflow: 'hidden',
-            margin: '0 auto',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: '#F0F4F8',
-            flexShrink: 0
-          }}>
-            <img
-              src={member.photoPreview}
-              alt="Member"
-              crossOrigin="anonymous"
-              style={{
-                flexShrink: 0,
-                minWidth: '100%',
-                minHeight: '100%',
-                width: 'auto',
-                height: 'auto',
-                maxWidth: 'none',
-                maxHeight: 'none',
-                objectFit: 'cover'
-              }}
-            />
-          </div>
+          <img
+            src={member.photoPreview}
+            alt="Member"
+            data-member-photo="true"
+            crossOrigin="anonymous"
+            style={{
+              width: '70px',
+              height: '84px',
+              objectFit: 'cover',
+              objectPosition: 'center top',
+              border: '1.5px solid #003366',
+              borderRadius: '3px',
+              display: 'block'
+            }}
+          />
         ) : (
           <div style={{ width: '70px', height: '84px', border: '1.5px dashed #003366', borderRadius: '3px', background: '#F0F4F8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: '8px', gap: '3px', margin: '0 auto' }}>
             <span style={{ fontSize: '16px' }}>👤</span>PHOTO
@@ -320,6 +306,46 @@ function IDCard({ member, onReset, showReset = true }) {
   const frontRef = useRef(null);
   const backRef = useRef(null);
 
+  // Pre-draws photo images as canvas elements (correct cover crop) before html2canvas
+  const replacePhotosWithCanvas = async (container) => {
+    const photoImgs = container.querySelectorAll('img[data-member-photo="true"]');
+    await Promise.all(Array.from(photoImgs).map(img => new Promise((resolve) => {
+      const w = img.offsetWidth || 70;
+      const h = img.offsetHeight || 84;
+      const source = new Image();
+      source.crossOrigin = 'anonymous';
+      source.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = w;
+        c.height = h;
+        const ctx = c.getContext('2d');
+        // Draw cover-crop: scale to fill, align top-center
+        const imgRatio = source.naturalWidth / source.naturalHeight;
+        const boxRatio = w / h;
+        let sw, sh, sx, sy;
+        if (imgRatio > boxRatio) {
+          sh = source.naturalHeight;
+          sw = sh * boxRatio;
+          sx = (source.naturalWidth - sw) / 2; // center horizontally
+          sy = 0;                               // align top
+        } else {
+          sw = source.naturalWidth;
+          sh = sw / boxRatio;
+          sx = 0;
+          sy = 0;                               // align top (face)
+        }
+        ctx.drawImage(source, sx, sy, sw, sh, 0, 0, w, h);
+        c.style.cssText = img.style.cssText;
+        c.style.border = img.style.border;
+        c.style.borderRadius = img.style.borderRadius;
+        img.parentNode.replaceChild(c, img);
+        resolve();
+      };
+      source.onerror = () => resolve();
+      source.src = img.src;
+    })));
+  };
+
   const downloadCard = async () => {
     const wrap = document.createElement('div');
     wrap.style.cssText = `
@@ -363,7 +389,9 @@ function IDCard({ member, onReset, showReset = true }) {
     wrap.appendChild(clone);
 
     await document.fonts.ready;
-    await new Promise(r => setTimeout(r, 600));
+    await new Promise(r => setTimeout(r, 400));
+    await replacePhotosWithCanvas(clone);
+    await new Promise(r => setTimeout(r, 200));
 
     const canvas = await html2canvas(clone, {
       scale: 4,
@@ -440,7 +468,9 @@ function IDCard({ member, onReset, showReset = true }) {
     wrap.appendChild(backClone);
 
     await document.fonts.ready;
-    await new Promise(r => setTimeout(r, 600));
+    await new Promise(r => setTimeout(r, 400));
+    await replacePhotosWithCanvas(frontClone);
+    await new Promise(r => setTimeout(r, 200));
 
     const cardW = 320;
     const cardH = 480;
