@@ -307,21 +307,33 @@ function IDCard({ member, onReset, showReset = true }) {
   const backRef = useRef(null);
 
   // Pre-draws photo images as canvas elements (correct cover crop) before html2canvas
-  const replacePhotosWithCanvas = async (container) => {
+  // scale must match the html2canvas scale option so the canvas is drawn at full resolution
+  const replacePhotosWithCanvas = async (container, scale = 4) => {
     const photoImgs = container.querySelectorAll('img[data-member-photo="true"]');
     await Promise.all(Array.from(photoImgs).map(img => new Promise((resolve) => {
-      const w = img.offsetWidth || 70;
-      const h = img.offsetHeight || 84;
+      // Use fixed logical sizes since we're in an off-screen div
+      const logicalW = 70;
+      const logicalH = 84;
+      const canvasW = logicalW * scale;
+      const canvasH = logicalH * scale;
       const source = new Image();
       source.crossOrigin = 'anonymous';
       source.onload = () => {
         const c = document.createElement('canvas');
-        c.width = w;
-        c.height = h;
+        c.width = canvasW;
+        c.height = canvasH;
+        // Force display size to match logical layout (html2canvas reads style px)
+        c.style.width = logicalW + 'px';
+        c.style.height = logicalH + 'px';
+        c.style.border = img.style.border;
+        c.style.borderRadius = img.style.borderRadius;
+        c.style.display = 'block';
         const ctx = c.getContext('2d');
-        // Draw cover-crop: scale to fill, align top-center
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        // Draw cover-crop: scale to fill, align top-center (face visible)
         const imgRatio = source.naturalWidth / source.naturalHeight;
-        const boxRatio = w / h;
+        const boxRatio = logicalW / logicalH;
         let sw, sh, sx, sy;
         if (imgRatio > boxRatio) {
           sh = source.naturalHeight;
@@ -334,10 +346,7 @@ function IDCard({ member, onReset, showReset = true }) {
           sx = 0;
           sy = 0;                               // align top (face)
         }
-        ctx.drawImage(source, sx, sy, sw, sh, 0, 0, w, h);
-        c.style.cssText = img.style.cssText;
-        c.style.border = img.style.border;
-        c.style.borderRadius = img.style.borderRadius;
+        ctx.drawImage(source, sx, sy, sw, sh, 0, 0, canvasW, canvasH);
         img.parentNode.replaceChild(c, img);
         resolve();
       };
