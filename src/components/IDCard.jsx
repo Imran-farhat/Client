@@ -335,6 +335,25 @@ function CardBack({ member }) {
           </div>
         </div>
 
+        {/* Aadhaar */}
+        <div style={{ borderBottom: '0.5px solid #E0E0E0', padding: '5px 0' }}>
+          <div style={{
+            fontSize: '9px',
+            fontWeight: '700',
+            color: '#444444',
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase',
+            marginBottom: '2.5px'
+          }}>ஆதார் எண் / AADHAAR</div>
+          <div style={{
+            fontFamily: 'Courier Prime, Courier New, monospace',
+            fontSize: '11px',
+            fontWeight: '900',
+            color: '#000000',
+            letterSpacing: '2px'
+          }}>{member.aadhaar || member.aadhar || '-'}</div>
+        </div>
+
         {/* Contact Numbers */}
         <div style={{ borderBottom: '0.5px solid #E0E0E0', padding: '5px 0' }}>
           <div style={{
