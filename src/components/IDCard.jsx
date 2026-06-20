@@ -40,25 +40,58 @@ function DarkSignature({ src, alt, style }) {
       try {
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imgData.data;
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // Step 1: Detect signature ink pixels based on brightness
+        const pixels = new Uint8Array(width * height);
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i];
           const g = data[i+1];
           const b = data[i+2];
           const a = data[i+3];
-          
-          // Calculate brightness of the pixel (0 to 255)
           const brightness = (r + g + b) / 3;
-          if (brightness < 235 && a > 30) {
-            // Convert blue ink to pure black
-            data[i] = 0;
-            data[i+1] = 0;
-            data[i+2] = 0;
+          
+          const idx = i / 4;
+          if (brightness < 240 && a > 20) {
+            pixels[idx] = 1; // Mark as signature ink
           } else {
-            // Force light backgrounds to pure white so multiply hides them
-            data[i] = 255;
-            data[i+1] = 255;
-            data[i+2] = 255;
-            data[i+3] = 255;
+            pixels[idx] = 0;
+          }
+        }
+
+        // Step 2: Perform 3x3 Dilation to thicken signature stroke
+        const dilated = new Uint8Array(width * height);
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            const idx = y * width + x;
+            if (pixels[idx] === 1) {
+              for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                  const ny = y + dy;
+                  const nx = x + dx;
+                  if (ny >= 0 && ny < height && nx >= 0 && nx < width) {
+                    dilated[ny * width + nx] = 1;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Step 3: Write back dilated pure black stroke and pure white background
+        for (let i = 0; i < data.length; i += 4) {
+          const idx = i / 4;
+          if (dilated[idx] === 1) {
+            data[i] = 0;     // Red
+            data[i+1] = 0;   // Green
+            data[i+2] = 0;   // Blue
+            data[i+3] = 255; // Alpha fully opaque
+          } else {
+            data[i] = 255;   // Red
+            data[i+1] = 255; // Green
+            data[i+2] = 255; // Blue
+            data[i+3] = 255; // Alpha fully white
           }
         }
         ctx.putImageData(imgData, 0, 0);
