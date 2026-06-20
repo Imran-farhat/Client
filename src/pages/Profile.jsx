@@ -232,6 +232,7 @@ function Profile() {
                 {[
                   ['Member ID', memberData.member_id],
                   ['Name', memberData.full_name],
+                  ['Aadhaar / ஆதார் எண்', memberData.aadhar],
                   ['District', memberData.district],
                   ['Mobile', memberData.mobile],
                   ['Blood Group', memberData.blood_group],

@@ -7,13 +7,44 @@ import { printMemberForm } from '../utils/printMemberForm';
 import PageLoader from '../components/PageLoader';
 
 const TAMIL_NADU_DISTRICTS = [
-  'அரியலூர்', 'சேலம்', 'சென்னை', 'கோயம்புத்தூர்', 'கடலூர்', 'தர்மபுரி', 'திண்டுக்கல்',
-  'ஈரோடு', 'காஞ்சிபுரம்', 'கன்னியாகுமரி', 'கரூர்', 'கிருஷ்ணகிரி', 'மதுரை',
-  'மயிலாடுதுறை', 'நாகப்பட்டினம்', 'நாமக்கல்', 'நீலகிரி', 'பெரம்பலூர்',
-  'புதுக்கோட்டை', 'ராமநாதபுரம்', 'ராணிப்பேட்டை', 'சிவகங்கை', 'தென்காசி',
-  'தஞ்சாவூர்', 'தேனி', 'திருவள்ளூர்', 'திருவண்ணாமலை', 'திருவாரூர்',
-  'தூத்துக்குடி', 'திருச்சிராப்பள்ளி', 'திருநெல்வேலி', 'திருப்பத்தூர்',
-  'திருப்பூர்', 'வேலூர்', 'விழுப்புரம்', 'விருதுநகர்'
+  "அரியலூர்",
+  "ஈரோடு",
+  "காஞ்சிபுரம்",
+  "கடலூர்",
+  "கரூர்",
+  "கன்னியாகுமரி",
+  "கள்ளக்குறிச்சி",
+  "கிருஷ்ணகிரி",
+  "கோயம்புத்தூர்",
+  "சிவகங்கை",
+  "சேலம்",
+  "செங்கல்பட்டு",
+  "சென்னை",
+  "தஞ்சாவூர்",
+  "தர்மபுரி",
+  "திண்டுக்கல்",
+  "திருச்சிராப்பள்ளி",
+  "திருநெல்வேலி",
+  "திருப்பத்தூர்",
+  "திருப்பூர்",
+  "திருவண்ணாமலை",
+  "திருவாரூர்",
+  "திருவள்ளூர்",
+  "தூத்துக்குடி",
+  "தேனி",
+  "தென்காசி",
+  "நாகப்பட்டினம்",
+  "நாமக்கல்",
+  "நீலகிரி",
+  "பெரம்பலூர்",
+  "புதுக்கோட்டை",
+  "மதுரை",
+  "மயிலாடுதுறை",
+  "ராணிப்பேட்டை",
+  "ராமநாதபுரம்",
+  "விருதுநகர்",
+  "விழுப்புரம்",
+  "வேலூர்"
 ];
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
@@ -551,6 +582,7 @@ NEW MEMBER REGISTRATION DETAILS
                         <th className="p-3 font-semibold">Photo</th>
                         <th className="p-3 font-semibold">Name</th>
                         <th className="p-3 font-semibold">Member ID</th>
+                        <th className="p-3 font-semibold">Aadhaar</th>
                         <th className="p-3 font-semibold">District</th>
                         <th className="p-3 font-semibold">Mobile</th>
                         <th className="p-3 font-semibold text-center">Actions</th>
@@ -558,7 +590,7 @@ NEW MEMBER REGISTRATION DETAILS
                     </thead>
                     <tbody className="text-sm">
                       {loadingData
-                        ? <tr><td colSpan="7" className="p-8 text-center text-gray-400">Loading...</td></tr>
+                        ? <tr><td colSpan="8" className="p-8 text-center text-gray-400">Loading...</td></tr>
                         : paginatedMembers.map((m, idx) => (
                           <tr key={m.member_id} className="border-b border-gray-100 hover:bg-gray-50 transition">
                             <td className="p-3 text-gray-500">{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
@@ -570,6 +602,7 @@ NEW MEMBER REGISTRATION DETAILS
                             </td>
                             <td className="p-3 font-semibold text-gray-800 max-w-[120px] truncate">{m.full_name}</td>
                             <td className="p-3 font-mono text-[#003366] text-xs">{m.member_id}</td>
+                            <td className="p-3 font-mono text-xs">{m.aadhar ? 'XXXX XXXX ' + String(m.aadhar).slice(-4) : '-'}</td>
                             <td className="p-3 text-gray-600 text-xs">{m.district}</td>
                             <td className="p-3 text-gray-600 text-xs">{m.mobile}</td>
                             <td className="p-3 text-center">
@@ -583,7 +616,7 @@ NEW MEMBER REGISTRATION DETAILS
                           </tr>
                         ))
                       }
-                      {!loadingData && paginatedMembers.length === 0 && <tr><td colSpan="7" className="p-8 text-center text-gray-500">No members found.</td></tr>}
+                      {!loadingData && paginatedMembers.length === 0 && <tr><td colSpan="8" className="p-8 text-center text-gray-500">No members found.</td></tr>}
                     </tbody>
                   </table>
                 </div>

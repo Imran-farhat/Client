@@ -45,9 +45,26 @@ function CardFront({ member }) {
       borderBottom: '0.5px solid #E8EDF3',
       boxSizing: 'border-box'
     }}>
-      <div style={{ width: '65px', flexShrink: 0, fontSize: '10px', fontWeight: '700', color: '#555', textAlign: 'left' }}>{label}</div>
+      <div style={{
+        width: '65px',
+        flexShrink: 0,
+        fontSize: '9px',
+        fontWeight: '700',
+        color: '#444444',
+        letterSpacing: '0.5px',
+        textTransform: 'uppercase',
+        textAlign: 'left'
+      }}>{label}</div>
       <div style={{ width: '12px', flexShrink: 0, fontSize: '10px', color: '#BBB', textAlign: 'center' }}>:</div>
-      <div style={{ flex: 1, fontSize: '10.5px', fontWeight: '800', color: '#003366', wordBreak: 'break-word', lineHeight: '1.2', textAlign: 'left' }}>{value}</div>
+      <div style={{
+        flex: 1,
+        fontSize: '10px',
+        fontWeight: '900',
+        color: '#000000',
+        wordBreak: 'break-word',
+        lineHeight: '1.3',
+        textAlign: 'left'
+      }}>{value}</div>
     </div>
   );
 
@@ -60,8 +77,9 @@ function CardFront({ member }) {
       position: 'relative',
       overflow: 'hidden',
       background: '#FFFFFF',
+      color: '#000000',
       borderRadius: '8px',
-      borderLeft: '4px solid #FF6B00',
+      borderLeft: '7px solid #FF6600',
       borderRight: '1px solid #CCCCCC',
       borderTop: '1px solid #CCCCCC',
       borderBottom: '1px solid #CCCCCC',
@@ -73,18 +91,18 @@ function CardFront({ member }) {
       boxSizing: 'border-box'
     }}>
       {/* Top tricolor */}
-      <div style={{ display: 'flex', height: '4px', flexShrink: 0 }}>
-        <div style={{ flex: 1, background: '#FF9933' }} />
+      <div style={{ display: 'flex', height: '7px', flexShrink: 0 }}>
+        <div style={{ flex: 1, background: '#FF6600' }} />
         <div style={{ flex: 1, background: '#FFFFFF', borderTop: '0.5px solid #DDD', borderBottom: '0.5px solid #DDD' }} />
-        <div style={{ flex: 1, background: '#138808' }} />
+        <div style={{ flex: 1, background: '#008000' }} />
       </div>
 
       {/* Navy header */}
       <div style={{ background: '#003366', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
         <img src={'/logo.png'} alt="TIWTN" style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid #FF6B00', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none'; }} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '9.5px', fontWeight: '800', color: '#FFFFFF', lineHeight: '1.25' }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</div>
-          <div style={{ fontSize: '7px', color: '#B8C9E0', letterSpacing: '0.3px', marginTop: '1px' }}>WELDING PROFESSIONALS WELFARE ASSOCIATION</div>
+          <div style={{ fontSize: '10px', fontWeight: '900', color: '#FFFFFF', lineHeight: '1.25' }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</div>
+          <div style={{ fontSize: '7px', fontWeight: '700', color: '#E0E0E0', letterSpacing: '0.3px', marginTop: '1px' }}>WELDING PROFESSIONALS WELFARE ASSOCIATION</div>
         </div>
       </div>
 
@@ -128,8 +146,21 @@ function CardFront({ member }) {
       {/* ── Member ID bar ── */}
       <div style={{ padding: '5px 10px', background: '#EBF0F8', borderBottom: '0.5px solid #D8E2EF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <div>
-          <div style={{ fontSize: '7.5px', color: '#888', marginBottom: '2px', letterSpacing: '0.2px' }}>உறுப்பினர் எண் / Member ID</div>
-          <div style={{ fontFamily: 'Courier Prime, monospace', fontSize: '10.5px', fontWeight: '700', color: '#003366', letterSpacing: '0.5px' }}>
+          <div style={{
+            fontSize: '9px',
+            fontWeight: '700',
+            color: '#444444',
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase',
+            marginBottom: '2px'
+          }}>உறுப்பினர் எண் / Member ID</div>
+          <div style={{
+            fontFamily: 'Courier Prime, Courier New, monospace',
+            fontSize: '11px',
+            fontWeight: '900',
+            color: '#000000',
+            letterSpacing: '2px'
+          }}>
             {member.memberId || 'TIWTN-2026-XXXXX'}
           </div>
         </div>
@@ -159,21 +190,23 @@ function CardFront({ member }) {
                 objectPosition: 'center bottom',
                 display: 'block',
                 mixBlendMode: 'multiply',
+                filter: 'brightness(0) contrast(2)',
+                opacity: '1'
               }}
             />
-            <div style={{ width: '100%', borderTop: '0.5px solid #333', marginBottom: '2px' }} />
-            <div style={{ fontSize: '8px', fontWeight: '800', color: '#003366', lineHeight: '1.2' }}>{auth.nameTamil}</div>
-            <div style={{ fontSize: '7px', color: '#444', lineHeight: '1.2' }}>{auth.role}</div>
-            <div style={{ fontSize: '6.5px', color: '#888', lineHeight: '1.2' }}>{auth.roleEn}</div>
+            <div style={{ borderTop: '1.5px solid #000000', width: '100%', marginBottom: '2px' }} />
+            <div style={{ fontSize: '8px', fontWeight: '900', color: '#000000', lineHeight: '1.2' }}>{auth.nameTamil}</div>
+            <div style={{ fontSize: '7px', fontWeight: '700', color: '#222222', lineHeight: '1.2' }}>{auth.role}</div>
+            <div style={{ fontSize: '7px', fontWeight: '700', color: '#222222', lineHeight: '1.2' }}>{auth.roleEn}</div>
           </div>
         ))}
       </div>
 
       {/* Bottom tricolor */}
-      <div style={{ display: 'flex', height: '4px', width: '100%', flexShrink: 0 }}>
-        <div style={{ flex: 1, background: '#FF9933' }} />
+      <div style={{ display: 'flex', height: '7px', width: '100%', flexShrink: 0 }}>
+        <div style={{ flex: 1, background: '#FF6600' }} />
         <div style={{ flex: 1, background: '#FFFFFF', borderTop: '0.5px solid #DDD', borderBottom: '0.5px solid #DDD' }} />
-        <div style={{ flex: 1, background: '#138808' }} />
+        <div style={{ flex: 1, background: '#008000' }} />
       </div>
     </div>
   );
@@ -189,8 +222,9 @@ function CardBack({ member }) {
       position: 'relative',
       overflow: 'hidden',
       background: '#FFFFFF',
+      color: '#000000',
       borderRadius: '8px',
-      borderLeft: '4px solid #FF6B00',
+      borderLeft: '7px solid #FF6600',
       borderRight: '1px solid #CCCCCC',
       borderTop: '1px solid #CCCCCC',
       borderBottom: '1px solid #CCCCCC',
@@ -202,18 +236,18 @@ function CardBack({ member }) {
       boxSizing: 'border-box'
     }}>
       {/* 1. Tricolor top */}
-      <div style={{ display: 'flex', height: '4px', flexShrink: 0 }}>
-        <div style={{ flex: 1, background: '#FF9933' }} />
+      <div style={{ display: 'flex', height: '7px', flexShrink: 0 }}>
+        <div style={{ flex: 1, background: '#FF6600' }} />
         <div style={{ flex: 1, background: '#FFFFFF', borderTop: '0.5px solid #DDD', borderBottom: '0.5px solid #DDD' }} />
-        <div style={{ flex: 1, background: '#138808' }} />
+        <div style={{ flex: 1, background: '#008000' }} />
       </div>
 
       {/* 2. Navy header — same as front */}
       <div style={{ background: '#003366', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
         <img src={'/logo.png'} alt="TIWTN" style={{ width: '38px', height: '38px', borderRadius: '50%', border: '1.5px solid #FF6B00', flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none'; }} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '9.5px', fontWeight: '800', color: '#FFFFFF', lineHeight: '1.25' }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</div>
-          <div style={{ fontSize: '7px', color: '#B8C9E0', letterSpacing: '0.3px', marginTop: '1px' }}>WELDING PROFESSIONALS WELFARE ASSOCIATION</div>
+          <div style={{ fontSize: '10px', fontWeight: '900', color: '#FFFFFF', lineHeight: '1.25' }}>தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்</div>
+          <div style={{ fontSize: '7px', fontWeight: '700', color: '#E0E0E0', letterSpacing: '0.3px', marginTop: '1px' }}>WELDING PROFESSIONALS WELFARE ASSOCIATION</div>
         </div>
       </div>
 
@@ -229,13 +263,18 @@ function CardBack({ member }) {
           borderBottom: '0.5px solid #E0E0E0'
         }}>
           <div style={{
-            fontSize: '8px', color: '#888',
-            letterSpacing: '0.4px', marginBottom: '3px',
-            textTransform: 'uppercase'
+            fontSize: '9px',
+            fontWeight: '700',
+            color: '#444444',
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase',
+            marginBottom: '3px'
           }}>அலுவல முகவரி / OFFICE ADDRESS</div>
           <div style={{
-            fontSize: '10.5px', fontWeight: '700',
-            color: '#003366', lineHeight: '1.4'
+            fontSize: '10px',
+            fontWeight: '900',
+            color: '#000000',
+            lineHeight: '1.3'
           }}>
             தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்<br/>
             133/34, 1A, 1A பெங்களூர் ஹைவே,<br/>
@@ -245,32 +284,73 @@ function CardBack({ member }) {
 
         {/* Joined date */}
         <div style={{ borderBottom: '0.5px solid #E0E0E0', padding: '5px 0' }}>
-          <div style={{ fontSize: '7.5px', color: '#888', marginBottom: '2.5px' }}>இணைந்த தேதி / DATE OF JOINED</div>
-          <div style={{ fontSize: '11px', fontWeight: '800', color: '#003366' }}>{member.joiningDate || member.joinDate || '-'}</div>
+          <div style={{
+            fontSize: '9px',
+            fontWeight: '700',
+            color: '#444444',
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase',
+            marginBottom: '2.5px'
+          }}>இணைந்த தேதி / DATE OF JOINED</div>
+          <div style={{
+            fontSize: '10px',
+            fontWeight: '900',
+            color: '#000000',
+            lineHeight: '1.3'
+          }}>{member.joiningDate || member.joinDate || '-'}</div>
         </div>
 
         {/* Nominee + blood row */}
         <div style={{ display: 'flex', gap: '16px', borderBottom: '0.5px solid #E0E0E0', padding: '5px 0' }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '7.5px', color: '#888' }}>வாரிசுதாரர் / NOMINEE</div>
-            <div style={{ fontSize: '11px', fontWeight: '800', color: '#003366', wordBreak: 'break-word' }}>{member.nomineeName || '-'}</div>
+            <div style={{
+              fontSize: '9px',
+              fontWeight: '700',
+              color: '#444444',
+              letterSpacing: '0.5px',
+              textTransform: 'uppercase'
+            }}>வாரிசுதாரர் / NOMINEE</div>
+            <div style={{
+              fontSize: '10px',
+              fontWeight: '900',
+              color: '#000000',
+              lineHeight: '1.3',
+              wordBreak: 'break-word'
+            }}>{member.nomineeName || '-'}</div>
           </div>
           <div style={{ width: '80px', flexShrink: 0 }}>
-            <div style={{ fontSize: '7.5px', color: '#888' }}>இரத்த பிரிவு / BLOOD</div>
-            <div style={{ fontSize: '11px', fontWeight: '800', color: '#003366' }}>{member.bloodGroup || '-'}</div>
+            <div style={{
+              fontSize: '9px',
+              fontWeight: '700',
+              color: '#444444',
+              letterSpacing: '0.5px',
+              textTransform: 'uppercase'
+            }}>இரத்த பிரிவு / BLOOD</div>
+            <div style={{
+              fontSize: '10px',
+              fontWeight: '900',
+              color: '#000000',
+              lineHeight: '1.3'
+            }}>{member.bloodGroup || '-'}</div>
           </div>
-        </div>
-
-        {/* Aadhaar */}
-        <div style={{ borderBottom: '0.5px solid #E0E0E0', padding: '5px 0' }}>
-          <div style={{ fontSize: '7.5px', color: '#888', marginBottom: '2.5px' }}>ஆதார் எண் / AADHAAR</div>
-          <div style={{ fontFamily: 'Courier Prime, monospace', fontSize: '11px', fontWeight: '700', color: '#003366', letterSpacing: '0.5px' }}>{member.aadhaar || '-'}</div>
         </div>
 
         {/* Contact Numbers */}
         <div style={{ borderBottom: '0.5px solid #E0E0E0', padding: '5px 0' }}>
-          <div style={{ fontSize: '7.5px', color: '#888', marginBottom: '2.5px' }}>தொடர்பு எண் / CONTACT NO</div>
-          <div style={{ fontSize: '10px', fontWeight: '800', color: '#003366', lineHeight: '1.3' }}>
+          <div style={{
+            fontSize: '9px',
+            fontWeight: '700',
+            color: '#444444',
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase',
+            marginBottom: '2.5px'
+          }}>தொடர்பு எண் / CONTACT NO</div>
+          <div style={{
+            fontSize: '10px',
+            fontWeight: '900',
+            color: '#000000',
+            lineHeight: '1.3'
+          }}>
             +91 98765 43210, +91 86085 08342, +91 97861 11700
           </div>
         </div>
@@ -293,10 +373,10 @@ function CardBack({ member }) {
       </div>
 
       {/* 5. Tricolor bottom — flow, last child */}
-      <div style={{ display: 'flex', height: '4px', width: '100%', marginTop: 'auto', flexShrink: 0 }}>
-        <div style={{ flex: 1, background: '#FF9933' }} />
+      <div style={{ display: 'flex', height: '7px', width: '100%', marginTop: 'auto', flexShrink: 0 }}>
+        <div style={{ flex: 1, background: '#FF6600' }} />
         <div style={{ flex: 1, background: '#FFFFFF', borderTop: '0.5px solid #DDD', borderBottom: '0.5px solid #DDD' }} />
-        <div style={{ flex: 1, background: '#138808' }} />
+        <div style={{ flex: 1, background: '#008000' }} />
       </div>
     </div>
   );
@@ -399,19 +479,50 @@ function IDCard({ member, onReset, showReset = true }) {
 
     await document.fonts.ready;
     await new Promise(r => setTimeout(r, 400));
-    await replacePhotosWithCanvas(clone);
+    await replacePhotosWithCanvas(clone, 5);
     await new Promise(r => setTimeout(r, 200));
 
     const canvas = await html2canvas(clone, {
-      scale: 4,
+      scale: 5,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#FFFFFF',
       logging: false,
-      width: 320,
-      height: 480,
+      width: Math.ceil(clone.getBoundingClientRect().width || clone.scrollWidth || 320),
+      height: Math.ceil(
+        clone.getBoundingClientRect().height ||
+        clone.scrollHeight
+      ),
       windowWidth: 1200,
-      windowHeight: 3000
+      windowHeight: 3000,
+      imageTimeout: 15000,
+      onclone: (doc) => {
+        const el = doc.getElementById('dl-front-clone');
+        if (!el) return;
+        // Force all text to pure black for print
+        el.querySelectorAll('*').forEach(node => {
+          const computed = window.getComputedStyle(node);
+          if (computed.color &&
+              computed.color !== 'rgb(255, 255, 255)' &&
+              computed.color !== 'rgba(0, 0, 0, 0)') {
+            // Keep white text white, darken everything else
+            const rgb = computed.color.match(/\d+/g);
+            if (rgb) {
+              const brightness =
+                (parseInt(rgb[0]) * 299 +
+                 parseInt(rgb[1]) * 587 +
+                 parseInt(rgb[2]) * 114) / 1000;
+              if (brightness < 200) {
+                node.style.color = '#000000';
+                node.style.fontWeight = '900';
+              }
+            }
+          }
+          node.style.transform = 'none';
+          node.style.backdropFilter = 'none';
+          node.style.webkitBackdropFilter = 'none';
+        });
+      }
     });
 
     document.body.removeChild(wrap);
@@ -478,14 +589,43 @@ function IDCard({ member, onReset, showReset = true }) {
 
     await document.fonts.ready;
     await new Promise(r => setTimeout(r, 400));
-    await replacePhotosWithCanvas(frontClone);
+    await replacePhotosWithCanvas(frontClone, 5);
     await new Promise(r => setTimeout(r, 200));
 
     const cardW = 320;
     const cardH = 480;
 
+    const oncloneProcessor = (doc) => {
+      ['id-card-front-clone', 'id-card-back-clone'].forEach(id => {
+        const el = doc.getElementById(id);
+        if (!el) return;
+        el.querySelectorAll('*').forEach(node => {
+          const computed = window.getComputedStyle(node);
+          if (computed.color &&
+              computed.color !== 'rgb(255, 255, 255)' &&
+              computed.color !== 'rgba(0, 0, 0, 0)') {
+            // Keep white text white, darken everything else
+            const rgb = computed.color.match(/\d+/g);
+            if (rgb) {
+              const brightness =
+                (parseInt(rgb[0]) * 299 +
+                 parseInt(rgb[1]) * 587 +
+                 parseInt(rgb[2]) * 114) / 1000;
+              if (brightness < 200) {
+                node.style.color = '#000000';
+                node.style.fontWeight = '900';
+              }
+            }
+          }
+          node.style.transform = 'none';
+          node.style.backdropFilter = 'none';
+          node.style.webkitBackdropFilter = 'none';
+        });
+      });
+    };
+
     const captureOpts = {
-      scale: 4,
+      scale: 5,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#FFFFFF',
@@ -493,7 +633,9 @@ function IDCard({ member, onReset, showReset = true }) {
       width: cardW,
       height: cardH,
       windowWidth: 1200,
-      windowHeight: 3000
+      windowHeight: 3000,
+      imageTimeout: 15000,
+      onclone: oncloneProcessor
     };
 
     const frontCanvas = await html2canvas(frontClone, captureOpts);
@@ -502,7 +644,7 @@ function IDCard({ member, onReset, showReset = true }) {
     document.body.removeChild(wrap);
 
     // Both canvases are now guaranteed identical size — combine side-by-side
-    const gap = 80; // pixel gap at scale 4
+    const gap = 100; // pixel gap at scale 5
     const cw = frontCanvas.width;
     const ch = frontCanvas.height;
 
