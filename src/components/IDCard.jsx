@@ -264,8 +264,8 @@ function CardFront({ member }) {
               src={auth.sign}
               alt={auth.nameTamil}
               style={{
-                width: '65px',
-                height: '26px',
+                width: '78px',
+                height: '32px',
                 objectFit: 'contain',
                 objectPosition: 'center bottom',
                 display: 'block',
@@ -273,9 +273,9 @@ function CardFront({ member }) {
               }}
             />
             <div style={{ borderTop: '1.5px solid #000000', width: '100%', marginBottom: '2px' }} />
-            <div style={{ fontSize: '8px', fontWeight: '900', color: '#000000', lineHeight: '1.2' }}>{auth.nameTamil}</div>
-            <div style={{ fontSize: '7px', fontWeight: '700', color: '#222222', lineHeight: '1.2' }}>{auth.role}</div>
-            <div style={{ fontSize: '7px', fontWeight: '700', color: '#222222', lineHeight: '1.2' }}>{auth.roleEn}</div>
+            <div style={{ fontSize: '9px', fontWeight: '900', color: '#000000', lineHeight: '1.2' }}>{auth.nameTamil}</div>
+            <div style={{ fontSize: '7.5px', fontWeight: '800', color: '#000000', lineHeight: '1.2' }}>{auth.role}</div>
+            <div style={{ fontSize: '7.5px', fontWeight: '800', color: '#000000', lineHeight: '1.2' }}>{auth.roleEn}</div>
           </div>
         ))}
       </div>
