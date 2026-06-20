@@ -25,6 +25,54 @@ const AUTHORITIES = [
   }
 ];
 
+function DarkSignature({ src, alt, style }) {
+  const [blackSign, setBlackSign] = useState(src);
+
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      try {
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i+1];
+          const b = data[i+2];
+          const a = data[i+3];
+          
+          // Calculate brightness of the pixel (0 to 255)
+          const brightness = (r + g + b) / 3;
+          if (brightness < 235 && a > 30) {
+            // Convert blue ink to pure black
+            data[i] = 0;
+            data[i+1] = 0;
+            data[i+2] = 0;
+          } else {
+            // Force light backgrounds to pure white so multiply hides them
+            data[i] = 255;
+            data[i+1] = 255;
+            data[i+2] = 255;
+            data[i+3] = 255;
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+        setBlackSign(canvas.toDataURL());
+      } catch (err) {
+        console.error('Error processing signature:', err);
+      }
+    };
+    img.src = src;
+  }, [src]);
+
+  return <img src={blackSign} alt={alt} style={style} crossOrigin="anonymous" />;
+}
+
 function CardFront({ member }) {
   const fields = [
     { label: 'Name',     value: member.fullName || '-' },
@@ -179,10 +227,9 @@ function CardFront({ member }) {
       }}>
         {AUTHORITIES.map((auth, i) => (
           <div key={i} style={{ width: '32%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-            <img
+            <DarkSignature
               src={auth.sign}
               alt={auth.nameTamil}
-              crossOrigin="anonymous"
               style={{
                 width: '65px',
                 height: '26px',
@@ -190,8 +237,6 @@ function CardFront({ member }) {
                 objectPosition: 'center bottom',
                 display: 'block',
                 mixBlendMode: 'multiply',
-                filter: 'brightness(0) contrast(2)',
-                opacity: '1'
               }}
             />
             <div style={{ borderTop: '1.5px solid #000000', width: '100%', marginBottom: '2px' }} />
