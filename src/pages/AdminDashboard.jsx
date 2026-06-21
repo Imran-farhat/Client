@@ -296,21 +296,65 @@ NEW MEMBER REGISTRATION DETAILS
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate file
+    // Validate file type
     if (!file.type.startsWith('image/')) {
       alert('படக் கோப்பு மட்டுமே / Only image files allowed')
-      return
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('5MB-க்கு கீழ் இருக்க வேண்டும் / Max 5MB')
       return
     }
 
     setUploadingImage(true)
 
     try {
+      // Compress the image before uploading to optimize storage on free accounts
+      const compressedFile = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 1200;
+            const MAX_HEIGHT = 1200;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const compressed = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+                  type: 'image/jpeg',
+                  lastModified: Date.now()
+                });
+                resolve(compressed);
+              } else {
+                resolve(file);
+              }
+            }, 'image/jpeg', 0.75); // Compress to 75% quality JPEG
+          };
+          img.onerror = () => resolve(file);
+        };
+        reader.onerror = () => resolve(file);
+      });
+
       // Create unique filename
-      const fileExt = file.name.split('.').pop()
+      const fileExt = 'jpg';
       const fileName = `gallery_${Date.now()}_${
         Math.random().toString(36).substring(2)
       }.${fileExt}`
@@ -319,7 +363,7 @@ NEW MEMBER REGISTRATION DETAILS
       const { data, error } = await supabase
         .storage
         .from('gallery-images')
-        .upload(fileName, file, {
+        .upload(fileName, compressedFile, {
           cacheControl: '3600',
           upsert: false
         })
@@ -389,6 +433,11 @@ NEW MEMBER REGISTRATION DETAILS
     if (!newGalleryItem.title.trim() || !newGalleryItem.image_url) {
       alert('தலைப்பு மற்றும் படம் அவசியம் / Title and image are required')
       return
+    }
+
+    if (galleryItems.length >= 30) {
+      alert('இலவச கணக்கு வரம்பு: கேலரியில் அதிகபட்சம் 30 படங்கள் மட்டுமே சேர்க்க முடியும். புதிய படத்தை சேர்க்க பழைய படத்தை நீக்கவும். / Free Account Limit: You can only have up to 30 images in the gallery. Please delete an old photo first.');
+      return;
     }
 
     const { error } = await supabase
