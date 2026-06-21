@@ -103,7 +103,7 @@ function AdminDashboard() {
     title: '', category: 'EVENTS', image_url: '', description: ''
   });
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState('');
+  const [uploadedImageUrls, setUploadedImageUrls] = useState([]);
   const joiningDate = useMemo(() => formatDateDisplay(), []);
 
   const { logout, userProfile } = useAuth();
@@ -292,107 +292,134 @@ NEW MEMBER REGISTRATION DETAILS
   const resetRegForm = () => { setNewMember(EMPTY_REGISTER_FORM); setRegErrors({}); setRegSuccess(null); };
 
   // ── Gallery actions ──────────────────────────────────────────
-  const handleGalleryImageUpload = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/')) {
+        resolve(null);
+        return;
+      }
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          let width = img.width;
+          let height = img.height;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert('படக் கோப்பு மட்டுமே / Only image files allowed')
-      return
-    }
-
-    setUploadingImage(true)
-
-    try {
-      // Compress the image before uploading to optimize storage on free accounts
-      const compressedFile = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-          const img = new Image();
-          img.src = event.target.result;
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 1200;
-            const MAX_HEIGHT = 1200;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > height) {
-              if (width > MAX_WIDTH) {
-                height *= MAX_WIDTH / width;
-                width = MAX_WIDTH;
-              }
-            } else {
-              if (height > MAX_HEIGHT) {
-                width *= MAX_HEIGHT / height;
-                height = MAX_HEIGHT;
-              }
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
             }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
 
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
 
-            canvas.toBlob((blob) => {
-              if (blob) {
-                const compressed = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
-                  type: 'image/jpeg',
-                  lastModified: Date.now()
-                });
-                resolve(compressed);
-              } else {
-                resolve(file);
-              }
-            }, 'image/jpeg', 0.75); // Compress to 75% quality JPEG
-          };
-          img.onerror = () => resolve(file);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const compressed = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              });
+              resolve(compressed);
+            } else {
+              resolve(file);
+            }
+          }, 'image/jpeg', 0.75); // Compress to 75% quality JPEG
         };
-        reader.onerror = () => resolve(file);
+        img.onerror = () => resolve(file);
+      };
+      reader.onerror = () => resolve(file);
+    });
+  };
+
+  const uploadSingleImage = async (file) => {
+    const compressedFile = await compressImage(file);
+    if (!compressedFile) return null;
+
+    const fileExt = 'jpg';
+    const fileName = `gallery_${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+    const { data, error } = await supabase
+      .storage
+      .from('gallery-images')
+      .upload(fileName, compressedFile, {
+        cacheControl: '3600',
+        upsert: false
       });
 
-      // Create unique filename
-      const fileExt = 'jpg';
-      const fileName = `gallery_${Date.now()}_${
-        Math.random().toString(36).substring(2)
-      }.${fileExt}`
+    if (error) throw error;
 
-      // Upload to Supabase Storage
-      const { data, error } = await supabase
-        .storage
-        .from('gallery-images')
-        .upload(fileName, compressedFile, {
-          cacheControl: '3600',
-          upsert: false
-        })
+    const { data: urlData } = supabase
+      .storage
+      .from('gallery-images')
+      .getPublicUrl(data.path);
 
-      if (error) throw error
+    return urlData.publicUrl;
+  };
 
-      // Get public URL
-      const { data: urlData } = supabase
-        .storage
-        .from('gallery-images')
-        .getPublicUrl(data.path)
+  const handleGalleryImageUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-      const publicUrl = urlData.publicUrl
-      setUploadedImageUrl(publicUrl)
-      setNewGalleryItem(prev => ({
-        ...prev,
-        image_url: publicUrl
-      }))
-
-      console.log('Uploaded:', publicUrl)
-
-    } catch (err) {
-      console.error('Upload error:', err)
-      alert('பதிவேற்றம் தோல்வி / Upload failed: ' +
-        err.message)
-    } finally {
-      setUploadingImage(false)
+    // Validate file types
+    const invalidFiles = files.filter(file => !file.type.startsWith('image/'));
+    if (invalidFiles.length > 0) {
+      alert('படக் கோப்புகள் மட்டுமே அனுமதிக்கப்படும் / Only image files allowed');
+      return;
     }
-  }
+
+    if (galleryItems.length + uploadedImageUrls.length + files.length > 30) {
+      alert('இலவச கணக்கு வரம்பு: கேலரியில் அதிகபட்சம் 30 படங்கள் மட்டுமே சேர்க்க முடியும். / Free Account Limit: You can only have up to 30 images in the gallery.');
+      return;
+    }
+
+    setUploadingImage(true);
+
+    try {
+      const urls = [];
+      for (const file of files) {
+        const publicUrl = await uploadSingleImage(file);
+        if (publicUrl) {
+          urls.push(publicUrl);
+        }
+      }
+      setUploadedImageUrls(prev => [...prev, ...urls]);
+      console.log('Uploaded URLs:', urls);
+    } catch (err) {
+      console.error('Upload error:', err);
+      alert('பதிவேற்றம் தோல்வி / Upload failed: ' + err.message);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeUploadedPreviewImage = async (url) => {
+    if (url.includes('supabase')) {
+      const fileName = url.split('/').pop();
+      try {
+        await supabase
+          .storage
+          .from('gallery-images')
+          .remove([fileName]);
+      } catch (err) {
+        console.error('Error deleting file from storage:', err);
+      }
+    }
+    setUploadedImageUrls(prev => prev.filter(item => item !== url));
+  };
 
   // Delete image from storage when gallery item deleted
   const deleteGalleryItem = async (id, imageUrl) => {
@@ -419,43 +446,68 @@ NEW MEMBER REGISTRATION DETAILS
     else alert('Error: ' + error.message)
   }
 
-  const closeGalleryForm = () => {
-    setUploadedImageUrl('')
+  const closeGalleryForm = async () => {
+    // If there are uploaded images that weren't saved, clean them up from storage
+    if (uploadedImageUrls.length > 0) {
+      const fileNames = uploadedImageUrls
+        .filter(url => url.includes('supabase'))
+        .map(url => url.split('/').pop());
+      
+      if (fileNames.length > 0) {
+        try {
+          await supabase
+            .storage
+            .from('gallery-images')
+            .remove(fileNames);
+        } catch (err) {
+          console.error('Error cleaning up images:', err);
+        }
+      }
+    }
+    setUploadedImageUrls([]);
     setNewGalleryItem({
       title: '', category: 'EVENTS',
       image_url: '', description: ''
-    })
-    setShowGalleryForm(false)
-  }
+    });
+    setShowGalleryForm(false);
+  };
 
   const handleGallerySubmit = async (e) => {
-    if (e) e.preventDefault()
-    if (!newGalleryItem.title.trim() || !newGalleryItem.image_url) {
-      alert('தலைப்பு மற்றும் படம் அவசியம் / Title and image are required')
-      return
+    if (e) e.preventDefault();
+    if (!newGalleryItem.title.trim() || uploadedImageUrls.length === 0) {
+      alert('தலைப்பு மற்றும் படம் அவசியம் / Title and image are required');
+      return;
     }
 
-    if (galleryItems.length >= 30) {
+    if (galleryItems.length + uploadedImageUrls.length > 30) {
       alert('இலவச கணக்கு வரம்பு: கேலரியில் அதிகபட்சம் 30 படங்கள் மட்டுமே சேர்க்க முடியும். புதிய படத்தை சேர்க்க பழைய படத்தை நீக்கவும். / Free Account Limit: You can only have up to 30 images in the gallery. Please delete an old photo first.');
       return;
     }
 
+    const records = uploadedImageUrls.map(url => ({
+      title: newGalleryItem.title,
+      category: newGalleryItem.category,
+      image_url: url,
+      description: newGalleryItem.description || ''
+    }));
+
     const { error } = await supabase
       .from('gallery')
-      .insert({
-        title: newGalleryItem.title,
-        category: newGalleryItem.category,
-        image_url: newGalleryItem.image_url,
-        description: newGalleryItem.description || ''
-      })
+      .insert(records);
 
     if (error) {
-      alert('Error: ' + error.message)
+      alert('Error: ' + error.message);
     } else {
-      await loadGallery()
-      closeGalleryForm()
+      await loadGallery();
+      // Clear state without cleaning up from storage
+      setUploadedImageUrls([]);
+      setNewGalleryItem({
+        title: '', category: 'EVENTS',
+        image_url: '', description: ''
+      });
+      setShowGalleryForm(false);
     }
-  }
+  };
 
   // ── Nav helper ───────────────────────────────────────────────
   const goTab = (id) => { setActiveTab(id); setSidebarOpen(false); };
@@ -1287,6 +1339,7 @@ NEW MEMBER REGISTRATION DETAILS
                   <input
                     type="file"
                     accept="image/*"
+                    multiple
                     onChange={handleGalleryImageUpload}
                     disabled={uploadingImage}
                     style={{
@@ -1323,44 +1376,6 @@ NEW MEMBER REGISTRATION DETAILS
                         }} />
                       </div>
                     </div>
-                  ) : uploadedImageUrl ? (
-                    <div>
-                      <img
-                        src={uploadedImageUrl}
-                        alt="uploaded"
-                        style={{
-                          width: '100%', maxHeight: '200px',
-                          objectFit: 'cover',
-                          borderRadius: '8px',
-                          marginBottom: '8px'
-                        }}
-                      />
-                      <div style={{
-                        fontSize: '12px', color: '#22C55E',
-                        fontWeight: '700'
-                      }}>✅ பதிவேற்றம் வெற்றி / Upload successful!</div>
-                      <button
-                        type="button"
-                        onClick={e => {
-                          e.stopPropagation()
-                          setUploadedImageUrl('')
-                          setNewGalleryItem(prev => ({
-                            ...prev, image_url: ''
-                          }))
-                        }}
-                        style={{
-                          marginTop: '8px',
-                          background: 'transparent',
-                          border: '1px solid #E53E3E',
-                          color: '#E53E3E',
-                          borderRadius: '6px',
-                          padding: '4px 12px',
-                          cursor: 'pointer',
-                          fontSize: '12px'
-                        }}>
-                        மாற்று / Change Image
-                      </button>
-                    </div>
                   ) : (
                     <div>
                       <div style={{
@@ -1371,23 +1386,50 @@ NEW MEMBER REGISTRATION DETAILS
                         color: 'var(--text-primary)',
                         marginBottom: '4px'
                       }}>
-                        படத்தை இங்கே இழுக்கவும் அல்லது
-                        கிளிக் செய்யவும்
+                        படங்களை இங்கே இழுக்கவும் அல்லது கிளிக் செய்யவும்
                       </div>
                       <div style={{
                         fontSize: '12px',
                         color: 'var(--text-muted)'
                       }}>
-                        Drag & drop or click to upload
-                        <br/>PNG, JPG, WEBP · Max 5MB
+                        Drag & drop or click to upload one or more images
+                        <br/>PNG, JPG, WEBP · Max 5MB per image
                       </div>
                     </div>
                   )}
                 </div>
-              </div>
+
+                {/* Preview Grid for Uploaded Images */}
+                {uploadedImageUrls.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-semibold text-gray-500 uppercase">
+                      பதிவேற்றப்பட்ட படங்கள் ({uploadedImageUrls.length}) / Uploaded Images
+                    </p>
+                    <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1 border border-gray-200 rounded-lg">
+                      {uploadedImageUrls.map((url, index) => (
+                        <div key={index} className="relative group aspect-video rounded border overflow-hidden bg-gray-100">
+                          <img
+                            src={url}
+                            alt={`Preview ${index}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeUploadedPreviewImage(url)}
+                            className="absolute top-1 right-1 bg-black/60 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] transition-colors"
+                            title="Remove image"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                </div>
 
               <div className="mt-5 flex gap-3">
-                <button type="submit" disabled={uploadingImage || !newGalleryItem.image_url} className="flex-1 rounded-lg bg-[#FF6B00] text-white py-2.5 font-semibold hover:opacity-90 transition text-sm disabled:opacity-50">
+                <button type="submit" disabled={uploadingImage || uploadedImageUrls.length === 0} className="flex-1 rounded-lg bg-[#FF6B00] text-white py-2.5 font-semibold hover:opacity-90 transition text-sm disabled:opacity-50">
                   Save Photo
                 </button>
                 <button type="button" onClick={closeGalleryForm} className="flex-1 rounded-lg border border-gray-300 py-2.5 text-gray-600 hover:bg-gray-50 transition text-sm">
