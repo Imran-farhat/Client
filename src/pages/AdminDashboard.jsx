@@ -78,6 +78,114 @@ const NAV = [
   { id: 'gallery',  icon: '🖼️', label: 'Gallery' },
 ];
 
+// ── Album card for admin gallery ──────────────────────────────
+function AlbumAdminCard({ album, onDeleteAlbum, onDeleteImage }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div style={{
+      background: '#fff',
+      borderRadius: '12px',
+      boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+      border: '1px solid #f0f0f0',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      {/* Cover image */}
+      <div style={{ position: 'relative' }}>
+        <img
+          src={album.cover}
+          alt={album.title}
+          style={{ width: '100%', height: '160px', objectFit: 'cover', display: 'block' }}
+        />
+        {/* Photo count badge */}
+        <div style={{
+          position: 'absolute', top: '8px', right: '8px',
+          background: 'rgba(0,0,0,0.65)',
+          color: '#fff', borderRadius: '20px',
+          padding: '2px 8px', fontSize: '11px', fontWeight: '700',
+        }}>
+          📷 {album.images.length}
+        </div>
+      </div>
+
+      {/* Info */}
+      <div style={{ padding: '10px 12px', flex: 1 }}>
+        <span style={{
+          fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px',
+          background: '#FFF3E0', color: '#E65100',
+          padding: '2px 8px', borderRadius: '20px', fontWeight: '700'
+        }}>{album.category}</span>
+        <p style={{
+          fontWeight: '700', fontSize: '13px', color: '#1a1a1a',
+          marginTop: '6px', overflow: 'hidden',
+          display: '-webkit-box', WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+        }}>{album.title}</p>
+        <p style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>
+          {album.images.length} photo{album.images.length !== 1 ? 's' : ''}
+        </p>
+      </div>
+
+      {/* Actions */}
+      <div style={{
+        borderTop: '1px solid #f5f5f5',
+        padding: '8px 12px',
+        display: 'flex', gap: '8px', alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <button
+          onClick={() => setExpanded(e => !e)}
+          style={{
+            fontSize: '11px', color: '#003366', fontWeight: '600',
+            background: 'none', border: 'none', cursor: 'pointer', padding: 0
+          }}
+        >
+          {expanded ? '▲ Hide Photos' : '▼ View Photos'}
+        </button>
+        <button
+          onClick={onDeleteAlbum}
+          style={{
+            fontSize: '11px', color: '#ef4444', fontWeight: '600',
+            background: 'none', border: 'none', cursor: 'pointer', padding: 0
+          }}
+        >
+          🗑️ Delete Album
+        </button>
+      </div>
+
+      {/* Expanded individual photo grid */}
+      {expanded && (
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '4px', padding: '8px 12px 12px',
+          borderTop: '1px solid #f5f5f5',
+          maxHeight: '200px', overflowY: 'auto'
+        }}>
+          {album.images.map((img, i) => (
+            <div key={img.id} style={{ position: 'relative', aspectRatio: '1', borderRadius: '6px', overflow: 'hidden' }}>
+              <img src={img.image_url} alt={`Photo ${i+1}`}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <button
+                onClick={() => onDeleteImage(img)}
+                style={{
+                  position: 'absolute', top: '3px', right: '3px',
+                  background: 'rgba(0,0,0,0.6)', color: '#fff',
+                  border: 'none', borderRadius: '50%',
+                  width: '18px', height: '18px',
+                  fontSize: '9px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}
+                title="Delete this photo"
+              >✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Verify section removed
 
 function AdminDashboard() {
@@ -422,8 +530,8 @@ NEW MEMBER REGISTRATION DETAILS
   };
 
   // Delete image from storage when gallery item deleted
-  const deleteGalleryItem = async (id, imageUrl) => {
-    if (!window.confirm(
+  const deleteGalleryItem = async (id, imageUrl, silent = false) => {
+    if (!silent && !window.confirm(
       'இந்த படத்தை நீக்கவா? / Delete this item?'
     )) return
 
@@ -1121,41 +1229,66 @@ NEW MEMBER REGISTRATION DETAILS
           )}
 
           {/* ── GALLERY MANAGEMENT ── */}
-          {activeTab === 'gallery' && (
-            <div className="space-y-4 md:space-y-6 max-w-6xl">
-              <div className="flex flex-wrap gap-3 items-center justify-between">
-                <h2 className="text-xl md:text-2xl font-bold text-[#003366]">Gallery Management</h2>
-                <button onClick={() => setShowGalleryForm(true)} className="bg-[#003366] text-white px-3 py-2 rounded font-semibold text-xs md:text-sm shadow-sm hover:opacity-90">
-                  ➕ Add Photo
-                </button>
-              </div>
+          {activeTab === 'gallery' && (() => {
+            // Group images by title — same logic as public Gallery.jsx
+            const adminAlbums = Object.values(
+              galleryItems.reduce((groups, item) => {
+                const key = item.title.trim().toLowerCase();
+                if (!groups[key]) {
+                  groups[key] = {
+                    title: item.title,
+                    category: item.category,
+                    cover: item.image_url,
+                    images: [],
+                    created_at: item.created_at,
+                  };
+                }
+                groups[key].images.push(item);
+                if (new Date(item.created_at) > new Date(groups[key].created_at)) {
+                  groups[key].created_at = item.created_at;
+                }
+                return groups;
+              }, {})
+            ).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {galleryItems.map((item) => (
-                  <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col justify-between">
-                    <div>
-                      <img src={item.image_url} alt={item.title} className="w-full h-40 object-cover" />
-                      <div className="p-3">
-                        <span className="text-[10px] uppercase tracking-wider bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">
-                          {item.category}
-                        </span>
-                        <h4 className="font-semibold text-gray-800 text-sm mt-2 line-clamp-1">{item.title}</h4>
-                        {item.description && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.description}</p>}
-                      </div>
-                    </div>
-                    <div className="p-3 border-t border-gray-50 flex justify-end">
-                      <button onClick={() => deleteGalleryItem(item.id, item.image_url)} className="text-xs font-semibold text-red-500 hover:text-red-700 transition">
-                        🗑️ Delete
-                      </button>
-                    </div>
+            return (
+              <div className="space-y-4 md:space-y-6 max-w-6xl">
+                <div className="flex flex-wrap gap-3 items-center justify-between">
+                  <div>
+                    <h2 className="text-xl md:text-2xl font-bold text-[#003366]">Gallery Management</h2>
+                    <p className="text-xs text-gray-400 mt-0.5">{adminAlbums.length} album{adminAlbums.length !== 1 ? 's' : ''} · {galleryItems.length} photo{galleryItems.length !== 1 ? 's' : ''}</p>
                   </div>
-                ))}
-                {galleryItems.length === 0 && (
-                  <p className="col-span-full p-8 text-center text-gray-400 text-sm">No images in gallery yet.</p>
+                  <button onClick={() => setShowGalleryForm(true)} className="bg-[#003366] text-white px-3 py-2 rounded font-semibold text-xs md:text-sm shadow-sm hover:opacity-90">
+                    ➕ Add Photos
+                  </button>
+                </div>
+
+                {adminAlbums.length === 0 ? (
+                  <p className="p-8 text-center text-gray-400 text-sm">No images in gallery yet.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {adminAlbums.map((album) => (
+                      <AlbumAdminCard
+                        key={album.title}
+                        album={album}
+                        onDeleteAlbum={async () => {
+                          if (!window.confirm(`Delete entire album "${album.title}" (${album.images.length} photo${album.images.length !== 1 ? 's' : ''})?`)) return;
+                          for (const img of album.images) {
+                            await deleteGalleryItem(img.id, img.image_url, true);
+                          }
+                          await loadGallery();
+                        }}
+                        onDeleteImage={async (img) => {
+                          await deleteGalleryItem(img.id, img.image_url);
+                        }}
+                      />
+                    ))}
+                  </div>
                 )}
               </div>
-            </div>
-          )}
+            );
+          })()}
+
 
           {/* Verify section removed */}
 
