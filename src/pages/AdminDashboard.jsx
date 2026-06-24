@@ -47,7 +47,6 @@ const TAMIL_NADU_DISTRICTS = [
   "வேலூர்"
 ];
 
-const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 const ITEMS_PER_PAGE = 10;
 
 const displayAadhar = (aadhar) => {
@@ -944,16 +943,15 @@ NEW MEMBER REGISTRATION DETAILS
                       <label className="block text-sm font-semibold text-[#003366] mb-1">
                         இரத்த பிரிவு / Blood Group <span className="text-red-500">*</span>
                       </label>
-                      <select
+                      <input
+                        type="text"
+                        placeholder="இரத்த பிரிவு / Blood Group"
                         value={newMember.bloodGroup}
                         onChange={handleRegChange('bloodGroup')}
                         className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
                           regErrors.bloodGroup ? 'border-red-400' : 'border-gray-200'
                         }`}
-                      >
-                        <option value="">-- Select --</option>
-                        {BLOOD_GROUPS.map(bg => <option key={bg} value={bg}>{bg}</option>)}
-                      </select>
+                      />
                       {regErrors.bloodGroup && <p className="mt-0.5 text-xs text-red-500">{regErrors.bloodGroup}</p>}
                     </div>
 
@@ -1356,6 +1354,7 @@ NEW MEMBER REGISTRATION DETAILS
                 { key: 'full_name', label: 'பெயர் / Name', type: 'text' },
                 { key: 'posting',   label: 'பதவி / Posting', type: 'text' },
                 { key: 'dob',       label: 'பிறந்த தேதி / DOB', type: 'date' },
+                { key: 'blood_group', label: 'இரத்த பிரிவு / Blood Group', type: 'text' },
                 { key: 'mobile',    label: 'கைபேசி / Mobile', type: 'tel' },
                 { key: 'aadhar',    label: 'ஆதார் / Aadhaar', type: 'text' },
                 { key: 'address',   label: 'முகவரி / Address', type: 'text' },

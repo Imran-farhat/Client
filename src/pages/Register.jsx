@@ -7,7 +7,7 @@ import { supabase } from '../supabase/client';
 import { useAuth } from '../context/AuthContext';
 import { generateMemberId } from '../utils/memberIdUtils';
 
-const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
+
 
 const TAMIL_NADU_DISTRICTS = [
   "அரியலூர்",
@@ -547,15 +547,14 @@ NEW MEMBER REGISTRATION DETAILS
                   <label className="block">
                     <BiLabel tamil="இரத்த பிரிவு" english="Blood Group" required />
                     <div style={{ marginTop: '4px' }}>
-                      <select
+                      <input
+                        type="text"
+                        placeholder="இரத்த பிரிவு / Blood Group"
                         value={form.bloodGroup}
                         onChange={handleChange('bloodGroup')}
-                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('bloodGroup'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', appearance: 'auto' }}
+                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('bloodGroup'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
                         className="focus:border-amber"
-                      >
-                        <option value="">Select</option>
-                        {bloodGroups.map((bg) => <option key={bg} value={bg}>{bg}</option>)}
-                      </select>
+                      />
                     </div>
                     {errors.bloodGroup && <p style={{ color: '#E53E3E', fontSize: '12px', marginTop: '4px' }}>{errors.bloodGroup}</p>}
                   </label>
