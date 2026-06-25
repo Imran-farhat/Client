@@ -282,6 +282,35 @@ function AdminDashboard() {
     return () => supabase.removeChannel(sub);
   }, []);
 
+  // Lazy-load photos for the visible page
+  useEffect(() => {
+    const missingPhotos = paginatedMembers.filter(m => !m.photo_base64);
+    if (missingPhotos.length === 0) return;
+
+    missingPhotos.forEach(async (member) => {
+      const photo = await fetchSingleMemberPhoto(member.member_id);
+      if (photo) {
+        setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, photo_base64: photo } : m));
+      }
+    });
+  }, [currentPage, searchQuery, districtFilter, members.length]);
+
+  // Lazy-load photos for the recent registrations on Overview dashboard
+  useEffect(() => {
+    if (activeTab === 'overview') {
+      const recentMembers = members.slice(0, 8);
+      const missingPhotos = recentMembers.filter(m => !m.photo_base64);
+      if (missingPhotos.length === 0) return;
+
+      missingPhotos.forEach(async (member) => {
+        const photo = await fetchSingleMemberPhoto(member.member_id);
+        if (photo) {
+          setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, photo_base64: photo } : m));
+        }
+      });
+    }
+  }, [activeTab, members.length]);
+
   // ── Derived ─────────────────────────────────────────────────
   const filteredMembers = members.filter(m => {
     const q = searchQuery.toLowerCase();
