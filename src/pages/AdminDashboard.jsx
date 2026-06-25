@@ -217,7 +217,10 @@ function AdminDashboard() {
 
   // ── Data loaders ─────────────────────────────────────────────
   const loadMembers = async () => {
-    const { data } = await supabase.from('members').select('*').order('registered_at', { ascending: false });
+    const { data } = await supabase
+      .from('members')
+      .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer')
+      .order('registered_at', { ascending: false });
     if (data) setMembers(data);
   };
   const loadUsers = async () => {
@@ -227,6 +230,48 @@ function AdminDashboard() {
   const loadGallery = async () => {
     const { data } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
     if (data) setGalleryItems(data);
+  };
+
+  const fetchSingleMemberPhoto = async (memberId) => {
+    const { data } = await supabase
+      .from('members')
+      .select('photo_base64')
+      .eq('member_id', memberId)
+      .maybeSingle();
+    return data?.photo_base64 || null;
+  };
+
+  const handleViewMember = async (member) => {
+    setSelectedMember(member);
+    if (!member.photo_base64) {
+      const photo = await fetchSingleMemberPhoto(member.member_id);
+      if (photo) {
+        setSelectedMember(prev => prev && prev.member_id === member.member_id ? { ...prev, photo_base64: photo } : prev);
+        setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, photo_base64: photo } : m));
+      }
+    }
+  };
+
+  const handleEditMemberClick = async (member) => {
+    setEditMember({ ...member });
+    if (!member.photo_base64) {
+      const photo = await fetchSingleMemberPhoto(member.member_id);
+      if (photo) {
+        setEditMember(prev => prev && prev.member_id === member.member_id ? { ...prev, photo_base64: photo } : prev);
+        setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, photo_base64: photo } : m));
+      }
+    }
+  };
+
+  const handlePrintMember = async (member) => {
+    if (!member.photo_base64) {
+      const photo = await fetchSingleMemberPhoto(member.member_id);
+      if (photo) {
+        printMemberForm({ ...member, photo_base64: photo });
+        return;
+      }
+    }
+    printMemberForm(member);
   };
 
   useEffect(() => {
@@ -295,15 +340,49 @@ function AdminDashboard() {
     if (regErrors[field]) setRegErrors(prev => { const n = {...prev}; delete n[field]; return n; });
   };
 
+  const compressMemberPhoto = (base64Str) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 400;
+        const MAX_HEIGHT = 400;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.onerror = () => resolve(base64Str);
+    });
+  };
+
   const handleAdminPhoto = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onloadend = () => {
-      setAdminPhotoPreview(reader.result)
+    reader.onloadend = async () => {
+      const compressed = await compressMemberPhoto(reader.result);
+      setAdminPhotoPreview(compressed)
       setNewMember(prev => ({
         ...prev,
-        photoPreview: reader.result
+        photoPreview: compressed
       }))
     }
     reader.readAsDataURL(file)
@@ -815,9 +894,9 @@ NEW MEMBER REGISTRATION DETAILS
                             <td className="p-3 text-gray-600 text-xs">{m.mobile}</td>
                             <td className="p-3 text-center">
                               <div className="flex gap-1 justify-center">
-                                <button onClick={() => setSelectedMember(m)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition text-sm" title="View">👁️</button>
-                                <button onClick={() => setEditMember({ ...m })} className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded transition text-sm" title="Edit">✏️</button>
-                                <button onClick={() => printMemberForm(m)} style={{ background: 'transparent', border: '1px solid #003366', color: '#003366', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', fontSize: '11px' }} title="Print Form">🖨️</button>
+                                <button onClick={() => handleViewMember(m)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition text-sm" title="View">👁️</button>
+                                <button onClick={() => handleEditMemberClick(m)} className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded transition text-sm" title="Edit">✏️</button>
+                                <button onClick={() => handlePrintMember(m)} style={{ background: 'transparent', border: '1px solid #003366', color: '#003366', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', fontSize: '11px' }} title="Print Form">🖨️</button>
                                 <button onClick={() => deleteMember(m.member_id, m.user_id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded transition text-sm" title="Delete">🗑️</button>
                               </div>
                             </td>
