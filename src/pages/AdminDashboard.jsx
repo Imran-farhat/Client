@@ -242,6 +242,7 @@ function AdminDashboard() {
   const [migrating, setMigrating]       = useState(false);
   const [syncRemaining, setSyncRemaining] = useState(0);
   const isMigrating = useRef(false); // guard against duplicate runs
+  const realtimeTimerRef = useRef(null); // debounce postgres changes
 
   // When modal opens:
   useEffect(() => {
@@ -299,17 +300,29 @@ function AdminDashboard() {
   const loadMembers = async () => {
     const { data } = await supabase
       .from('members')
-      .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer, photo_url, photo_base64')
+      .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer, photo_url')
       .order('registered_at', { ascending: false });
     if (data) setMembers(data);
   };
   const loadUsers = async () => {
-    const { data } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+    const { data } = await supabase
+      .from('users')
+      .select('id, email, name, role, has_registered, created_at')
+      .order('created_at', { ascending: false });
     if (data) setUsers(data);
   };
   const loadGallery = async () => {
     const { data } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
     if (data) setGalleryItems(data);
+  };
+
+  const fetchMultipleMemberPhotos = async (memberIds) => {
+    if (!memberIds || memberIds.length === 0) return [];
+    const { data } = await supabase
+      .from('members')
+      .select('member_id, photo_url, photo_base64')
+      .in('member_id', memberIds);
+    return data || [];
   };
 
   // ── Auto-migrate legacy base64 photos → Supabase Storage (silent) ──
@@ -433,10 +446,22 @@ function AdminDashboard() {
 
   useEffect(() => {
     Promise.all([loadMembers(), loadUsers(), loadGallery()]).finally(() => setLoadingData(false));
+    
+    const handleRealtimeChange = () => {
+      if (realtimeTimerRef.current) clearTimeout(realtimeTimerRef.current);
+      realtimeTimerRef.current = setTimeout(() => {
+        loadMembers();
+      }, 500);
+    };
+
     const sub = supabase.channel('admin-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, () => loadMembers())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, handleRealtimeChange)
       .subscribe();
-    return () => supabase.removeChannel(sub);
+
+    return () => {
+      supabase.removeChannel(sub);
+      if (realtimeTimerRef.current) clearTimeout(realtimeTimerRef.current);
+    };
   }, []);
 
   // ── Auto-migrate on mount + every 5 min ──
@@ -453,47 +478,64 @@ function AdminDashboard() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Lazy-load photos for the visible page
+  // Lazy-load photos for the visible page (batch queries)
   useEffect(() => {
     const missingPhotos = paginatedMembers.filter(m => !m.photo_url && !m.photo_base64);
     if (missingPhotos.length === 0) return;
 
-    missingPhotos.forEach(async (member) => {
-      const photos = await fetchSingleMemberPhoto(member.member_id);
-      if (photos.photo_url || photos.photo_base64) {
-        setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, ...photos } : m));
-      }
+    const ids = missingPhotos.map(m => m.member_id);
+    fetchMultipleMemberPhotos(ids).then(results => {
+      if (results.length === 0) return;
+      setMembers(prev => prev.map(m => {
+        const found = results.find(r => r.member_id === m.member_id);
+        return found ? { ...m, photo_url: found.photo_url, photo_base64: found.photo_base64 } : m;
+      }));
     });
   }, [currentPage, searchQuery, districtFilter, members.length]);
 
-  // Lazy-load photos for the recent registrations on Overview dashboard
+  // Lazy-load photos for the recent registrations on Overview dashboard (batch queries)
   useEffect(() => {
     if (activeTab === 'overview') {
       const recentMembers = members.slice(0, 8);
       const missingPhotos = recentMembers.filter(m => !m.photo_url && !m.photo_base64);
       if (missingPhotos.length === 0) return;
 
-      missingPhotos.forEach(async (member) => {
-        const photos = await fetchSingleMemberPhoto(member.member_id);
-        if (photos.photo_url || photos.photo_base64) {
-          setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, ...photos } : m));
-        }
+      const ids = missingPhotos.map(m => m.member_id);
+      fetchMultipleMemberPhotos(ids).then(results => {
+        if (results.length === 0) return;
+        setMembers(prev => prev.map(m => {
+          const found = results.find(r => r.member_id === m.member_id);
+          return found ? { ...m, photo_url: found.photo_url, photo_base64: found.photo_base64 } : m;
+        }));
       });
     }
   }, [activeTab, members.length]);
 
   // ── Derived ─────────────────────────────────────────────────
-  const filteredMembers = members.filter(m => {
-    const q = searchQuery.toLowerCase();
-    const matchSearch = !q || m.full_name?.toLowerCase().includes(q) || m.mobile?.includes(q) || m.member_id?.toLowerCase().includes(q);
-    const matchDistrict = !districtFilter || m.district === districtFilter;
-    return matchSearch && matchDistrict;
-  });
-  const totalPages = Math.ceil(filteredMembers.length / ITEMS_PER_PAGE);
-  const paginatedMembers = filteredMembers.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-  const todayCount = members.filter(m => new Date(m.registered_at).toDateString() === new Date().toDateString()).length;
-  const districtsCount = TAMIL_NADU_DISTRICTS.map(dist => ({ name: dist, count: members.filter(m => m.district === dist).length }));
-  const activeDistricts = districtsCount.filter(d => d.count > 0).length;
+  const filteredMembers = useMemo(() => {
+    return members.filter(m => {
+      const q = searchQuery.toLowerCase();
+      const matchSearch = !q || m.full_name?.toLowerCase().includes(q) || m.mobile?.includes(q) || m.member_id?.toLowerCase().includes(q);
+      const matchDistrict = !districtFilter || m.district === districtFilter;
+      return matchSearch && matchDistrict;
+    });
+  }, [members, searchQuery, districtFilter]);
+
+  const totalPages = useMemo(() => Math.ceil(filteredMembers.length / ITEMS_PER_PAGE), [filteredMembers.length]);
+  
+  const paginatedMembers = useMemo(() => {
+    return filteredMembers.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  }, [filteredMembers, currentPage]);
+
+  const todayCount = useMemo(() => {
+    return members.filter(m => new Date(m.registered_at).toDateString() === new Date().toDateString()).length;
+  }, [members]);
+
+  const districtsCount = useMemo(() => {
+    return TAMIL_NADU_DISTRICTS.map(dist => ({ name: dist, count: members.filter(m => m.district === dist).length }));
+  }, [members]);
+
+  const activeDistricts = useMemo(() => districtsCount.filter(d => d.count > 0).length, [districtsCount]);
 
   // ── Actions ──────────────────────────────────────────────────
   const deleteMember = async (memberId, userId) => {
