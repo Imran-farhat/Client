@@ -107,6 +107,12 @@ function DarkSignature({ src, alt, style }) {
 }
 
 function CardFront({ member }) {
+  const memberPhoto =
+    member.photo_url ||
+    member.photo_base64 ||
+    member.photoPreview ||
+    null;
+
   const fields = [
     { label: 'Name',     value: member.fullName || '-' },
     { label: 'Posting',  value: member.posting  || '-' },
@@ -194,9 +200,9 @@ function CardFront({ member }) {
 
       {/* ── PHOTO (Cover-fit via direct fixed dimensions) ── */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0', borderBottom: '1px solid #E0E0E0', background: '#FFFFFF', flexShrink: 0 }}>
-        {member.photoPreview ? (
+        {memberPhoto ? (
           <img
-            src={member.photoPreview}
+            src={memberPhoto}
             alt="Member"
             data-member-photo="true"
             crossOrigin="anonymous"

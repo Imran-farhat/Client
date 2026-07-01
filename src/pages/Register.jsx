@@ -151,7 +151,7 @@ function Register() {
     // Note: implement proper encryption later
   }
 
-  const saveToSupabase = async (formData, memberId) => {
+  const saveToSupabase = async (formData, memberId, photoUrl, photoBase64) => {
     try {
       console.log('Saving to Supabase...', memberId);
       console.log('Current user:', currentUser?.id);
@@ -173,7 +173,8 @@ function Register() {
         nominee_phone: formData.nomineeMobile || '',
         join_date: joiningDate,
         referrer: formData.referral || '',
-        photo_base64: formData.photoPreview || null,
+        photo_url: photoUrl || null,
+        photo_base64: photoBase64 || null,
         registered_at: new Date().toISOString()
       };
 
@@ -303,19 +304,64 @@ NEW MEMBER REGISTRATION DETAILS
     });
   };
 
-  const handlePhotoChange = (event) => {
-    const file = event.target.files?.[0] || null;
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const compressed = await compressMemberPhoto(reader.result);
-        setForm((prev) => ({ ...prev, profilePhoto: file, photoPreview: compressed }));
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setForm((prev) => ({ ...prev, profilePhoto: null, photoPreview: null }));
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('படக் கோப்பு மட்டுமே / Images only')
+      return
     }
-  };
+    if (file.size > 2 * 1024 * 1024) {
+      alert('2MB க்கு கீழ் / Max 2MB')
+      return
+    }
+
+    // Show local preview immediately (UX)
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setForm(prev => ({
+        ...prev,
+        photoPreview: reader.result,  // for display only
+        profilePhoto: file            // actual file for upload
+      }))
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const uploadPhotoToStorage = async (file, memberId) => {
+    if (!file) return { url: null, base64: null }
+
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `members/${memberId}.${ext}`
+
+      const { data, error } = await supabase.storage
+        .from('member-photos')
+        .upload(path, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (error) throw error
+
+      const { data: urlData } = supabase.storage
+        .from('member-photos')
+        .getPublicUrl(data.path)
+
+      return {
+        url: urlData.publicUrl,
+        base64: null  // no longer store base64 for new members
+      }
+    } catch (err) {
+      console.error('Photo upload failed:', err)
+      // Fallback: store as base64 if Storage fails
+      return {
+        url: null,
+        base64: form.photoPreview
+      }
+    }
+  }
 
   const handleChange = (field) => (event) => {
     const value = event.target.value;
@@ -401,14 +447,20 @@ NEW MEMBER REGISTRATION DETAILS
       await checkDuplicate(form.mobile, form.aadhaar);
 
       const generatedId = await generateMemberId(form.pledgeDistrict);
+
+      // Upload photo to storage
+      const { url: photoUrl, base64: photoBase64 } = await uploadPhotoToStorage(form.profilePhoto, generatedId);
+
       const memberData = {
         ...form,
         joiningDate,
         memberId: generatedId,
+        photo_url: photoUrl,
+        photo_base64: photoBase64
       };
 
       // Await save so errors surface before showing card
-      const saved = await saveToSupabase(form, generatedId);
+      const saved = await saveToSupabase(form, generatedId, photoUrl, photoBase64);
       console.log('Save result:', saved);
 
       if (saved) {
@@ -685,7 +737,7 @@ NEW MEMBER REGISTRATION DETAILS
                         <span>படம் பதிவேற்று</span>
                       </div>
                     )}
-                    <input type="file" accept="image/*" capture={false} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%', zIndex: 2 }} onChange={handlePhotoChange} />
+                    <input type="file" accept="image/*" capture={false} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%', zIndex: 2 }} onChange={handlePhotoUpload} />
                   </label>
                   {errors.profilePhoto && <p style={{ color: '#E53E3E', fontSize: '12px', marginTop: '6px', textAlign: 'center' }}>{errors.profilePhoto}</p>}
                 </div>

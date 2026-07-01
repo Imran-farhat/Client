@@ -199,6 +199,45 @@ function AdminDashboard() {
   const [editMember, setEditMember]         = useState(null);
   const [currentPage, setCurrentPage]       = useState(1);
 
+  const [editPhotoPreview, setEditPhotoPreview] = useState(null);
+  const [editPhotoFile, setEditPhotoFile]       = useState(null);
+
+  // When modal opens:
+  useEffect(() => {
+    if (editMember) {
+      setEditPhotoPreview(
+        editMember.photo_url ||
+        editMember.photo_base64 ||
+        null
+      );
+      setEditPhotoFile(null);
+      setEditMember(prev => ({
+        ...prev,
+        _original_photo_url: prev.photo_url,
+        _original_photo_base64: prev.photo_base64
+      }));
+    }
+  }, [editMember?.member_id]);
+
+  // Photo file input handler:
+  const handleEditPhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Max 2MB');
+      return;
+    }
+
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setEditPhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+    setEditPhotoFile(file);
+  };
+
   const [newMember, setNewMember]               = useState(EMPTY_REGISTER_FORM);
   const [adminPhotoPreview, setAdminPhotoPreview] = useState(null);
   const [regErrors, setRegErrors]           = useState({});
@@ -219,7 +258,7 @@ function AdminDashboard() {
   const loadMembers = async () => {
     const { data } = await supabase
       .from('members')
-      .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer')
+      .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer, photo_url')
       .order('registered_at', { ascending: false });
     if (data) setMembers(data);
   };
@@ -235,39 +274,42 @@ function AdminDashboard() {
   const fetchSingleMemberPhoto = async (memberId) => {
     const { data } = await supabase
       .from('members')
-      .select('photo_base64')
+      .select('photo_url, photo_base64')
       .eq('member_id', memberId)
       .maybeSingle();
-    return data?.photo_base64 || null;
+    return {
+      photo_url: data?.photo_url || null,
+      photo_base64: data?.photo_base64 || null
+    };
   };
 
   const handleViewMember = async (member) => {
     setSelectedMember(member);
-    if (!member.photo_base64) {
-      const photo = await fetchSingleMemberPhoto(member.member_id);
-      if (photo) {
-        setSelectedMember(prev => prev && prev.member_id === member.member_id ? { ...prev, photo_base64: photo } : prev);
-        setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, photo_base64: photo } : m));
+    if (!member.photo_url && !member.photo_base64) {
+      const photos = await fetchSingleMemberPhoto(member.member_id);
+      if (photos.photo_url || photos.photo_base64) {
+        setSelectedMember(prev => prev && prev.member_id === member.member_id ? { ...prev, ...photos } : prev);
+        setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, ...photos } : m));
       }
     }
   };
 
   const handleEditMemberClick = async (member) => {
     setEditMember({ ...member });
-    if (!member.photo_base64) {
-      const photo = await fetchSingleMemberPhoto(member.member_id);
-      if (photo) {
-        setEditMember(prev => prev && prev.member_id === member.member_id ? { ...prev, photo_base64: photo } : prev);
-        setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, photo_base64: photo } : m));
+    if (!member.photo_url && !member.photo_base64) {
+      const photos = await fetchSingleMemberPhoto(member.member_id);
+      if (photos.photo_url || photos.photo_base64) {
+        setEditMember(prev => prev && prev.member_id === member.member_id ? { ...prev, ...photos } : prev);
+        setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, ...photos } : m));
       }
     }
   };
 
   const handlePrintMember = async (member) => {
-    if (!member.photo_base64) {
-      const photo = await fetchSingleMemberPhoto(member.member_id);
-      if (photo) {
-        printMemberForm({ ...member, photo_base64: photo });
+    if (!member.photo_url && !member.photo_base64) {
+      const photos = await fetchSingleMemberPhoto(member.member_id);
+      if (photos.photo_url || photos.photo_base64) {
+        printMemberForm({ ...member, ...photos });
         return;
       }
     }
@@ -284,13 +326,13 @@ function AdminDashboard() {
 
   // Lazy-load photos for the visible page
   useEffect(() => {
-    const missingPhotos = paginatedMembers.filter(m => !m.photo_base64);
+    const missingPhotos = paginatedMembers.filter(m => !m.photo_url && !m.photo_base64);
     if (missingPhotos.length === 0) return;
 
     missingPhotos.forEach(async (member) => {
-      const photo = await fetchSingleMemberPhoto(member.member_id);
-      if (photo) {
-        setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, photo_base64: photo } : m));
+      const photos = await fetchSingleMemberPhoto(member.member_id);
+      if (photos.photo_url || photos.photo_base64) {
+        setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, ...photos } : m));
       }
     });
   }, [currentPage, searchQuery, districtFilter, members.length]);
@@ -299,13 +341,13 @@ function AdminDashboard() {
   useEffect(() => {
     if (activeTab === 'overview') {
       const recentMembers = members.slice(0, 8);
-      const missingPhotos = recentMembers.filter(m => !m.photo_base64);
+      const missingPhotos = recentMembers.filter(m => !m.photo_url && !m.photo_base64);
       if (missingPhotos.length === 0) return;
 
       missingPhotos.forEach(async (member) => {
-        const photo = await fetchSingleMemberPhoto(member.member_id);
-        if (photo) {
-          setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, photo_base64: photo } : m));
+        const photos = await fetchSingleMemberPhoto(member.member_id);
+        if (photos.photo_url || photos.photo_base64) {
+          setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, ...photos } : m));
         }
       });
     }
@@ -334,21 +376,64 @@ function AdminDashboard() {
   };
 
   const saveEditMember = async () => {
-    if (!editMember) return;
-    await supabase.from('members').update({
-      full_name: editMember.full_name,
-      posting: editMember.posting,
-      mobile: editMember.mobile,
-      district: editMember.district,
-      address: editMember.address,
-      blood_group: editMember.blood_group,
-      dob: editMember.dob,
-      aadhar: editMember.aadhar,
-      branch: editMember.branch,
-      nominee_name: editMember.nominee_name,
-    }).eq('member_id', editMember.member_id);
-    setEditMember(null);
-    await loadMembers();
+    let newPhotoUrl = editMember.photo_url;
+    let newPhotoBase64 = editMember.photo_base64;
+
+    // If admin selected a new photo file
+    if (editPhotoFile) {
+      try {
+        const ext = editPhotoFile.name.split('.').pop();
+        const path = `members/${editMember.member_id}.${ext}`;
+
+        const { data, error } = await supabase.storage
+          .from('member-photos')
+          .upload(path, editPhotoFile, {
+            cacheControl: '3600',
+            upsert: true  // overwrite existing
+          });
+
+        if (error) throw error;
+
+        const { data: urlData } = supabase.storage
+          .from('member-photos')
+          .getPublicUrl(data.path);
+
+        newPhotoUrl = urlData.publicUrl;
+        newPhotoBase64 = null; // clear old base64
+      } catch (err) {
+        console.error('Photo upload failed:', err);
+        alert('படம் பதிவேற்றம் தோல்வி / Photo upload failed');
+        return;
+      }
+    }
+
+    const { error } = await supabase
+      .from('members')
+      .update({
+        full_name: editMember.full_name,
+        posting: editMember.posting,
+        dob: editMember.dob,
+        mobile: editMember.mobile,
+        aadhar: editMember.aadhar,
+        address: editMember.address,
+        district: editMember.district,
+        branch: editMember.branch,
+        blood_group: editMember.blood_group,
+        nominee_name: editMember.nominee_name,
+        photo_url: newPhotoUrl || null,
+        photo_base64: newPhotoBase64 || null
+      })
+      .eq('member_id', editMember.member_id);
+
+    if (!error) {
+      setEditMember(null);
+      setEditPhotoPreview(null);
+      setEditPhotoFile(null);
+      await loadMembers();
+      alert('✅ திருத்தப்பட்டது / Updated!');
+    } else {
+      alert('Error: ' + error.message);
+    }
   };
   const changeUserRole = async (userId, newRole) => {
     await supabase.from('users').update({ role: newRole }).eq('id', userId);
@@ -361,7 +446,7 @@ function AdminDashboard() {
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `TIWTN_Members_${Date.now()}.csv`; a.click();
   };
-  const toIdCardShape = (m) => m ? ({ memberId: m.member_id, fullName: m.full_name, posting: m.posting, dob: m.dob, bloodGroup: m.blood_group, mobile: m.mobile, district: m.district, address: m.address, nomineeName: m.nominee_name, joinDate: m.join_date, pledgeDistrict: m.district, pledgeBranch: m.branch, photoPreview: m.photo_base64 }) : null;
+  const toIdCardShape = (m) => m ? ({ memberId: m.member_id, fullName: m.full_name, posting: m.posting, dob: m.dob, bloodGroup: m.blood_group, mobile: m.mobile, district: m.district, address: m.address, nomineeName: m.nominee_name, joinDate: m.join_date, pledgeDistrict: m.district, pledgeBranch: m.branch, photo_url: m.photo_url, photo_base64: m.photo_base64, photoPreview: m.photo_base64 }) : null;
 
   // ── Register on behalf ───────────────────────────────────────
   const handleRegChange = (field) => (e) => {
@@ -838,10 +923,12 @@ NEW MEMBER REGISTRATION DETAILS
                 ) : members.slice(0, 8).map((m, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 md:p-4 border-b border-gray-50 hover:bg-gray-50 transition">
                     <div className="flex items-center gap-3 min-w-0">
-                      {m.photo_base64
-                        ? <img src={m.photo_base64} alt="" className="w-9 h-9 rounded-full object-cover border border-[#FFB347]/30 flex-shrink-0" />
-                        : <div className="w-9 h-9 rounded-full bg-[#FFB347]/20 text-[#FF6B00] flex items-center justify-center font-bold text-sm flex-shrink-0">{m.full_name?.charAt(0)}</div>
-                      }
+                      {(() => {
+                        const photoSrc = m.photo_url || m.photo_base64 || null;
+                        return photoSrc
+                          ? <img src={photoSrc} alt="" className="w-9 h-9 rounded-full object-cover border border-[#FFB347]/30 flex-shrink-0" />
+                          : <div className="w-9 h-9 rounded-full bg-[#FFB347]/20 text-[#FF6B00] flex items-center justify-center font-bold text-sm flex-shrink-0">{m.full_name?.charAt(0)}</div>;
+                      })()}
                       <div className="min-w-0">
                         <p className="font-semibold text-gray-800 text-sm truncate">{m.full_name}</p>
                         <p className="text-xs text-gray-500 truncate">{m.district}</p>
@@ -911,10 +998,21 @@ NEW MEMBER REGISTRATION DETAILS
                           <tr key={m.member_id} className="border-b border-gray-100 hover:bg-gray-50 transition">
                             <td className="p-3 text-gray-500">{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
                             <td className="p-3">
-                              {m.photo_base64
-                                ? <img src={m.photo_base64} alt="" className="w-8 h-8 rounded-full object-cover border border-[#FFB347]/30" />
-                                : <div className="w-8 h-8 rounded-full bg-[#FFB347]/20 text-[#FF6B00] flex items-center justify-center font-bold text-xs">{m.full_name?.charAt(0)}</div>
-                              }
+                              {(() => {
+                                const photoSrc = m.photo_url || m.photo_base64 || null;
+                                return photoSrc ? (
+                                  <img src={photoSrc} alt="" style={{
+                                    width: '40px', height: '48px',
+                                    objectFit: 'cover',
+                                    borderRadius: '4px',
+                                    border: '1.5px solid #003366'
+                                  }} />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-[#FFB347]/20 text-[#FF6B00] flex items-center justify-center font-bold text-xs">
+                                    {m.full_name?.charAt(0)?.toUpperCase()}
+                                  </div>
+                                );
+                              })()}
                             </td>
                             <td className="p-3 font-semibold text-gray-800 max-w-[120px] truncate">{m.full_name}</td>
                             <td className="p-3 font-mono text-[#003366] text-xs">{m.member_id}</td>
@@ -1457,6 +1555,93 @@ NEW MEMBER REGISTRATION DETAILS
           <div className="relative w-full max-w-lg bg-white rounded-t-3xl md:rounded-2xl shadow-2xl p-5 md:p-8 overflow-y-auto max-h-[90vh]">
             <button onClick={() => setEditMember(null)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-black hover:bg-gray-200 text-sm">✕</button>
             <h3 className="text-lg md:text-xl font-bold text-[#003366] mb-4">Edit Member</h3>
+
+            {/* Edit Photo Input Section */}
+            <div style={{
+              display: 'flex', alignItems: 'center',
+              gap: '16px', padding: '12px',
+              background: 'var(--bg-secondary)',
+              borderRadius: '10px', marginBottom: '16px',
+              border: '1px solid var(--border)'
+            }}>
+              {/* Preview */}
+              <div style={{ flexShrink: 0 }}>
+                {editPhotoPreview ? (
+                  <img
+                    src={editPhotoPreview}
+                    style={{
+                      width: '80px', height: '96px',
+                      objectFit: 'cover', borderRadius: '6px',
+                      border: '2px solid #003366'
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '80px', height: '96px',
+                    borderRadius: '6px',
+                    background: '#FF6B00',
+                    display: 'flex', alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '2rem', color: '#fff',
+                    fontWeight: '800'
+                  }}>
+                    {editMember?.full_name?.charAt(0)
+                      ?.toUpperCase() || '?'}
+                  </div>
+                )}
+              </div>
+
+              {/* Controls */}
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  fontSize: '13px', fontWeight: '700',
+                  color: 'var(--text-primary)',
+                  marginBottom: '4px'
+                }}>படம் மாற்று / Change Photo</div>
+                <div style={{
+                  fontSize: '11px', color: 'var(--text-muted)',
+                  marginBottom: '10px'
+                }}>JPG, PNG · Max 2MB</div>
+
+                <label style={{
+                  display: 'inline-block',
+                  padding: '7px 16px',
+                  background: '#003366', color: '#fff',
+                  borderRadius: '6px', fontSize: '12px',
+                  fontWeight: '700', cursor: 'pointer'
+                }}>
+                  📷 படம் தேர்வு / Choose Photo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleEditPhotoUpload}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+
+                {editPhotoFile && (
+                  <button
+                    onClick={() => {
+                      setEditPhotoPreview(
+                        editMember._original_photo_url ||
+                        editMember._original_photo_base64 ||
+                        null
+                      )
+                      setEditPhotoFile(null)
+                    }}
+                    style={{
+                      marginLeft: '8px', padding: '7px 12px',
+                      background: 'transparent',
+                      color: '#E53E3E',
+                      border: '1px solid #E53E3E',
+                      borderRadius: '6px', fontSize: '12px',
+                      cursor: 'pointer'
+                    }}
+                  >↩ Reset</button>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-3 text-sm">
               {[
                 { key: 'full_name', label: 'பெயர் / Name', type: 'text' },

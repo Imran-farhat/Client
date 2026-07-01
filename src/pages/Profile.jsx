@@ -57,7 +57,8 @@ function Profile() {
 
         if (data) {
           console.log('Member found:', data);
-          setMemberData(data);
+          const memberPhoto = data.photo_url || data.photo_base64 || null;
+          setMemberData({ ...data, displayPhoto: memberPhoto });
         } else {
           console.log('No member found for user:', currentUser.id);
           setMemberData(null);
@@ -139,7 +140,7 @@ function Profile() {
     joinDate: memberData.join_date,
     pledgeDistrict: memberData.district,
     pledgeBranch: memberData.branch,
-    photoPreview: memberData.photo_base64,
+    photoPreview: memberData.displayPhoto || memberData.photo_base64,
     aadhaar: memberData.aadhar,
   } : null;
 
