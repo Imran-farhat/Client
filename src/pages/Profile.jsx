@@ -6,6 +6,12 @@ import IDCard from '../components/IDCard';
 import SEO from '../components/SEO';
 import PageLoader from '../components/PageLoader';
 
+const getPhotoSrc = (member) =>
+  member?.photo_url ||
+  member?.photo_base64 ||
+  member?.photoPreview ||
+  null;
+
 function Profile() {
   const { currentUser, userProfile, refreshProfile, logout } = useAuth();
   const navigate = useNavigate();
@@ -57,8 +63,7 @@ function Profile() {
 
         if (data) {
           console.log('Member found:', data);
-          const memberPhoto = data.photo_url || data.photo_base64 || null;
-          setMemberData({ ...data, displayPhoto: memberPhoto });
+          setMemberData(data);
         } else {
           console.log('No member found for user:', currentUser.id);
           setMemberData(null);
@@ -140,7 +145,9 @@ function Profile() {
     joinDate: memberData.join_date,
     pledgeDistrict: memberData.district,
     pledgeBranch: memberData.branch,
-    photoPreview: memberData.displayPhoto || memberData.photo_base64,
+    photo_url: memberData.photo_url,
+    photo_base64: memberData.photo_base64,
+    photoPreview: getPhotoSrc(memberData),
     aadhaar: memberData.aadhar,
   } : null;
 

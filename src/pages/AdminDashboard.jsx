@@ -1,10 +1,16 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabase/client';
 import IDCard from '../components/IDCard';
 import { generateMemberId } from '../utils/memberIdUtils';
 import { printMemberForm } from '../utils/printMemberForm';
 import PageLoader from '../components/PageLoader';
+
+const getPhotoSrc = (member) =>
+  member?.photo_url ||
+  member?.photo_base64 ||
+  member?.photoPreview ||
+  null;
 
 const TAMIL_NADU_DISTRICTS = [
   "அரியலூர்",
@@ -65,6 +71,7 @@ const EMPTY_REGISTER_FORM = {
   dob: '', aadhaar: '', mobile: '', nomineeName: '', nomineeMobile: '',
   pledgeDistrict: '', pledgeBranch: '', referral: '', pledgeName: '',
   photoPreview: null,
+  photoFile: null,
   joinDate: formatDateDisplay(),
 };
 
@@ -187,6 +194,36 @@ function AlbumAdminCard({ album, onDeleteAlbum, onDeleteImage }) {
 
 // Verify section removed
 
+// Compress a raw File to a JPEG Blob (max 800px, 75% quality) before Storage upload
+const compressImageFile = (file) => new Promise((resolve) => {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 800;
+      let { width, height } = img;
+      if (width > height) {
+        if (width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
+      } else {
+        if (height > MAX) { width = Math.round(width * MAX / height); height = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => resolve(blob || file),
+        'image/jpeg',
+        0.75
+      );
+    };
+    img.onerror = () => resolve(file);
+    img.src = e.target.result;
+  };
+  reader.onerror = () => resolve(file);
+  reader.readAsDataURL(file);
+});
+
 function AdminDashboard() {
   const [activeTab, setActiveTab]           = useState('overview');
   const [sidebarOpen, setSidebarOpen]       = useState(false);
@@ -201,6 +238,10 @@ function AdminDashboard() {
 
   const [editPhotoPreview, setEditPhotoPreview] = useState(null);
   const [editPhotoFile, setEditPhotoFile]       = useState(null);
+
+  const [migrating, setMigrating]       = useState(false);
+  const [syncRemaining, setSyncRemaining] = useState(0);
+  const isMigrating = useRef(false); // guard against duplicate runs
 
   // When modal opens:
   useEffect(() => {
@@ -258,7 +299,7 @@ function AdminDashboard() {
   const loadMembers = async () => {
     const { data } = await supabase
       .from('members')
-      .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer, photo_url')
+      .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer, photo_url, photo_base64')
       .order('registered_at', { ascending: false });
     if (data) setMembers(data);
   };
@@ -269,6 +310,80 @@ function AdminDashboard() {
   const loadGallery = async () => {
     const { data } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
     if (data) setGalleryItems(data);
+  };
+
+  // ── Auto-migrate legacy base64 photos → Supabase Storage (silent) ──
+  const migrateLegacyPhotos = async () => {
+    if (isMigrating.current) return; // already running
+    isMigrating.current = true;
+    setMigrating(true);
+
+    try {
+      const { data: legacy, error } = await supabase
+        .from('members')
+        .select('member_id, photo_base64')
+        .not('photo_base64', 'is', null)
+        .is('photo_url', null);
+
+      if (error || !legacy || legacy.length === 0) {
+        console.log('[PhotoSync] No legacy photos to migrate.');
+        return;
+      }
+
+      console.log(`[PhotoSync] Starting auto-migration for ${legacy.length} member(s)...`);
+      setSyncRemaining(legacy.length);
+
+      const BATCH = 10;
+      for (let i = 0; i < legacy.length; i += BATCH) {
+        const batch = legacy.slice(i, i + BATCH);
+
+        for (const member of batch) {
+          try {
+            const base64 = member.photo_base64;
+            const [meta, b64data] = base64.split(',');
+            const mimeMatch = meta?.match(/data:([^;]+);/);
+            const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+            const byteStr = atob(b64data);
+            const bytes = new Uint8Array(byteStr.length);
+            for (let j = 0; j < byteStr.length; j++) bytes[j] = byteStr.charCodeAt(j);
+            const blob = new Blob([bytes], { type: mime });
+
+            const path = `members/${member.member_id}`;
+            const { data: uploadData, error: uploadErr } = await supabase.storage
+              .from('member-photos')
+              .upload(path, blob, { contentType: mime, upsert: true });
+            if (uploadErr) throw uploadErr;
+
+            const { data: urlData } = supabase.storage
+              .from('member-photos')
+              .getPublicUrl(uploadData.path);
+
+            const { error: updateErr } = await supabase
+              .from('members')
+              .update({ photo_url: urlData.publicUrl, photo_base64: null })
+              .eq('member_id', member.member_id);
+            if (updateErr) throw updateErr;
+
+            console.log(`[PhotoSync] ✓ ${member.member_id}`);
+          } catch (err) {
+            console.error(`[PhotoSync] ✗ ${member.member_id}:`, err);
+          }
+          setSyncRemaining(prev => Math.max(0, prev - 1));
+        }
+
+        // Pause 500ms between batches to avoid rate-limiting
+        if (i + BATCH < legacy.length) {
+          await new Promise(r => setTimeout(r, 500));
+        }
+      }
+
+      console.log('[PhotoSync] Auto-migration complete. Refreshing member list...');
+      await loadMembers();
+    } finally {
+      setSyncRemaining(0);
+      setMigrating(false);
+      isMigrating.current = false;
+    }
   };
 
   const fetchSingleMemberPhoto = async (memberId) => {
@@ -323,6 +438,20 @@ function AdminDashboard() {
       .subscribe();
     return () => supabase.removeChannel(sub);
   }, []);
+
+  // ── Auto-migrate on mount + every 5 min ──
+  useEffect(() => {
+    // Wait briefly for initial data load to settle, then run
+    const initial = setTimeout(() => migrateLegacyPhotos(), 3000);
+
+    // Re-check every 5 minutes (catches new legacy registrations)
+    const poll = setInterval(() => migrateLegacyPhotos(), 5 * 60 * 1000);
+
+    return () => {
+      clearTimeout(initial);
+      clearInterval(poll);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Lazy-load photos for the visible page
   useEffect(() => {
@@ -382,13 +511,13 @@ function AdminDashboard() {
     // If admin selected a new photo file
     if (editPhotoFile) {
       try {
-        const ext = editPhotoFile.name.split('.').pop();
-        const path = `members/${editMember.member_id}.${ext}`;
-
+        const path = `members/${editMember.member_id}`; // no extension!
+        // Compress before upload
+        const compressed = await compressImageFile(editPhotoFile);
         const { data, error } = await supabase.storage
           .from('member-photos')
-          .upload(path, editPhotoFile, {
-            cacheControl: '3600',
+          .upload(path, compressed, {
+            contentType: 'image/jpeg',
             upsert: true  // overwrite existing
           });
 
@@ -488,19 +617,29 @@ function AdminDashboard() {
   };
 
   const handleAdminPhoto = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onloadend = async () => {
-      const compressed = await compressMemberPhoto(reader.result);
-      setAdminPhotoPreview(compressed)
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('படக் கோப்பு மட்டுமே / Images only');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      alert('2MB க்கு கீழ் / Max 2MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAdminPhotoPreview(reader.result);
       setNewMember(prev => ({
         ...prev,
-        photoPreview: compressed
-      }))
-    }
-    reader.readAsDataURL(file)
-  }
+        photoPreview: reader.result,
+        photoFile: file
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   const validateReg = () => {
     const e = {};
@@ -569,6 +708,30 @@ NEW MEMBER REGISTRATION DETAILS
     if (Object.keys(errs).length) { setRegErrors(errs); return; }
     setRegSubmitting(true);
     const memberId = await generateMemberId(newMember.pledgeDistrict);
+
+    let photoUrl = null;
+    if (newMember.photoFile) {
+      try {
+        const file = newMember.photoFile;
+        const path = `members/${memberId}`; // no extension!
+        // Compress before upload
+        const compressed = await compressImageFile(file);
+        const { data, error } = await supabase.storage
+          .from('member-photos')
+          .upload(path, compressed, {
+            contentType: 'image/jpeg',
+            upsert: true
+          });
+        if (error) throw error;
+        const { data: urlData } = supabase.storage
+          .from('member-photos')
+          .getPublicUrl(data.path);
+        photoUrl = urlData.publicUrl;
+      } catch (err) {
+        console.error('Admin photo upload failed:', err);
+      }
+    }
+
     const record = {
       member_id: memberId, user_id: null, full_name: newMember.fullName,
       posting: newMember.posting,
@@ -577,7 +740,9 @@ NEW MEMBER REGISTRATION DETAILS
       address: newMember.address, org_address: newMember.companyAddress || '', district: newMember.pledgeDistrict,
       branch: newMember.pledgeBranch || '', nominee_name: newMember.nomineeName || '',
       nominee_phone: newMember.nomineeMobile || '', join_date: joiningDate,
-      referrer: newMember.referral || '', photo_base64: newMember.photoPreview || null,
+      referrer: newMember.referral || '', 
+      photo_url: photoUrl,
+      photo_base64: photoUrl ? null : (newMember.photoPreview || null),
       registered_at: new Date().toISOString(),
     };
     const { data, error } = await supabase.from('members').insert(record).select().single();
@@ -895,22 +1060,42 @@ NEW MEMBER REGISTRATION DETAILS
             <div className="space-y-6 max-w-5xl">
               <h2 className="text-xl md:text-2xl font-bold text-[#003366]">Dashboard Overview</h2>
 
-              {/* Stat cards — 2 cols on mobile, 4 on desktop */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                {[
-                  { label: 'Total Members',    value: members.length,  color: '#FFB347' },
-                  { label: 'Today Registered', value: todayCount,       color: '#22C55E' },
-                  { label: 'Districts Covered',value: activeDistricts,  color: '#3B82F6' },
-                  { label: 'Registered Users', value: users.length,     color: '#A855F7' },
-                ].map(card => (
-                  <div key={card.label} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm" style={{ borderLeft: `4px solid ${card.color}` }}>
-                    <p className="text-[10px] md:text-xs text-gray-500 font-semibold uppercase tracking-wider leading-tight">{card.label}</p>
-                    <p className="text-3xl md:text-4xl font-bold mt-2 text-[#003366]">
-                      {loadingData ? '…' : card.value}
-                    </p>
+              {/* Stat cards — 2 cols on mobile, 3 on desktop */}
+              {(() => {
+                const notRegistered = users.filter(u => !u.has_registered).length;
+                const legacyPhotos  = members.filter(m => m.photo_base64 && !m.photo_url).length;
+                return (
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                    {[
+                      { label: 'Total Members',     value: members.length, color: '#FFB347', icon: '👥' },
+                      { label: 'Today Registered',  value: todayCount,     color: '#22C55E', icon: '✅' },
+                      { label: 'Districts Covered', value: activeDistricts, color: '#3B82F6', icon: '🗺️' },
+                      { label: 'Signed-Up Users',   value: users.length,   color: '#A855F7', icon: '🙍' },
+                      { label: 'Not Registered Yet',value: notRegistered,  color: notRegistered > 0 ? '#EF4444' : '#22C55E', icon: notRegistered > 0 ? '⏳' : '🎉' },
+                      { label: 'Legacy Photos',     value: legacyPhotos,   color: legacyPhotos > 0 ? '#F59E0B' : '#22C55E', icon: legacyPhotos > 0 ? '🖼️' : '✅' },
+                    ].map(card => (
+                      <div key={card.label} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm" style={{ borderLeft: `4px solid ${card.color}` }}>
+                        <p className="text-[10px] md:text-xs text-gray-500 font-semibold uppercase tracking-wider leading-tight">
+                          {card.icon} {card.label}
+                        </p>
+                        <p className="text-3xl md:text-4xl font-bold mt-2" style={{ color: card.color }}>
+                          {loadingData ? '…' : card.value}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                );
+              })()}
+
+              {/* ── Auto-sync indicator (subtle, no buttons) ── */}
+              {migrating && syncRemaining > 0 && (
+                <p style={{
+                  fontSize: '11px', color: '#6B7280',
+                  textAlign: 'right', marginTop: '-8px'
+                }}>
+                  ⟳ Auto-syncing photos… ({syncRemaining} remaining)
+                </p>
+              )}
 
               {/* Recent registrations */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -924,9 +1109,9 @@ NEW MEMBER REGISTRATION DETAILS
                   <div key={idx} className="flex items-center justify-between p-3 md:p-4 border-b border-gray-50 hover:bg-gray-50 transition">
                     <div className="flex items-center gap-3 min-w-0">
                       {(() => {
-                        const photoSrc = m.photo_url || m.photo_base64 || null;
+                        const photoSrc = getPhotoSrc(m);
                         return photoSrc
-                          ? <img src={photoSrc} alt="" className="w-9 h-9 rounded-full object-cover border border-[#FFB347]/30 flex-shrink-0" />
+                          ? <img src={photoSrc} alt="" crossOrigin="anonymous" className="w-9 h-9 rounded-full object-cover border border-[#FFB347]/30 flex-shrink-0" />
                           : <div className="w-9 h-9 rounded-full bg-[#FFB347]/20 text-[#FF6B00] flex items-center justify-center font-bold text-sm flex-shrink-0">{m.full_name?.charAt(0)}</div>;
                       })()}
                       <div className="min-w-0">
@@ -942,6 +1127,49 @@ NEW MEMBER REGISTRATION DETAILS
                 ))}
                 {!loadingData && members.length === 0 && <p className="p-6 text-gray-400 text-sm text-center">No registrations yet.</p>}
               </div>
+
+              {/* ── Pending Registration Users ── */}
+              {(() => {
+                const pendingUsers = users.filter(u => !u.has_registered);
+                if (pendingUsers.length === 0) return null;
+                return (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="p-4 border-b border-gray-100 bg-red-50/60 flex justify-between items-center">
+                      <div>
+                        <h3 className="font-semibold text-red-700 text-sm">⏳ Pending Member Registration</h3>
+                        <p className="text-xs text-red-400 mt-0.5">{pendingUsers.length} user{pendingUsers.length !== 1 ? 's' : ''} signed up but haven't registered yet</p>
+                      </div>
+                      <button onClick={() => goTab('register')} className="text-xs bg-[#003366] text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition font-semibold">
+                        + Register
+                      </button>
+                    </div>
+                    <div className="divide-y divide-gray-50">
+                      {pendingUsers.map((u, i) => (
+                        <div key={u.id || i} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-full bg-red-100 text-red-500 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                              {u.name?.charAt(0)?.toUpperCase() || u.email?.charAt(0)?.toUpperCase() || '?'}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-gray-800 text-sm truncate">{u.name || '—'}</p>
+                              <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                            </div>
+                          </div>
+                          <div className="text-right flex-shrink-0 ml-2">
+                            <span className="inline-block text-[10px] font-semibold text-red-500 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">Not Registered</span>
+                            {u.created_at && (
+                              <p className="text-[10px] text-gray-400 mt-0.5">
+                                Joined {new Date(u.created_at).toLocaleDateString('en-IN')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
             </div>
           )}
 
@@ -999,9 +1227,9 @@ NEW MEMBER REGISTRATION DETAILS
                             <td className="p-3 text-gray-500">{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
                             <td className="p-3">
                               {(() => {
-                                const photoSrc = m.photo_url || m.photo_base64 || null;
+                                const photoSrc = getPhotoSrc(m);
                                 return photoSrc ? (
-                                  <img src={photoSrc} alt="" style={{
+                                  <img src={photoSrc} alt="" crossOrigin="anonymous" style={{
                                     width: '40px', height: '48px',
                                     objectFit: 'cover',
                                     borderRadius: '4px',

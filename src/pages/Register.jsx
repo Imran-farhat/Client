@@ -7,6 +7,12 @@ import { supabase } from '../supabase/client';
 import { useAuth } from '../context/AuthContext';
 import { generateMemberId } from '../utils/memberIdUtils';
 
+const getPhotoSrc = (member) =>
+  member?.photo_url ||
+  member?.photo_base64 ||
+  member?.photoPreview ||
+  null;
+
 
 
 const TAMIL_NADU_DISTRICTS = [
@@ -67,6 +73,7 @@ const initialForm = {
   pledgeBranch: '',
   profilePhoto: null,
   photoPreview: null,
+  photoFile: null,
 };
 
 const BiLabel = ({ tamil, english, required }) => (
@@ -151,7 +158,7 @@ function Register() {
     // Note: implement proper encryption later
   }
 
-  const saveToSupabase = async (formData, memberId, photoUrl, photoBase64) => {
+  const saveToSupabase = async (formData, memberId, photoUrl = null) => {
     try {
       console.log('Saving to Supabase...', memberId);
       console.log('Current user:', currentUser?.id);
@@ -173,8 +180,8 @@ function Register() {
         nominee_phone: formData.nomineeMobile || '',
         join_date: joiningDate,
         referrer: formData.referral || '',
-        photo_url: photoUrl || null,
-        photo_base64: photoBase64 || null,
+        photo_url: photoUrl,
+        photo_base64: photoUrl ? null : (formData.photoPreview || null),
         registered_at: new Date().toISOString()
       };
 
@@ -304,7 +311,37 @@ NEW MEMBER REGISTRATION DETAILS
     });
   };
 
-  const handlePhotoUpload = async (e) => {
+  // Compress a raw File to a JPEG Blob (max 800px, 75% quality) before Storage upload
+  const compressImageFile = (file) => new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 800;
+        let { width, height } = img;
+        if (width > height) {
+          if (width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
+        } else {
+          if (height > MAX) { width = Math.round(width * MAX / height); height = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => resolve(blob || file),
+          'image/jpeg',
+          0.75
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+
+  const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -323,43 +360,33 @@ NEW MEMBER REGISTRATION DETAILS
       setForm(prev => ({
         ...prev,
         photoPreview: reader.result,  // for display only
-        profilePhoto: file            // actual file for upload
+        profilePhoto: file,           // for validation
+        photoFile: file               // actual file for upload
       }))
     }
     reader.readAsDataURL(file)
   }
 
   const uploadPhotoToStorage = async (file, memberId) => {
-    if (!file) return { url: null, base64: null }
-
+    if (!file) return null;
     try {
-      const ext = file.name.split('.').pop()
-      const path = `members/${memberId}.${ext}`
-
+      // Compress to JPEG (max 800px, 75% quality) before uploading
+      const compressed = await compressImageFile(file);
+      const path = `members/${memberId}`; // no extension!
       const { data, error } = await supabase.storage
         .from('member-photos')
-        .upload(path, file, {
-          cacheControl: '3600',
+        .upload(path, compressed, {
+          contentType: 'image/jpeg',
           upsert: true
-        })
-
-      if (error) throw error
-
+        });
+      if (error) throw error;
       const { data: urlData } = supabase.storage
         .from('member-photos')
-        .getPublicUrl(data.path)
-
-      return {
-        url: urlData.publicUrl,
-        base64: null  // no longer store base64 for new members
-      }
+        .getPublicUrl(data.path);
+      return urlData.publicUrl;
     } catch (err) {
-      console.error('Photo upload failed:', err)
-      // Fallback: store as base64 if Storage fails
-      return {
-        url: null,
-        base64: form.photoPreview
-      }
+      console.error('Storage upload failed:', err);
+      return null;
     }
   }
 
@@ -448,19 +475,19 @@ NEW MEMBER REGISTRATION DETAILS
 
       const generatedId = await generateMemberId(form.pledgeDistrict);
 
-      // Upload photo to storage
-      const { url: photoUrl, base64: photoBase64 } = await uploadPhotoToStorage(form.profilePhoto, generatedId);
+      // Upload photo to Storage
+      const photoUrl = await uploadPhotoToStorage(form.photoFile, generatedId);
 
       const memberData = {
         ...form,
         joiningDate,
         memberId: generatedId,
         photo_url: photoUrl,
-        photo_base64: photoBase64
+        photo_base64: photoUrl ? null : (form.photoPreview || null)
       };
 
       // Await save so errors surface before showing card
-      const saved = await saveToSupabase(form, generatedId, photoUrl, photoBase64);
+      const saved = await saveToSupabase(form, generatedId, photoUrl);
       console.log('Save result:', saved);
 
       if (saved) {
@@ -729,8 +756,8 @@ NEW MEMBER REGISTRATION DETAILS
                 <div className="w-full rounded-[12px] p-5 text-center" style={{ border: '1.5px solid #E5DDD0' }}>
                   <p className="mb-3 text-sm font-semibold" style={{ color: '#2C3E6B' }}>உறுப்பினர் படம்</p>
                   <label className="group relative mx-auto block cursor-pointer" style={{ width: '120px', height: '140px' }}>
-                    {form.photoPreview ? (
-                      <img src={form.photoPreview} alt="Member" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', border: '2px solid #003366' }} />
+                    {getPhotoSrc(form) ? (
+                      <img src={getPhotoSrc(form)} alt="Member" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', border: '2px solid #003366' }} />
                     ) : (
                       <div style={{ width: '100%', height: '100%', border: '2px dashed #CCCCCC', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#888888', fontSize: '12px' }}>
                         <span style={{ fontSize: '24px' }}>📷</span>
@@ -875,9 +902,9 @@ NEW MEMBER REGISTRATION DETAILS
                     <p style={{ fontSize: '11px', color: '#666666', margin: '4px 0 0 0' }}>Thennindia Welding Thozhilaalargal Nala Sangam — உறுப்பினர் படிவம் / MEMBERSHIP FORM</p>
                   </div>
                 </div>
-                {form.photoPreview && (
+                {getPhotoSrc(form) && (
                   <div style={{ width: '96px', textAlign: 'center', flexShrink: 0 }}>
-                    <img src={form.photoPreview} alt="Member" style={{ width: '96px', height: '112px', objectFit: 'cover', borderRadius: '4px', border: '2px solid #003366' }} />
+                    <img src={getPhotoSrc(form)} alt="Member" crossOrigin="anonymous" style={{ width: '96px', height: '112px', objectFit: 'cover', borderRadius: '4px', border: '2px solid #003366' }} />
                     <p style={{ fontSize: '9px', color: '#888', marginTop: '2px' }}>உறுப்பினர் படம்</p>
                   </div>
                 )}

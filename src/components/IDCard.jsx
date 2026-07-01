@@ -4,6 +4,12 @@ import balajiSign from '../assets/balaji_clean.png';
 import idhreesSign from '../assets/idhrees_clean.png';
 import muraliSign from '../assets/murali_clean.png';
 
+const getPhotoSrc = (data) =>
+  data?.photo_url ||
+  data?.photo_base64 ||
+  data?.photoPreview ||
+  null;
+
 const AUTHORITIES = [
   {
     sign: balajiSign,
@@ -107,11 +113,7 @@ function DarkSignature({ src, alt, style }) {
 }
 
 function CardFront({ member }) {
-  const memberPhoto =
-    member.photo_url ||
-    member.photo_base64 ||
-    member.photoPreview ||
-    null;
+  const memberPhoto = getPhotoSrc(member);
 
   const fields = [
     { label: 'Name',     value: member.fullName || '-' },
@@ -600,6 +602,9 @@ function IDCard({ member, onReset, showReset = true }) {
       windowHeight: 3000,
       imageTimeout: 15000,
       onclone: (doc) => {
+        doc.querySelectorAll('img').forEach(img => {
+          img.crossOrigin = 'anonymous';
+        });
         const el = doc.getElementById('dl-front-clone');
         if (!el) return;
         // Force all text to pure black for print
