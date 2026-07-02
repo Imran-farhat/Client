@@ -394,8 +394,8 @@ export const printMemberForm = (member) => {
   <!-- RIGHT: PHOTO + MEMBER ID -->
   <div class="right-col">
     <div class="photo-box">
-      ${member.photo_base64
-        ? `<img src="${member.photo_base64}" alt="படம்"/>`
+      ${(member.photo_url || member.photo_base64)
+        ? `<img src="${member.photo_url || member.photo_base64}" alt="படம்" crossorigin="anonymous"/>`
         : '<div class="photo-empty">உறுப்பினர்<br/>படம்</div>'
       }
     </div>
