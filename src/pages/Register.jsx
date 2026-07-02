@@ -385,7 +385,8 @@ NEW MEMBER REGISTRATION DETAILS
       const { data: urlData } = supabase.storage
         .from('member-photos')
         .getPublicUrl(data.path);
-      return urlData.publicUrl;
+      // Append cache-buster so browser fetches the fresh image (upsert keeps same URL)
+      return `${urlData.publicUrl}?t=${Date.now()}`;
     } catch (err) {
       console.error('Storage upload failed:', err);
       return null;

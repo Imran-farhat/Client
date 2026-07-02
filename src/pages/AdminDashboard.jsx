@@ -571,7 +571,8 @@ function AdminDashboard() {
           .from('member-photos')
           .getPublicUrl(data.path);
 
-        newPhotoUrl = urlData.publicUrl;
+        // Append cache-buster so browser fetches the fresh image (upsert keeps same URL)
+        newPhotoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
         newPhotoBase64 = null; // clear old base64
       } catch (err) {
         console.error('Photo upload failed:', err);
@@ -770,7 +771,8 @@ NEW MEMBER REGISTRATION DETAILS
         const { data: urlData } = supabase.storage
           .from('member-photos')
           .getPublicUrl(data.path);
-        photoUrl = urlData.publicUrl;
+        // Append cache-buster so browser fetches the fresh image
+        photoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
       } catch (err) {
         console.error('Admin photo upload failed:', err);
       }
