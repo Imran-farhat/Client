@@ -530,7 +530,12 @@ function AdminDashboard() {
   }, [filteredMembers, currentPage]);
 
   const todayCount = useMemo(() => {
-    return members.filter(m => new Date(m.registered_at).toDateString() === new Date().toDateString()).length;
+    // Use IST timezone to avoid UTC↔IST date mismatch
+    const todayIST = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+    return members.filter(m => {
+      if (!m.registered_at) return false;
+      return new Date(m.registered_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }) === todayIST;
+    }).length;
   }, [members]);
 
   const districtsCount = useMemo(() => {
@@ -794,9 +799,33 @@ NEW MEMBER REGISTRATION DETAILS
     const { data, error } = await supabase.from('members').insert(record).select().single();
     setRegSubmitting(false);
     if (error) { alert('Error: ' + error.message); return; }
-    
-    await sendAdminNotification(newMember, memberId);
 
+    // Fix: mark matching user as registered (find by mobile number)
+    if (newMember.mobile) {
+      const { data: matchedUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('mobile', newMember.mobile)
+        .maybeSingle();
+
+      // Also try matching by checking members.user_id via email fallback
+      const { data: memberWithUser } = await supabase
+        .from('members')
+        .select('user_id')
+        .eq('member_id', memberId)
+        .maybeSingle();
+
+      const userIdToUpdate = matchedUser?.id || memberWithUser?.user_id;
+      if (userIdToUpdate) {
+        await supabase
+          .from('users')
+          .update({ has_registered: true, member_id: memberId })
+          .eq('id', userIdToUpdate);
+        await loadUsers();
+      }
+    }
+
+    await sendAdminNotification(newMember, memberId);
     setRegSuccess(data);
     await loadMembers();
   };
@@ -1040,7 +1069,7 @@ NEW MEMBER REGISTRATION DETAILS
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] admin-dashboard">
+    <div className="min-h-screen admin-dashboard" style={{ background: '#F0F4F9' }}>
 
       {/* ── MOBILE TOP BAR ── */}
       <div className="sticky top-0 z-30 flex items-center justify-between bg-[#003366] px-4 py-3 md:hidden shadow-lg">
@@ -1063,37 +1092,67 @@ NEW MEMBER REGISTRATION DETAILS
       <div className="flex">
         {/* ── SIDEBAR ── */}
         <aside className={`
-          fixed top-0 left-0 h-full w-64 bg-[#003366] text-white z-20 flex flex-col
+          fixed top-0 left-0 h-full w-64 z-20 flex flex-col
           transform transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-0 md:static md:w-[220px] md:h-screen md:sticky md:top-0
-        `}>
+          md:translate-x-0 md:static md:w-[240px] md:h-screen md:sticky md:top-0
+        `} style={{ background: 'linear-gradient(180deg, #0A1628 0%, #003366 60%, #004080 100%)' }}>
+
           {/* Sidebar header */}
-          <div className="p-5 border-b border-white/10 flex items-center gap-3 flex-shrink-0">
-            <div className="w-8 h-8 rounded bg-[#FFB347] flex items-center justify-center font-bold text-black text-sm">A</div>
-            <span className="font-bold text-lg tracking-wide">Admin Panel</span>
+          <div className="px-5 py-6 border-b border-white/10 flex items-center gap-3 flex-shrink-0">
+            <div style={{
+              width: '40px', height: '40px', borderRadius: '10px',
+              background: 'linear-gradient(135deg, #FF6B00, #FFB347)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: '900', color: '#fff', fontSize: '18px',
+              boxShadow: '0 4px 12px rgba(255,107,0,0.4)'
+            }}>A</div>
+            <div>
+              <div className="font-bold text-white text-sm tracking-wide">Admin Panel</div>
+              <div className="text-[10px] text-white/50 mt-0.5">TIWTN Management</div>
+            </div>
           </div>
 
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {/* Admin info chip */}
+          <div className="mx-4 mt-4 mb-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(255,179,71,0.12)', border: '1px solid rgba(255,179,71,0.2)' }}>
+            <div className="text-[10px] text-white/40 uppercase tracking-wider">Logged in as</div>
+            <div className="text-xs text-[#FFB347] font-semibold truncate mt-0.5">{userProfile?.email || userProfile?.name || 'Admin'}</div>
+          </div>
+
+          <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
             {NAV.map(tab => (
               <button key={tab.id} onClick={() => goTab(tab.id)}
-                className={`w-full text-left px-4 py-3 rounded text-sm transition flex items-center ${
-                  activeTab === tab.id
-                    ? 'bg-white/10 text-[#FFB347] border-l-4 border-[#FFB347]'
-                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
-                }`}>
-                {tab.icon} {tab.label}
+                className="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all duration-200 flex items-center gap-2.5"
+                style={activeTab === tab.id ? {
+                  background: 'rgba(255,179,71,0.18)',
+                  color: '#FFB347',
+                  borderLeft: '3px solid #FFB347',
+                  fontWeight: '700',
+                  paddingLeft: '9px'
+                } : {
+                  color: 'rgba(255,255,255,0.65)',
+                  fontWeight: '500'
+                }}>
+                <span style={{ fontSize: '16px' }}>{tab.icon}</span>
+                <span>{tab.label}</span>
               </button>
             ))}
+            <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
             <button onClick={() => { exportCSV(); setSidebarOpen(false); }}
-              className="w-full text-left px-4 py-3 rounded text-sm text-gray-300 hover:bg-white/5 hover:text-white transition">
-              📥 Export CSV
+              className="w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-2.5"
+              style={{ color: 'rgba(255,255,255,0.55)' }}>
+              <span style={{ fontSize: '16px' }}>📥</span>
+              <span>Export CSV</span>
             </button>
           </nav>
 
           <div className="p-4 border-t border-white/10 flex-shrink-0">
-            <button onClick={logout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 transition">
-              🚪 Logout Admin
+            <button onClick={logout}
+              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all"
+              style={{ color: '#FC8181', background: 'rgba(252,129,129,0.08)' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(252,129,129,0.16)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'rgba(252,129,129,0.08)'}>
+              <span>🚪</span> <span className="font-semibold">Logout</span>
             </button>
           </div>
         </aside>
@@ -1104,29 +1163,92 @@ NEW MEMBER REGISTRATION DETAILS
           {/* ── OVERVIEW ── */}
           {activeTab === 'overview' && (
             <div className="space-y-6 max-w-5xl">
-              <h2 className="text-xl md:text-2xl font-bold text-[#003366]">Dashboard Overview</h2>
+              {/* Header row */}
+              <div className="flex flex-wrap gap-3 items-start justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold" style={{ color: '#0A1628' }}>Dashboard Overview</h2>
+                  <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>
+                    {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Kolkata' })}
+                  </p>
+                </div>
+                <button onClick={() => { loadMembers(); loadUsers(); }}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
+                  style={{ background: '#F0F4F9', color: '#003366', border: '1px solid #D1D9E6' }}>
+                  ↻ Refresh
+                </button>
+              </div>
 
-              {/* Stat cards — 2 cols on mobile, 3 on desktop */}
+              {/* Stat cards */}
               {(() => {
                 const notRegistered = users.filter(u => !u.has_registered).length;
                 const legacyPhotos  = members.filter(m => m.photo_base64 && !m.photo_url).length;
+                const cards = [
+                  {
+                    label: 'Total Members', value: members.length,
+                    sub: 'All time registrations',
+                    iconBg: 'linear-gradient(135deg,#FF6B00,#FFB347)', icon: '👥',
+                    valueCls: '#FF6B00'
+                  },
+                  {
+                    label: 'Registered Today', value: todayCount,
+                    sub: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', timeZone: 'Asia/Kolkata' }),
+                    iconBg: 'linear-gradient(135deg,#16A34A,#4ADE80)', icon: '✅',
+                    valueCls: '#16A34A'
+                  },
+                  {
+                    label: 'Districts Covered', value: activeDistricts,
+                    sub: `of ${TAMIL_NADU_DISTRICTS.length} total districts`,
+                    iconBg: 'linear-gradient(135deg,#2563EB,#60A5FA)', icon: '🗺️',
+                    valueCls: '#2563EB'
+                  },
+                  {
+                    label: 'Signed-Up Users', value: users.length,
+                    sub: 'Accounts created',
+                    iconBg: 'linear-gradient(135deg,#7C3AED,#A78BFA)', icon: '👤',
+                    valueCls: '#7C3AED'
+                  },
+                  {
+                    label: 'Pending Registration', value: notRegistered,
+                    sub: notRegistered > 0 ? 'Users yet to register' : 'All users registered!',
+                    iconBg: notRegistered > 0 ? 'linear-gradient(135deg,#DC2626,#F87171)' : 'linear-gradient(135deg,#16A34A,#4ADE80)',
+                    icon: notRegistered > 0 ? '⏳' : '🎉',
+                    valueCls: notRegistered > 0 ? '#DC2626' : '#16A34A'
+                  },
+                  {
+                    label: 'Legacy Photos', value: legacyPhotos,
+                    sub: legacyPhotos > 0 ? 'Pending migration' : 'All synced to cloud',
+                    iconBg: legacyPhotos > 0 ? 'linear-gradient(135deg,#D97706,#FCD34D)' : 'linear-gradient(135deg,#16A34A,#4ADE80)',
+                    icon: legacyPhotos > 0 ? '🖼️' : '☁️',
+                    valueCls: legacyPhotos > 0 ? '#D97706' : '#16A34A'
+                  },
+                ];
                 return (
                   <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                    {[
-                      { label: 'Total Members',     value: members.length, color: '#FFB347', icon: '👥' },
-                      { label: 'Today Registered',  value: todayCount,     color: '#22C55E', icon: '✅' },
-                      { label: 'Districts Covered', value: activeDistricts, color: '#3B82F6', icon: '🗺️' },
-                      { label: 'Signed-Up Users',   value: users.length,   color: '#A855F7', icon: '🙍' },
-                      { label: 'Not Registered Yet',value: notRegistered,  color: notRegistered > 0 ? '#EF4444' : '#22C55E', icon: notRegistered > 0 ? '⏳' : '🎉' },
-                      { label: 'Legacy Photos',     value: legacyPhotos,   color: legacyPhotos > 0 ? '#F59E0B' : '#22C55E', icon: legacyPhotos > 0 ? '🖼️' : '✅' },
-                    ].map(card => (
-                      <div key={card.label} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm" style={{ borderLeft: `4px solid ${card.color}` }}>
-                        <p className="text-[10px] md:text-xs text-gray-500 font-semibold uppercase tracking-wider leading-tight">
-                          {card.icon} {card.label}
-                        </p>
-                        <p className="text-3xl md:text-4xl font-bold mt-2" style={{ color: card.color }}>
-                          {loadingData ? '…' : card.value}
-                        </p>
+                    {cards.map(card => (
+                      <div key={card.label} style={{
+                        background: '#fff',
+                        borderRadius: '16px',
+                        padding: '18px 20px',
+                        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                        border: '1px solid #E8EDF5',
+                        display: 'flex', flexDirection: 'column', gap: '10px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{
+                            width: '38px', height: '38px', borderRadius: '10px',
+                            background: card.iconBg,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '18px'
+                          }}>{card.icon}</div>
+                        </div>
+                        <div>
+                          <div style={{
+                            fontSize: '28px', fontWeight: '800',
+                            color: card.valueCls, lineHeight: 1.1
+                          }}>{loadingData ? '—' : card.value}</div>
+                          <div style={{ fontSize: '12px', fontWeight: '600', color: '#374151', marginTop: '4px' }}>{card.label}</div>
+                          <div style={{ fontSize: '10px', color: '#9CA3AF', marginTop: '2px' }}>{card.sub}</div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1144,34 +1266,44 @@ NEW MEMBER REGISTRATION DETAILS
               )}
 
               {/* Recent registrations */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                  <h3 className="font-semibold text-[#003366] text-sm">Recent Registrations</h3>
-                  <button onClick={() => goTab('members')} className="text-xs text-[#FF6B00] hover:underline">View All →</button>
+              <div style={{ background: '#fff', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #E8EDF5', overflow: 'hidden' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #F3F4F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: '700', color: '#0A1628', fontSize: '15px' }}>Recent Registrations</div>
+                    <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>Latest {Math.min(members.length, 8)} of {members.length} members</div>
+                  </div>
+                  <button onClick={() => goTab('members')}
+                    style={{ fontSize: '12px', color: '#FF6B00', fontWeight: '600', background: '#FFF3E0', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
+                    View All →
+                  </button>
                 </div>
                 {loadingData ? (
-                  <p className="p-6 text-gray-400 text-sm text-center">Loading...</p>
+                  <div style={{ padding: '32px', textAlign: 'center', color: '#9CA3AF', fontSize: '14px' }}>Loading…</div>
                 ) : members.slice(0, 8).map((m, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 md:p-4 border-b border-gray-50 hover:bg-gray-50 transition">
-                    <div className="flex items-center gap-3 min-w-0">
+                  <div key={idx}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid #F9FAFB', cursor: 'pointer', transition: 'background 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    onClick={() => handleViewMember(m)}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
                       {(() => {
                         const photoSrc = getPhotoSrc(m);
                         return photoSrc
-                          ? <img src={photoSrc} alt="" crossOrigin="anonymous" className="w-9 h-9 rounded-full object-cover border border-[#FFB347]/30 flex-shrink-0" />
-                          : <div className="w-9 h-9 rounded-full bg-[#FFB347]/20 text-[#FF6B00] flex items-center justify-center font-bold text-sm flex-shrink-0">{m.full_name?.charAt(0)}</div>;
+                          ? <img src={photoSrc} alt="" crossOrigin="anonymous" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #FFB347', flexShrink: 0 }} />
+                          : <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg,#FF6B00,#FFB347)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '16px', flexShrink: 0 }}>{m.full_name?.charAt(0)}</div>;
                       })()}
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-800 text-sm truncate">{m.full_name}</p>
-                        <p className="text-xs text-gray-500 truncate">{m.district}</p>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: '600', color: '#111827', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.full_name}</div>
+                        <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>{m.district} · {m.blood_group || '—'}</div>
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0 ml-2">
-                      <p className="text-xs font-mono text-[#003366]">{m.member_id}</p>
-                      <p className="text-xs text-gray-500">{m.join_date}</p>
+                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
+                      <div style={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: '700', color: '#003366', background: '#EEF3FF', borderRadius: '6px', padding: '2px 8px', display: 'inline-block' }}>{m.member_id}</div>
+                      <div style={{ fontSize: '10px', color: '#9CA3AF', marginTop: '4px' }}>{m.join_date}</div>
                     </div>
                   </div>
                 ))}
-                {!loadingData && members.length === 0 && <p className="p-6 text-gray-400 text-sm text-center">No registrations yet.</p>}
+                {!loadingData && members.length === 0 && <div style={{ padding: '32px', textAlign: 'center', color: '#9CA3AF', fontSize: '14px' }}>No registrations yet.</div>}
               </div>
 
               {/* ── Pending Registration Users ── */}
@@ -1295,10 +1427,10 @@ NEW MEMBER REGISTRATION DETAILS
                             <td className="p-3 text-gray-600 text-xs">{m.mobile}</td>
                             <td className="p-3 text-center">
                               <div className="flex gap-1 justify-center">
-                                <button onClick={() => handleViewMember(m)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition text-sm" title="View">👁️</button>
-                                <button onClick={() => handleEditMemberClick(m)} className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded transition text-sm" title="Edit">✏️</button>
-                                <button onClick={() => handlePrintMember(m)} style={{ background: 'transparent', border: '1px solid #003366', color: '#003366', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', fontSize: '11px' }} title="Print Form">🖨️</button>
-                                <button onClick={() => deleteMember(m.member_id, m.user_id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded transition text-sm" title="Delete">🗑️</button>
+                                <button onClick={() => handleViewMember(m)} title="View" style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #DBEAFE', background: '#EFF6FF', color: '#2563EB', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>View</button>
+                                <button onClick={() => handleEditMemberClick(m)} title="Edit" style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #FDE68A', background: '#FFFBEB', color: '#D97706', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Edit</button>
+                                <button onClick={() => handlePrintMember(m)} title="Print" style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #C7D2FE', background: '#EEF2FF', color: '#4338CA', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>🖨️</button>
+                                <button onClick={() => deleteMember(m.member_id, m.user_id)} title="Delete" style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Del</button>
                               </div>
                             </td>
                           </tr>
