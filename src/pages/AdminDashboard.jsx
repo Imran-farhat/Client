@@ -1295,6 +1295,67 @@ NEW MEMBER REGISTRATION DETAILS
                 );
               })()}
 
+              {/* ── CLOUD STORAGE MONITOR ── */}
+              {(() => {
+                const estimatedStorageMB = Math.round((members.length * 75) / 1024);
+                const storagePercentage = Math.min(100, Math.round((estimatedStorageMB / 1024) * 100));
+                const isNearLimit = storagePercentage >= 80;
+
+                return (
+                  <div style={{
+                    background: '#fff',
+                    borderRadius: '16px',
+                    padding: '18px 20px',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                    border: '1px solid #E8EDF5',
+                    marginTop: '4px'
+                  }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div>
+                        <div style={{ fontWeight: '700', color: '#0A1628', fontSize: '14px' }}>Supabase Storage Monitor</div>
+                        <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>
+                          Est. <strong>{estimatedStorageMB} MB</strong> used of <strong>1024 MB (1 GB)</strong> free tier capacity
+                        </div>
+                      </div>
+                      <span style={{
+                        fontSize: '11px', fontWeight: '700',
+                        color: isNearLimit ? '#DC2626' : '#16A34A',
+                        background: isNearLimit ? '#FEF2F2' : '#EFF6FF',
+                        border: isNearLimit ? '1px solid #FCA5A5' : '1px solid #DBEAFE',
+                        padding: '3px 10px', borderRadius: '20px'
+                      }}>
+                        {isNearLimit ? '⚠️ Storage Alert' : '✓ Healthy'}
+                      </span>
+                    </div>
+
+                    <div style={{ width: '100%', height: '8px', background: '#E5E7EB', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{
+                        width: `${storagePercentage}%`,
+                        height: '100%',
+                        background: isNearLimit ? 'linear-gradient(90deg, #EF4444, #DC2626)' : 'linear-gradient(90deg, #FFB347, #FF6B00)',
+                        transition: 'width 0.5s ease-out'
+                      }} />
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#9CA3AF', marginTop: '6px' }}>
+                      <span>0%</span>
+                      <span>{storagePercentage}% full</span>
+                      <span>100%</span>
+                    </div>
+
+                    {isNearLimit && (
+                      <div style={{
+                        marginTop: '12px', padding: '10px 12px', borderRadius: '8px',
+                        background: '#FFFBEB', border: '1px solid #FDE68A',
+                        fontSize: '12px', color: '#B45309', fontWeight: '500'
+                      }}>
+                        <strong>⚠️ Storage limit warning:</strong> Your cloud photo attachments are nearing the 1 GB free tier limit. Consider upgrading your Supabase bucket plan or cleaning up unused files to avoid registration failures.
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* ── Auto-sync indicator (subtle, no buttons) ── */}
               {migrating && syncRemaining > 0 && (
                 <p style={{
