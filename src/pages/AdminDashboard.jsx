@@ -300,18 +300,58 @@ function AdminDashboard() {
 
   // ── Data loaders ─────────────────────────────────────────────
   const loadMembers = async () => {
-    const { data } = await supabase
-      .from('members')
-      .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer, photo_url')
-      .order('registered_at', { ascending: false });
-    if (data) setMembers(data);
+    let allMembers = [];
+    let page = 0;
+    const pageSize = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('members')
+        .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer, photo_url')
+        .order('registered_at', { ascending: false })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (error) {
+        console.error('Error loading members batch:', error);
+        break;
+      }
+      if (data && data.length > 0) {
+        allMembers = [...allMembers, ...data];
+        hasMore = data.length === pageSize;
+        page++;
+      } else {
+        hasMore = false;
+      }
+    }
+    setMembers(allMembers);
   };
   const loadUsers = async () => {
-    const { data } = await supabase
-      .from('users')
-      .select('id, email, name, role, has_registered, created_at')
-      .order('created_at', { ascending: false });
-    if (data) setUsers(data);
+    let allUsers = [];
+    let page = 0;
+    const pageSize = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, email, name, role, has_registered, created_at')
+        .order('created_at', { ascending: false })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (error) {
+        console.error('Error loading users batch:', error);
+        break;
+      }
+      if (data && data.length > 0) {
+        allUsers = [...allUsers, ...data];
+        hasMore = data.length === pageSize;
+        page++;
+      } else {
+        hasMore = false;
+      }
+    }
+    setUsers(allUsers);
   };
   const loadGallery = async () => {
     const { data } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
