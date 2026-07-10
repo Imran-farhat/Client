@@ -59,8 +59,7 @@ const ITEMS_PER_PAGE = 10;
 
 const displayAadhar = (aadhar) => {
   if (!aadhar) return '-'
-  const str = String(aadhar)
-  return 'XXXX XXXX ' + str.slice(-4)
+  return String(aadhar)
 }
 
 function formatDateDisplay() {
@@ -626,9 +625,49 @@ function AdminDashboard() {
       }
     }
 
+    // Sync the details to the users table if a user is linked
+    let userIdToUpdate = editMember.user_id;
+
+    if (!userIdToUpdate) {
+      // Check if there is a matching user by member_id
+      const { data: userByMemberId } = await supabase
+        .from('users')
+        .select('id')
+        .eq('member_id', editMember.member_id)
+        .maybeSingle();
+
+      if (userByMemberId) {
+        userIdToUpdate = userByMemberId.id;
+      } else if (editMember.mobile) {
+        // Fallback: check by mobile
+        const { data: userByMobile } = await supabase
+          .from('users')
+          .select('id')
+          .eq('mobile', editMember.mobile)
+          .maybeSingle();
+        if (userByMobile) {
+          userIdToUpdate = userByMobile.id;
+        }
+      }
+    }
+
+    if (userIdToUpdate) {
+      // Sync the user's name and mobile
+      await supabase
+        .from('users')
+        .update({
+          name: editMember.full_name,
+          mobile: editMember.mobile,
+          has_registered: true,
+          member_id: editMember.member_id
+        })
+        .eq('id', userIdToUpdate);
+    }
+
     const { error } = await supabase
       .from('members')
       .update({
+        user_id: userIdToUpdate || editMember.user_id || null,
         full_name: editMember.full_name,
         posting: editMember.posting,
         dob: editMember.dob,
@@ -649,6 +688,7 @@ function AdminDashboard() {
       setEditPhotoPreview(null);
       setEditPhotoFile(null);
       await loadMembers();
+      await loadUsers(); // Refresh users list too
       alert('✅ திருத்தப்பட்டது / Updated!');
     } else {
       alert('Error: ' + error.message);
@@ -665,7 +705,7 @@ function AdminDashboard() {
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `TIWTN_Members_${Date.now()}.csv`; a.click();
   };
-  const toIdCardShape = (m) => m ? ({ memberId: m.member_id, fullName: m.full_name, posting: m.posting, dob: m.dob, bloodGroup: m.blood_group, mobile: m.mobile, district: m.district, address: m.address, nomineeName: m.nominee_name, joinDate: m.join_date, pledgeDistrict: m.district, pledgeBranch: m.branch, photo_url: m.photo_url, photo_base64: m.photo_base64, photoPreview: m.photo_base64 }) : null;
+  const toIdCardShape = (m) => m ? ({ memberId: m.member_id, fullName: m.full_name, posting: m.posting, dob: m.dob, bloodGroup: m.blood_group, mobile: m.mobile, district: m.district, address: m.address, nomineeName: m.nominee_name, joinDate: m.join_date, pledgeDistrict: m.district, pledgeBranch: m.branch, photo_url: m.photo_url, photo_base64: m.photo_base64, photoPreview: m.photo_base64, aadhar: m.aadhar, aadhaar: m.aadhar }) : null;
 
   // ── Register on behalf ───────────────────────────────────────
   const handleRegChange = (field) => (e) => {
@@ -861,6 +901,11 @@ NEW MEMBER REGISTRATION DETAILS
           .from('users')
           .update({ has_registered: true, member_id: memberId })
           .eq('id', userIdToUpdate);
+        // Link user_id in members table too!
+        await supabase
+          .from('members')
+          .update({ user_id: userIdToUpdate })
+          .eq('member_id', memberId);
         await loadUsers();
       }
     }
@@ -1523,7 +1568,7 @@ NEW MEMBER REGISTRATION DETAILS
                             </td>
                             <td className="p-3 font-semibold text-gray-800 max-w-[120px] truncate">{m.full_name}</td>
                             <td className="p-3 font-mono text-[#003366] text-xs">{m.member_id}</td>
-                            <td className="p-3 font-mono text-xs">{m.aadhar ? 'XXXX XXXX ' + String(m.aadhar).slice(-4) : '-'}</td>
+                            <td className="p-3 font-mono text-xs">{m.aadhar || m.aadhaar || '-'}</td>
                             <td className="p-3 text-gray-600 text-xs">{m.district}</td>
                             <td className="p-3 text-gray-600 text-xs">{m.mobile}</td>
                             <td className="p-3 text-center">

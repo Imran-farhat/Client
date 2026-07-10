@@ -115,6 +115,14 @@ function Profile() {
         if (updateError) throw updateError;
       }
 
+      // Sync name changes to members table too
+      if (memberData?.member_id) {
+        await supabase
+          .from('members')
+          .update({ full_name: editName })
+          .eq('member_id', memberData.member_id);
+      }
+
       await refreshProfile();
       alert('✅ பெயர் சேமிக்கப்பட்டது / Name saved!');
     } catch (err) {
