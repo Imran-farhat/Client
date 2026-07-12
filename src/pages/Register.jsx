@@ -149,6 +149,7 @@ function Register() {
   const [memberId, setMemberId] = useState('TIWTN-2026-_____');
   const [cardReady, setCardReady] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPending, setShowPending] = useState(false);
   const cardRef = useRef(null);
   const formRef = useRef(null);
   const joiningDate = useMemo(() => formatDateDisplay(), []);
@@ -496,12 +497,12 @@ NEW MEMBER REGISTRATION DETAILS
       if (saved) {
         await sendAdminNotification(form, generatedId);
         
-        // Show card only on successful save
+        // Show pending screen instead of ID card
         setErrors({});
         setMemberId(generatedId);
         setMember(memberData);
+        setShowPending(true);
         setCardReady(false);
-        setTimeout(() => setCardReady(true), 300);
       } else {
         // Registration failed (alert already shown inside saveToSupabase)
         setIsSubmitting(false);
@@ -521,6 +522,7 @@ NEW MEMBER REGISTRATION DETAILS
     setMember(null);
     setMemberId('TIWTN-2026-_____');
     setCardReady(false);
+    setShowPending(false);
   };
 
   const downloadForm = async () => {
@@ -585,7 +587,68 @@ NEW MEMBER REGISTRATION DETAILS
           <p className="mt-4 max-w-3xl text-lg leading-8" style={{ color: '#FFB347' }}>தென் இந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கத்திற்கு உறுப்பினர்களாக இணைந்து பயன்களைப் பெறுங்கள்.</p>
         </div>
 
-        {!member ? (
+        {showPending ? (
+          <div style={{ textAlign: 'center', padding: '3rem 2rem', maxWidth: '500px', margin: '0 auto' }}>
+            {/* Pending icon */}
+            <div style={{
+              width: '80px', height: '80px', borderRadius: '50%',
+              background: '#FEF3C7', border: '3px solid #F59E0B',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '2.5rem', margin: '0 auto 1.5rem'
+            }}>⏳</div>
+
+            <h2 style={{
+              fontSize: '1.4rem', fontWeight: '800', color: 'var(--text-primary)',
+              marginBottom: '0.5rem', fontFamily: 'Catamaran, sans-serif'
+            }}>விண்ணப்பம் பெறப்பட்டது!</h2>
+
+            <p style={{ fontSize: '14px', color: '#92400E', fontWeight: '700', marginBottom: '0.5rem' }}>
+              Application Received Successfully
+            </p>
+
+            <div style={{
+              background: '#FEF3C7', border: '1px solid #F59E0B',
+              borderRadius: '10px', padding: '1rem 1.5rem',
+              margin: '1.5rem 0', textAlign: 'left'
+            }}>
+              <div style={{ fontSize: '13px', color: '#92400E', lineHeight: '1.8', fontFamily: 'Catamaran, sans-serif' }}>
+                ✅ உங்கள் விண்ணப்பம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது.<br/>
+                ✅ நிர்வாகி சரிபார்த்த பின்னர் உங்கள் அட்டை கிடைக்கும்.<br/>
+                ✅ அனுமதி கிடைத்தவுடன் உங்கள் சுயவிவரத்தில் காட்டப்படும்.<br/>
+                <br/>
+                ✅ Your application has been submitted.<br/>
+                ✅ ID card will be available after admin approval.<br/>
+                ✅ You will see it in your profile once approved.
+              </div>
+            </div>
+
+            {/* Member ID preview */}
+            <div style={{
+              background: 'var(--bg-card)', border: '1px solid var(--border)',
+              borderRadius: '8px', padding: '0.8rem 1.2rem', marginBottom: '1.5rem'
+            }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                உங்கள் விண்ணப்ப எண் / Your Application ID
+              </div>
+              <div style={{
+                fontFamily: 'Courier New, monospace', fontSize: '14px',
+                fontWeight: '900', color: '#FF6B00', letterSpacing: '1px'
+              }}>{member?.memberId || memberId}</div>
+            </div>
+
+            <button
+              onClick={() => navigate('/profile')}
+              style={{
+                width: '100%', padding: '14px', background: '#FF6B00',
+                color: '#fff', border: 'none', borderRadius: '10px',
+                fontSize: '15px', fontWeight: '800', cursor: 'pointer',
+                fontFamily: 'Catamaran, sans-serif'
+              }}
+            >
+              சுயவிவரம் காண்க / View Profile →
+            </button>
+          </div>
+        ) : !member ? (
           <div ref={formRef} className="register-form rounded-[16px] border border-[#E5DDD0] bg-card" style={{ padding: '2rem', boxShadow: '0 4px 24px rgba(0,51,102,0.08)' }}>
             <div className="space-y-8">
               <div className="flex flex-col gap-4 rounded-[16px] p-4 sm:flex-row sm:items-center" style={{ background: '#003366' }}>

@@ -231,7 +231,102 @@ function Profile() {
 
             {loading ? (
               <PageLoader message="உறுப்பினர் விவரங்களை ஏற்றுகிறது..." />
-            ) : memberData ? (
+            ) : !memberData ? (
+              // NOT REGISTERED STATE
+              <div style={{ textAlign: 'center', paddingTop: '2rem', paddingBottom: '2rem' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📋</div>
+                <div className="mb-2 text-lg font-semibold text-[var(--text-secondary)]">இன்னும் பதிவு செய்யவில்லை</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '1rem' }}>You haven't registered yet</div>
+                <button
+                  onClick={() => navigate('/register')}
+                  style={{
+                    background: '#FF6B00', color: '#fff', border: 'none',
+                    borderRadius: '8px', padding: '12px 24px',
+                    fontSize: '14px', fontWeight: '700', cursor: 'pointer'
+                  }}
+                >
+                  பதிவு செய்க / Register Now
+                </button>
+              </div>
+
+            ) : memberData.status === 'pending' ? (
+              // PENDING STATE
+              <div style={{ textAlign: 'center', padding: '1rem' }}>
+                <div style={{
+                  width: '64px', height: '64px', borderRadius: '50%',
+                  background: '#FEF3C7', border: '3px solid #F59E0B',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '2rem', margin: '0 auto 1rem'
+                }}>⏳</div>
+                <h3 style={{ color: '#92400E', fontWeight: '800', marginBottom: '0.5rem', fontFamily: 'Catamaran, sans-serif' }}>
+                  அனுமதிக்காக காத்திருக்கிறது
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '1rem' }}>
+                  Your application is under review.<br/>
+                  நிர்வாகி சரிபார்க்கும் வரை காத்திருங்கள்.
+                </p>
+                <div style={{
+                  background: '#FEF3C7', border: '1px solid #F59E0B',
+                  borderRadius: '8px', padding: '0.8rem 1rem', marginBottom: '1rem'
+                }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>விண்ணப்ப எண் / Application ID</div>
+                  <div style={{ fontFamily: 'Courier New, monospace', fontSize: '13px', fontWeight: '900', color: '#FF6B00' }}>
+                    {memberData.member_id}
+                  </div>
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  அனுமதி கிடைத்தவுடன் இங்கே உங்கள் அட்டை காட்டப்படும்.<br/>
+                  Your ID card will appear here once approved.
+                </p>
+              </div>
+
+            ) : memberData.status === 'rejected' ? (
+              // REJECTED STATE
+              <div style={{ textAlign: 'center', padding: '1rem' }}>
+                <div style={{
+                  width: '64px', height: '64px', borderRadius: '50%',
+                  background: '#FEE2E2', border: '3px solid #EF4444',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '2rem', margin: '0 auto 1rem'
+                }}>❌</div>
+                <h3 style={{ color: '#DC2626', fontWeight: '800', marginBottom: '0.5rem', fontFamily: 'Catamaran, sans-serif' }}>
+                  விண்ணப்பம் நிராகரிக்கப்பட்டது
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '1rem' }}>
+                  Your application was rejected.
+                </p>
+                {memberData.rejection_reason && (
+                  <div style={{
+                    background: '#FEE2E2', border: '1px solid #EF4444',
+                    borderRadius: '8px', padding: '0.8rem 1rem',
+                    marginBottom: '1.5rem', textAlign: 'left'
+                  }}>
+                    <div style={{ fontSize: '11px', color: '#DC2626', fontWeight: '700', marginBottom: '4px' }}>காரணம் / Reason:</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{memberData.rejection_reason}</div>
+                  </div>
+                )}
+                <button
+                  onClick={async () => {
+                    if (window.confirm('மீண்டும் விண்ணப்பிக்கவா? / Apply again?')) {
+                      await supabase.from('members').delete().eq('member_id', memberData.member_id);
+                      await supabase.from('users').update({ has_registered: false, member_id: null }).eq('id', currentUser.id);
+                      await refreshProfile();
+                      setMemberData(null);
+                      navigate('/register');
+                    }
+                  }}
+                  style={{
+                    background: '#FF6B00', color: '#fff', border: 'none',
+                    borderRadius: '8px', padding: '12px 24px', fontSize: '14px',
+                    fontWeight: '700', cursor: 'pointer', width: '100%'
+                  }}
+                >
+                  🔄 மீண்டும் விண்ணப்பிக்க / Re-Apply
+                </button>
+              </div>
+
+            ) : (
+              // APPROVED STATE (existing logic — unchanged)
               <div>
                 <div style={{ color: '#22C55E', fontSize: '14px', fontWeight: '700', marginBottom: '1rem' }}>
                   ✅ பதிவு செய்யப்பட்டது / Registered
@@ -264,23 +359,6 @@ function Profile() {
                     <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{value || '-'}</span>
                   </div>
                 ))}
-
-
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', paddingTop: '2rem', paddingBottom: '2rem' }}>
-                <div className="mb-2 text-lg font-semibold text-[var(--text-secondary)]">இன்னும் பதிவு செய்யவில்லை</div>
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '1rem' }}>You haven't registered yet</div>
-                <button
-                  onClick={() => navigate('/register')}
-                  style={{
-                    background: '#FF6B00', color: '#fff', border: 'none',
-                    borderRadius: '8px', padding: '12px 24px',
-                    fontSize: '14px', fontWeight: '700', cursor: 'pointer'
-                  }}
-                >
-                  பதிவு செய்க / Register Now
-                </button>
               </div>
             )}
           </div>

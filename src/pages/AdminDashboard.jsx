@@ -79,6 +79,7 @@ const EMPTY_REGISTER_FORM = {
 
 const NAV = [
   { id: 'overview', icon: '📊', label: 'Overview' },
+  { id: 'pending',  icon: '⏳', label: 'Pending Approval' },
   { id: 'members',  icon: '👥', label: 'All Members' },
   { id: 'district', icon: '🗺️', label: 'By District' },
   { id: 'register', icon: '📝', label: 'Register Member' },
@@ -310,7 +311,7 @@ function AdminDashboard() {
     while (hasMore) {
       const { data, error } = await supabase
         .from('members')
-        .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, org_address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer, photo_url')
+        .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, org_address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer, photo_url, status, rejection_reason, approved_at, approved_by')
         .order('registered_at', { ascending: false })
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
@@ -556,6 +557,8 @@ function AdminDashboard() {
   }, [activeTab, members.length]);
 
   // ── Derived ─────────────────────────────────────────────────
+  const pendingCount = useMemo(() => members.filter(m => m.status === 'pending').length, [members]);
+
   const filteredMembers = useMemo(() => {
     return members.filter(m => {
       const q = searchQuery.toLowerCase();
@@ -593,6 +596,86 @@ function AdminDashboard() {
     if (userId) await supabase.from('users').update({ has_registered: false, member_id: null }).eq('id', userId);
     await loadMembers();
     setSelectedMember(null);
+  };
+
+  const approveMember = async (member) => {
+    const { error } = await supabase
+      .from('members')
+      .update({
+        status: 'approved',
+        approved_at: new Date().toISOString(),
+        approved_by: userProfile?.name || 'Admin'
+      })
+      .eq('member_id', member.member_id);
+
+    if (!error) {
+      try {
+        const payload = new FormData();
+        payload.append('access_key', import.meta.env.VITE_WEB3FORMS_KEY);
+        payload.append('subject', '\u2705 \u0b89\u0bb1\u0bc1\u0baa\u0bcd\u0baa\u0bbf\u0ba9\u0bb0\u0bcd \u0b85\u0ba9\u0bc1\u0bae\u0ba4\u0bbf / Membership Approved: ' + member.full_name);
+        payload.append('from_name', 'TIWTN Admin');
+        payload.append('message',
+          '\u0b85\u0ba9\u0bcd\u0baa\u0bc1\u0bb3\u0bcd\u0bb3 ' + member.full_name + ',\n\n' +
+          '\u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0ba4\u0bc6\u0ba9\u0bcd\u0ba9\u0bbf\u0ba8\u0bcd\u0ba4\u0bbf\u0baf \u0bb5\u0bc6\u0bb2\u0bcd\u0b9f\u0bbf\u0b99\u0bcd \u0ba4\u0bca\u0bb4\u0bbf\u0bb2\u0bbe\u0bb3\u0bb0\u0bcd\u0b95\u0bb3\u0bcd \u0ba8\u0bb2\u0b9a\u0bcd\u0b9a\u0b99\u0bcd\u0b95 \u0b89\u0bb1\u0bc1\u0baa\u0bcd\u0baa\u0bbf\u0ba9\u0bb0\u0bcd \u0bb5\u0bbf\u0ba3\u0bcd\u0ba3\u0baa\u0bcd\u0baa\u0bae\u0bcd \u0b85\u0ba8\u0bc1\u0bae\u0ba4\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1!\n\n' +
+          '\u0b89\u0bb1\u0bc1\u0baa\u0bcd\u0baa\u0bbf\u0ba9\u0bb0\u0bcd \u0b8e\u0ba3\u0bcd / Member ID: ' + member.member_id + '\n' +
+          '\u0bae\u0bbe\u0bb5\u0b9f\u0bcd\u0b9f\u0bae\u0bcd / District: ' + member.district + '\n\n' +
+          'Dear ' + member.full_name + ',\n\nYour membership has been APPROVED!\n' +
+          'Login to download your ID card:\nhttps://www.thennindiaweldingthozhilaalargalnalasangam.org/profile\n\n- TIWTN Admin Team'
+        );
+        await fetch('https://api.web3forms.com/submit', { method: 'POST', body: payload });
+      } catch (err) {
+        console.error('Email error:', err);
+      }
+      await loadMembers();
+      alert('\u2705 ' + member.full_name + ' \u0b85\u0ba8\u0bc1\u0bae\u0ba4\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0bbe\u0bb0\u0bcd!');
+    }
+  };
+
+  const rejectMember = async (member) => {
+    const reason = window.prompt(
+      '\u0ba8\u0bbf\u0bb0\u0bbe\u0b95\u0bb0\u0bbf\u0baa\u0bcd\u0baa\u0bc1 \u0b95\u0bbe\u0bb0\u0ba3\u0bae\u0bcd / Rejection reason for ' + member.full_name + ':\n(This will be shown to the member)'
+    );
+    if (reason === null) return;
+    if (!reason.trim()) { alert('\u0b95\u0bbe\u0bb0\u0ba3\u0bae\u0bcd \u0b89\u0bb3\u0bcd\u0bb3\u0bbf\u0b9f\u0bb5\u0bc1\u0bae\u0bcd / Please enter a reason'); return; }
+
+    const { error } = await supabase
+      .from('members')
+      .update({ status: 'rejected', rejection_reason: reason.trim() })
+      .eq('member_id', member.member_id);
+
+    if (!error) {
+      try {
+        const payload = new FormData();
+        payload.append('access_key', import.meta.env.VITE_WEB3FORMS_KEY);
+        payload.append('subject', '\u274c \u0bb5\u0bbf\u0ba3\u0bcd\u0ba3\u0baa\u0bcd\u0baa\u0bae\u0bcd \u0ba8\u0bbf\u0bb0\u0bbe\u0b95\u0bb0\u0bbf\u0baa\u0bcd\u0baa\u0bc1 / Application Rejected: ' + member.full_name);
+        payload.append('from_name', 'TIWTN Admin');
+        payload.append('message',
+          '\u0b85\u0ba9\u0bcd\u0baa\u0bc1\u0bb3\u0bcd\u0bb3 ' + member.full_name + ',\n\n' +
+          '\u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0bb5\u0bbf\u0ba3\u0bcd\u0ba3\u0baa\u0bcd\u0baa\u0bae\u0bcd \u0ba4\u0bb1\u0bcd\u0baa\u0bcb\u0ba4\u0bc1 \u0ba8\u0bbf\u0bb0\u0bbe\u0b95\u0bb0\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1.\n\n' +
+          '\u0b95\u0bbe\u0bb0\u0ba3\u0bae\u0bcd / Reason: ' + reason + '\n\n' +
+          'Dear ' + member.full_name + ',\nYour membership application was rejected.\nReason: ' + reason + '\n\nRe-apply at:\nhttps://www.thennindiaweldingthozhilaalargalnalasangam.org/profile\n\n- TIWTN Admin Team'
+        );
+        await fetch('https://api.web3forms.com/submit', { method: 'POST', body: payload });
+      } catch (err) {
+        console.error('Email error:', err);
+      }
+      await loadMembers();
+      alert('\u274c ' + member.full_name + ' \u0ba8\u0bbf\u0bb0\u0bbe\u0b95\u0bb0\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0bbe\u0bb0\u0bcd');
+    }
+  };
+
+  const statusBadge = (status) => {
+    const cfg = {
+      approved: { bg: '#F0FDF4', color: '#15803D', text: '\u2705 Approved' },
+      pending:  { bg: '#FEF3C7', color: '#92400E', text: '\u23f3 Pending' },
+      rejected: { bg: '#FEE2E2', color: '#DC2626', text: '\u274c Rejected' },
+    };
+    const c = cfg[status] || cfg.pending;
+    return (
+      <span style={{ background: c.bg, color: c.color, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>
+        {c.text}
+      </span>
+    );
   };
 
   const saveEditMember = async () => {
@@ -1225,6 +1308,12 @@ NEW MEMBER REGISTRATION DETAILS
                 }}>
                 <span style={{ fontSize: '16px' }}>{tab.icon}</span>
                 <span>{tab.label}</span>
+                {tab.id === 'pending' && pendingCount > 0 && (
+                  <span style={{
+                    background: '#EF4444', color: '#fff', borderRadius: '20px',
+                    padding: '1px 7px', fontSize: '10px', fontWeight: '700', marginLeft: 'auto'
+                  }}>{pendingCount}</span>
+                )}
               </button>
             ))}
             <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
@@ -1298,6 +1387,14 @@ NEW MEMBER REGISTRATION DETAILS
                     valueCls: '#7C3AED'
                   },
                   {
+                    label: 'Pending Approval', value: pendingCount,
+                    sub: pendingCount > 0 ? 'Awaiting admin review' : 'All applications reviewed',
+                    iconBg: pendingCount > 0 ? 'linear-gradient(135deg,#F59E0B,#FCD34D)' : 'linear-gradient(135deg,#16A34A,#4ADE80)',
+                    icon: pendingCount > 0 ? '⏳' : '✅',
+                    valueCls: pendingCount > 0 ? '#B45309' : '#16A34A',
+                    onClick: pendingCount > 0 ? () => goTab('pending') : undefined
+                  },
+                  {
                     label: 'Pending Registration', value: notRegistered,
                     sub: notRegistered > 0 ? 'Users yet to register' : 'All users registered!',
                     iconBg: notRegistered > 0 ? 'linear-gradient(135deg,#DC2626,#F87171)' : 'linear-gradient(135deg,#16A34A,#4ADE80)',
@@ -1316,13 +1413,13 @@ NEW MEMBER REGISTRATION DETAILS
                   <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                     {cards.map(card => (
                       <div key={card.label} style={{
-                        background: '#fff',
-                        borderRadius: '16px',
-                        padding: '18px 20px',
-                        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                        border: '1px solid #E8EDF5',
-                        display: 'flex', flexDirection: 'column', gap: '10px'
-                      }}>
+                        background: '#fff', borderRadius: '16px', padding: '18px 20px',
+                        boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #E8EDF5',
+                        display: 'flex', flexDirection: 'column', gap: '10px',
+                        cursor: card.onClick ? 'pointer' : 'default'
+                      }}
+                      onClick={card.onClick}
+                      >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <div style={{
                             width: '38px', height: '38px', borderRadius: '10px',
@@ -1502,6 +1599,98 @@ NEW MEMBER REGISTRATION DETAILS
             </div>
           )}
 
+          {/* ── PENDING APPROVAL ── */}
+          {activeTab === 'pending' && (
+            <div className="space-y-4 md:space-y-6 max-w-5xl">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <h2 className="text-xl md:text-2xl font-bold text-[#003366]">
+                  \u0b85\u0ba8\u0bc1\u0bae\u0ba4\u0bbf \u0ba8\u0bbf\u0bb2\u0bc1\u0bb5\u0bc8 / Pending Approval ({pendingCount})
+                </h2>
+              </div>
+
+              {pendingCount === 0 ? (
+                <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '3rem' }}>\u2705</div>
+                  <div style={{ marginTop: '1rem' }}>\u0ba8\u0bbf\u0bb2\u0bc1\u0bb5\u0bc8\u0baf\u0bbf\u0bb2\u0bcd \u0bb5\u0bbf\u0ba3\u0bcd\u0ba3\u0baa\u0bcd\u0baa\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0b87\u0bb2\u0bcd\u0bb2\u0bc8<br/>No pending applications</div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {members
+                    .filter(m => m.status === 'pending')
+                    .map(member => (
+                    <div key={member.member_id} style={{
+                      background: '#fff', border: '1px solid #F59E0B',
+                      borderRadius: '12px', padding: '1.2rem',
+                      display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap'
+                    }}>
+                      {/* Photo */}
+                      <div style={{ flexShrink: 0 }}>
+                        {(member.photo_url || member.photo_base64) ? (
+                          <img
+                            src={member.photo_url || member.photo_base64}
+                            crossOrigin="anonymous"
+                            style={{ width: '70px', height: '85px', objectFit: 'cover', borderRadius: '6px', border: '2px solid #003366' }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '70px', height: '85px', borderRadius: '6px',
+                            background: '#FF6B00', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', fontSize: '1.8rem', color: '#fff', fontWeight: '800'
+                          }}>
+                            {member.full_name?.charAt(0)?.toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Details */}
+                      <div style={{ flex: 1, minWidth: '200px' }}>
+                        <div style={{ fontSize: '16px', fontWeight: '800', color: '#0A1628', marginBottom: '6px' }}>
+                          {member.full_name}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px', fontSize: '12px' }}>
+                          {[
+                            ['Member ID', member.member_id],
+                            ['\u0baa\u0ba4\u0bb5\u0bbf', member.posting],
+                            ['\u0bae\u0bbe\u0bb5\u0b9f\u0bcd\u0b9f\u0bae\u0bcd', member.district],
+                            ['\u0b95\u0bc8\u0baa\u0bc7\u0b9a\u0bbf', member.mobile],
+                            ['\u0b87\u0bb0\u0ba4\u0bcd\u0ba4 \u0baa\u0bbf\u0bb0\u0bbf\u0bb5\u0bc1', member.blood_group],
+                            ['DOB', member.dob],
+                            ['\u0b95\u0bbf\u0bb3\u0bc8', member.branch || '-'],
+                            ['\u0bb5\u0bbf\u0ba3\u0bcd\u0ba3\u0baa\u0bcd\u0baa\u0bbf\u0ba4\u0bcd\u0ba4 \u0ba4\u0bc7\u0ba4\u0bbf', member.registered_at ? new Date(member.registered_at).toLocaleDateString('en-IN') : '-']
+                          ].map(([label, value]) => (
+                            <div key={label}>
+                              <span style={{ color: '#6B7280' }}>{label}: </span>
+                              <span style={{ fontWeight: '700', color: '#0A1628' }}>{value || '-'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
+                        <button
+                          onClick={() => handlePrintMember(member)}
+                          style={{ padding: '8px 16px', background: '#003366', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
+                          \uD83D\uDDA8\uFE0F \u0baa\u0b9f\u0bbf\u0bb5\u0bae\u0bcd \u0b95\u0bbe\u0ba3\u0bcd\u0b95
+                        </button>
+                        <button
+                          onClick={() => approveMember(member)}
+                          style={{ padding: '10px 16px', background: '#22C55E', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '800' }}>
+                          \u2705 \u0b85\u0ba8\u0bc1\u0bae\u0ba4\u0bbf / Approve
+                        </button>
+                        <button
+                          onClick={() => rejectMember(member)}
+                          style={{ padding: '10px 16px', background: 'transparent', color: '#EF4444', border: '2px solid #EF4444', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '800' }}>
+                          \u274c \u0ba8\u0bbf\u0bb0\u0bbe\u0b95\u0bb0\u0bbf / Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── ALL MEMBERS ── */}
           {activeTab === 'members' && (
             <div className="space-y-4 md:space-y-6 max-w-6xl">
@@ -1576,12 +1765,13 @@ NEW MEMBER REGISTRATION DETAILS
                         <th className="p-3 font-semibold">Aadhaar</th>
                         <th className="p-3 font-semibold">District</th>
                         <th className="p-3 font-semibold">Mobile</th>
+                        <th className="p-3 font-semibold">Status</th>
                         <th className="p-3 font-semibold text-center">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="text-sm">
                       {loadingData
-                        ? <tr><td colSpan="8" className="p-8 text-center text-gray-400">Loading...</td></tr>
+                        ? <tr><td colSpan="9" className="p-8 text-center text-gray-400">Loading...</td></tr>
                         : paginatedMembers.map((m, idx) => (
                           <tr key={m.member_id} className="border-b border-gray-100 hover:bg-gray-50 transition">
                             <td className="p-3 text-gray-500">{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
@@ -1607,6 +1797,7 @@ NEW MEMBER REGISTRATION DETAILS
                             <td className="p-3 font-mono text-xs">{m.aadhar || m.aadhaar || '-'}</td>
                             <td className="p-3 text-gray-600 text-xs">{m.district}</td>
                             <td className="p-3 text-gray-600 text-xs">{m.mobile}</td>
+                            <td className="p-3">{statusBadge(m.status || 'approved')}</td>
                             <td className="p-3 text-center">
                               <div className="flex gap-1 justify-center">
                                 <button onClick={() => handleViewMember(m)} title="View" style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #DBEAFE', background: '#EFF6FF', color: '#2563EB', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>View</button>
@@ -1618,7 +1809,7 @@ NEW MEMBER REGISTRATION DETAILS
                           </tr>
                         ))
                       }
-                      {!loadingData && paginatedMembers.length === 0 && <tr><td colSpan="8" className="p-8 text-center text-gray-500">No members found.</td></tr>}
+                      {!loadingData && paginatedMembers.length === 0 && <tr><td colSpan="9" className="p-8 text-center text-gray-500">No members found.</td></tr>}
                     </tbody>
                   </table>
                 </div>
