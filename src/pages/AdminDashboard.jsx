@@ -4,6 +4,7 @@ import { supabase } from '../supabase/client';
 import IDCard from '../components/IDCard';
 import { generateMemberId } from '../utils/memberIdUtils';
 import { printMemberForm } from '../utils/printMemberForm';
+import { bulkDownloadMembers } from '../utils/bulkDownload';
 import PageLoader from '../components/PageLoader';
 
 const getPhotoSrc = (member) =>
@@ -236,6 +237,8 @@ function AdminDashboard() {
   const [selectedMember, setSelectedMember] = useState(null);
   const [editMember, setEditMember]         = useState(null);
   const [currentPage, setCurrentPage]       = useState(1);
+  const [downloadingZip, setDownloadingZip] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
 
   const [editPhotoPreview, setEditPhotoPreview] = useState(null);
   const [editPhotoFile, setEditPhotoFile]       = useState(null);
@@ -1505,6 +1508,16 @@ NEW MEMBER REGISTRATION DETAILS
               <div className="flex flex-wrap gap-3 items-center justify-between">
                 <h2 className="text-xl md:text-2xl font-bold text-[#003366]">All Members</h2>
                 <div className="flex gap-2">
+                  <button onClick={async () => {
+                    setDownloadingZip(true);
+                    setDownloadProgress({ current: 0, total: members.length });
+                    await bulkDownloadMembers(members, (current, total) => {
+                      setDownloadProgress({ current, total });
+                    });
+                    setDownloadingZip(false);
+                  }} className="bg-[#008000] text-white px-3 py-2 rounded font-semibold text-xs md:text-sm shadow-sm hover:opacity-90">
+                    🗂️ Download All (ZIP)
+                  </button>
                   <button onClick={() => goTab('register')} className="bg-[#003366] text-white px-3 py-2 rounded font-semibold text-xs md:text-sm shadow-sm hover:opacity-90">
                     ➕ Register
                   </button>
@@ -1528,6 +1541,27 @@ NEW MEMBER REGISTRATION DETAILS
                   {TAMIL_NADU_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
+
+              {/* Progress Modal */}
+              {downloadingZip && (
+                <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4">
+                  <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center space-y-4">
+                    <div className="text-4xl animate-bounce">🗂️</div>
+                    <h3 className="text-xl font-bold text-[#003366]">Generating ZIP...</h3>
+                    <p className="text-sm text-gray-500">
+                      {downloadProgress.current === 'zipping' 
+                        ? 'Compressing files into a ZIP archive...' 
+                        : \`Processing card \${downloadProgress.current} of \${downloadProgress.total}...\`}
+                    </p>
+                    {downloadProgress.current !== 'zipping' && downloadProgress.total > 0 && (
+                      <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+                        <div className="bg-[#FFB347] h-2.5 rounded-full transition-all duration-300" 
+                          style={{ width: \`\${(downloadProgress.current / downloadProgress.total) * 100}%\` }}></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Scrollable table wrapper */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
