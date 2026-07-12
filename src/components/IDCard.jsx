@@ -228,10 +228,10 @@ function CardFront({ member }) {
           {/* APPROVED circular rubber stamp overlapping the bottom-right corner of the photo */}
           <div style={{
             position: 'absolute',
-            bottom: '-8px',
-            right: '-16px',
-            width: '44px',
-            height: '44px',
+            bottom: '-10px',
+            right: '-21px',
+            width: '40px',
+            height: '40px',
             zIndex: 10,
             transform: 'rotate(-8deg)',
             pointerEvents: 'none'
@@ -239,36 +239,36 @@ function CardFront({ member }) {
             <svg width="100%" height="100%" viewBox="0 0 100 100" style={{ mixBlendMode: 'multiply', opacity: 0.9 }}>
               <defs>
                 {/* Curved path for the organization name on top */}
-                <path id="topTextPath" d="M 13 50 A 37 37 0 0 1 87 50" fill="none" />
+                <path id="topTextPath" d="M 12 50 A 38 38 0 0 1 88 50" fill="none" />
                 {/* Curved path for the text on bottom */}
-                <path id="bottomTextPath" d="M 87 50 A 37 37 0 0 1 13 50" fill="none" />
+                <path id="bottomTextPath" d="M 88 50 A 38 38 0 0 1 12 50" fill="none" />
               </defs>
               
               {/* Outer thick stamp border */}
-              <circle cx="50" cy="50" r="46" stroke="#000000" strokeWidth="3" fill="none" />
+              <circle cx="50" cy="50" r="46" stroke="#0044cc" strokeWidth="3" fill="none" />
               
               {/* Inner thin stamp border */}
-              <circle cx="50" cy="50" r="38" stroke="#000000" strokeWidth="1.2" fill="none" />
+              <circle cx="50" cy="50" r="37" stroke="#0044cc" strokeWidth="1.2" fill="none" />
               
               {/* Top Curved Text */}
-              <text fill="#000000" fontSize="7.5" fontWeight="900" fontFamily="System-UI, sans-serif" letterSpacing="0.2">
+              <text fill="#0044cc" fontSize="8.2" fontWeight="900" fontFamily="Arial, Helvetica, sans-serif" letterSpacing="0.1">
                 <textPath href="#topTextPath" startOffset="50%" textAnchor="middle">
                   THENNINDIA WELDING
                 </textPath>
               </text>
               
               {/* Bottom Curved Text */}
-              <text fill="#000000" fontSize="6.2" fontWeight="900" fontFamily="System-UI, sans-serif" letterSpacing="0.1">
+              <text fill="#0044cc" fontSize="6.8" fontWeight="900" fontFamily="Arial, Helvetica, sans-serif" letterSpacing="0.15">
                 <textPath href="#bottomTextPath" startOffset="50%" textAnchor="middle">
                   THOZHILAALARGAL NALASANGAM
                 </textPath>
               </text>
 
               {/* Center box behind APPROVED text */}
-              <rect x="13" y="38" width="74" height="24" fill="#FFFFFF" stroke="#000000" strokeWidth="2.5" rx="1.5" />
+              <rect x="13" y="38" width="74" height="24" fill="#FFFFFF" stroke="#0044cc" strokeWidth="2.5" rx="1.5" />
               
               {/* Approved text in the center */}
-              <text x="50" y="54" fill="#000000" fontSize="10.5" fontWeight="900" fontFamily="System-UI, sans-serif" letterSpacing="0.5" textAnchor="middle">
+              <text x="50" y="54" fill="#0044cc" fontSize="10.5" fontWeight="900" fontFamily="Arial, Helvetica, sans-serif" letterSpacing="0.5" textAnchor="middle">
                 APPROVED
               </text>
             </svg>
