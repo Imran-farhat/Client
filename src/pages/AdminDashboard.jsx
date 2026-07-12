@@ -1551,12 +1551,12 @@ NEW MEMBER REGISTRATION DETAILS
                     <p className="text-sm text-gray-500">
                       {downloadProgress.current === 'zipping' 
                         ? 'Compressing files into a ZIP archive...' 
-                        : \`Processing card \${downloadProgress.current} of \${downloadProgress.total}...\`}
+                        : ('Processing card ' + downloadProgress.current + ' of ' + downloadProgress.total + '...')}
                     </p>
                     {downloadProgress.current !== 'zipping' && downloadProgress.total > 0 && (
                       <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
-                        <div className="bg-[#FFB347] h-2.5 rounded-full transition-all duration-300" 
-                          style={{ width: \`\${(downloadProgress.current / downloadProgress.total) * 100}%\` }}></div>
+                      <div className="bg-[#FFB347] h-2.5 rounded-full transition-all duration-300" 
+                          style={{ width: ((downloadProgress.current / downloadProgress.total) * 100) + '%' }}></div>
                       </div>
                     )}
                   </div>
