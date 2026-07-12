@@ -1604,14 +1604,14 @@ NEW MEMBER REGISTRATION DETAILS
             <div className="space-y-4 md:space-y-6 max-w-5xl">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h2 className="text-xl md:text-2xl font-bold text-[#003366]">
-                  \u0b85\u0ba8\u0bc1\u0bae\u0ba4\u0bbf \u0ba8\u0bbf\u0bb2\u0bc1\u0bb5\u0bc8 / Pending Approval ({pendingCount})
+                  அனுமதி நிலுவை / Pending Approval ({pendingCount})
                 </h2>
               </div>
 
               {pendingCount === 0 ? (
                 <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-                  <div style={{ fontSize: '3rem' }}>\u2705</div>
-                  <div style={{ marginTop: '1rem' }}>\u0ba8\u0bbf\u0bb2\u0bc1\u0bb5\u0bc8\u0baf\u0bbf\u0bb2\u0bcd \u0bb5\u0bbf\u0ba3\u0bcd\u0ba3\u0baa\u0bcd\u0baa\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0b87\u0bb2\u0bcd\u0bb2\u0bc8<br/>No pending applications</div>
+                  <div style={{ fontSize: '3rem' }}>✅</div>
+                  <div style={{ marginTop: '1rem' }}>நிலுவையில் விண்ணப்பங்கள் இல்லை<br/>No pending applications</div>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1671,17 +1671,17 @@ NEW MEMBER REGISTRATION DETAILS
                         <button
                           onClick={() => handlePrintMember(member)}
                           style={{ padding: '8px 16px', background: '#003366', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
-                          \uD83D\uDDA8\uFE0F \u0baa\u0b9f\u0bbf\u0bb5\u0bae\u0bcd \u0b95\u0bbe\u0ba3\u0bcd\u0b95
+                          🖨️ படிவம் காண்க
                         </button>
                         <button
                           onClick={() => approveMember(member)}
                           style={{ padding: '10px 16px', background: '#22C55E', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '800' }}>
-                          \u2705 \u0b85\u0ba8\u0bc1\u0bae\u0ba4\u0bbf / Approve
+                          ✅ அனுமதி / Approve
                         </button>
                         <button
                           onClick={() => rejectMember(member)}
                           style={{ padding: '10px 16px', background: 'transparent', color: '#EF4444', border: '2px solid #EF4444', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '800' }}>
-                          \u274c \u0ba8\u0bbf\u0bb0\u0bbe\u0b95\u0bb0\u0bbf / Reject
+                          ❌ நிராகரி / Reject
                         </button>
                       </div>
                     </div>
