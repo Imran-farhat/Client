@@ -1505,36 +1505,6 @@ NEW MEMBER REGISTRATION DETAILS
               <div className="flex flex-wrap gap-3 items-center justify-between">
                 <h2 className="text-xl md:text-2xl font-bold text-[#003366]">All Members</h2>
                 <div className="flex gap-2">
-                  <button onClick={async () => {
-                    const { data } = await supabase.from('members').select('id').eq('member_id', 'TIWTN-2026-DKL-061').maybeSingle();
-                    if (!data) {
-                      const { error } = await supabase.from('members').insert({
-                        member_id: 'TIWTN-2026-DKL-061',
-                        full_name: 'A. Vigneshwaran',
-                        posting: 'Member',
-                        dob: '1986-07-11',
-                        blood_group: 'B+ve',
-                        mobile: '9842057035',
-                        district: 'திண்டுக்கல்',
-                        address: '14 B.pu. Pillai road, balasamuthiram, dindugal, tamilnadu 624610',
-                        nominee_name: 'V. Sudha',
-                        join_date: '09-07-2026',
-                        aadhar: '673248317337',
-                        registered_at: new Date().toISOString()
-                      });
-                      if (!error) {
-                        alert('Successfully recovered and inserted missing member A. Vigneshwaran (TIWTN-2026-DKL-061)!');
-                        loadMembers();
-                      } else {
-                        alert('Error recovering member: ' + error.message);
-                      }
-                    } else {
-                      alert('Member is already in the database!');
-                      loadMembers();
-                    }
-                  }} className="bg-green-600 text-white px-3 py-2 rounded font-semibold text-xs md:text-sm shadow-sm hover:opacity-90">
-                    🛠️ Recover Vigneshwaran
-                  </button>
                   <button onClick={() => goTab('register')} className="bg-[#003366] text-white px-3 py-2 rounded font-semibold text-xs md:text-sm shadow-sm hover:opacity-90">
                     ➕ Register
                   </button>
