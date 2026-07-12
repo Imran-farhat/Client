@@ -253,7 +253,32 @@ function CardFront({ member }) {
             {member.memberId || 'TIWTN-2026-XXXXX'}
           </div>
         </div>
-        <img src={'/logo.png'} alt="TIWTN" style={{ width: '22px', height: '22px', borderRadius: '50%', border: '1px solid #FF6B00', opacity: 0.75 }} onError={(e) => { e.target.style.display = 'none'; }} />
+        {/* APPROVED stamp */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '1.5px solid #15803D',
+          borderRadius: '4px',
+          padding: '3px 7px',
+          background: '#F0FDF4',
+        }}>
+          <div style={{
+            fontSize: '7px',
+            fontWeight: '900',
+            color: '#15803D',
+            letterSpacing: '1px',
+            lineHeight: '1.2'
+          }}>✓ APPROVED</div>
+          <div style={{
+            fontSize: '6px',
+            fontWeight: '700',
+            color: '#15803D',
+            letterSpacing: '0.5px',
+            lineHeight: '1.2'
+          }}>அனுமதிக்கப்பட்டது</div>
+        </div>
       </div>
 
       {/* ── Signature section ── */}
