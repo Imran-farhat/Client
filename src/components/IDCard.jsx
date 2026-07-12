@@ -201,59 +201,78 @@ function CardFront({ member }) {
       </div>
 
       {/* ── PHOTO (Cover-fit via direct fixed dimensions) ── */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0', borderBottom: '1px solid #E0E0E0', background: '#FFFFFF', flexShrink: 0, position: 'relative' }}>
-        {memberPhoto ? (
-          <img
-            src={memberPhoto}
-            alt="Member"
-            data-member-photo="true"
-            crossOrigin="anonymous"
-            style={{
-              width: '70px',
-              height: '84px',
-              objectFit: 'cover',
-              objectPosition: 'center top',
-              border: '1.5px solid #003366',
-              borderRadius: '3px',
-              display: 'block'
-            }}
-          />
-        ) : (
-          <div style={{ width: '70px', height: '84px', border: '1.5px dashed #003366', borderRadius: '3px', background: '#F0F4F8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: '8px', gap: '3px', margin: '0 auto' }}>
-            <span style={{ fontSize: '16px' }}>👤</span>PHOTO
-          </div>
-        )}
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0', borderBottom: '1px solid #E0E0E0', background: '#FFFFFF', flexShrink: 0 }}>
+        <div style={{ position: 'relative', width: '70px', height: '84px' }}>
+          {memberPhoto ? (
+            <img
+              src={memberPhoto}
+              alt="Member"
+              data-member-photo="true"
+              crossOrigin="anonymous"
+              style={{
+                width: '70px',
+                height: '84px',
+                objectFit: 'cover',
+                objectPosition: 'center top',
+                border: '1.5px solid #003366',
+                borderRadius: '3px',
+                display: 'block'
+              }}
+            />
+          ) : (
+            <div style={{ width: '70px', height: '84px', border: '1.5px dashed #003366', borderRadius: '3px', background: '#F0F4F8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: '8px', gap: '3px', margin: '0 auto' }}>
+              <span style={{ fontSize: '16px' }}>👤</span>PHOTO
+            </div>
+          )}
 
-        {/* APPROVED stamp positioned to the right of the photo */}
-        <div style={{
-          position: 'absolute',
-          right: '20px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '1.5px solid #15803D',
-          borderRadius: '4px',
-          padding: '3px 7px',
-          background: '#F0FDF4',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-        }}>
+          {/* APPROVED circular rubber stamp overlapping the bottom-right corner of the photo */}
           <div style={{
-            fontSize: '7px',
-            fontWeight: '900',
-            color: '#15803D',
-            letterSpacing: '1px',
-            lineHeight: '1.2'
-          }}>✓ APPROVED</div>
-          <div style={{
-            fontSize: '6px',
-            fontWeight: '700',
-            color: '#15803D',
-            letterSpacing: '0.5px',
-            lineHeight: '1.2'
-          }}>அனுமதிக்கப்பட்டது</div>
+            position: 'absolute',
+            bottom: '-12px',
+            right: '-24px',
+            width: '60px',
+            height: '60px',
+            zIndex: 10,
+            transform: 'rotate(-8deg)',
+            pointerEvents: 'none'
+          }}>
+            <svg width="100%" height="100%" viewBox="0 0 100 100" style={{ mixBlendMode: 'multiply', opacity: 0.9 }}>
+              <defs>
+                {/* Curved path for the organization name on top */}
+                <path id="topTextPath" d="M 12 50 A 38 38 0 0 1 88 50" fill="none" />
+                {/* Curved path for the text on bottom */}
+                <path id="bottomTextPath" d="M 88 50 A 38 38 0 0 1 12 50" fill="none" />
+              </defs>
+              
+              {/* Outer thick stamp border */}
+              <circle cx="50" cy="50" r="46" stroke="#16a34a" strokeWidth="2.8" fill="none" />
+              
+              {/* Inner thin stamp border */}
+              <circle cx="50" cy="50" r="39" stroke="#16a34a" strokeWidth="1" fill="none" />
+              
+              {/* Top Curved Text */}
+              <text fill="#16a34a" fontSize="6" fontWeight="900" fontFamily="DM Sans, sans-serif" letterSpacing="0.2">
+                <textPath href="#topTextPath" startOffset="50%" textAnchor="middle">
+                  THENNINDIA WELDING
+                </textPath>
+              </text>
+              
+              {/* Bottom Curved Text */}
+              <text fill="#16a34a" fontSize="5.2" fontWeight="900" fontFamily="DM Sans, sans-serif" letterSpacing="0.1">
+                <textPath href="#bottomTextPath" startOffset="50%" textAnchor="middle">
+                  THOZHILAALARGAL NALASANGAM
+                </textPath>
+              </text>
+
+              {/* Center box behind APPROVED text */}
+              <rect x="13" y="38" width="74" height="24" fill="#FFFFFF" stroke="#16a34a" strokeWidth="2.2" rx="1.5" />
+              
+              {/* Approved text in the center */}
+              <text x="50" y="54" fill="#16a34a" fontSize="9.5" fontWeight="900" fontFamily="DM Sans, sans-serif" letterSpacing="0.5" textAnchor="middle">
+                APPROVED
+              </text>
+            </svg>
+          </div>
         </div>
       </div>
 
