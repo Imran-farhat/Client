@@ -4,7 +4,7 @@ import { supabase } from '../supabase/client';
 import IDCard from '../components/IDCard';
 import { generateMemberId } from '../utils/memberIdUtils';
 import { printMemberForm } from '../utils/printMemberForm';
-import { bulkDownloadMembers } from '../utils/bulkDownload';
+import { bulkDownloadMembers } from '../utils/bulkDownload.jsx';
 import PageLoader from '../components/PageLoader';
 
 const getPhotoSrc = (member) =>
