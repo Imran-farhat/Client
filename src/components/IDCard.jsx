@@ -201,7 +201,7 @@ function CardFront({ member }) {
       </div>
 
       {/* ── PHOTO (Cover-fit via direct fixed dimensions) ── */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0', borderBottom: '1px solid #E0E0E0', background: '#FFFFFF', flexShrink: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0', borderBottom: '1px solid #E0E0E0', background: '#FFFFFF', flexShrink: 0, position: 'relative' }}>
         {memberPhoto ? (
           <img
             src={memberPhoto}
@@ -223,6 +223,38 @@ function CardFront({ member }) {
             <span style={{ fontSize: '16px' }}>👤</span>PHOTO
           </div>
         )}
+
+        {/* APPROVED stamp positioned to the right of the photo */}
+        <div style={{
+          position: 'absolute',
+          right: '20px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '1.5px solid #15803D',
+          borderRadius: '4px',
+          padding: '3px 7px',
+          background: '#F0FDF4',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+        }}>
+          <div style={{
+            fontSize: '7px',
+            fontWeight: '900',
+            color: '#15803D',
+            letterSpacing: '1px',
+            lineHeight: '1.2'
+          }}>✓ APPROVED</div>
+          <div style={{
+            fontSize: '6px',
+            fontWeight: '700',
+            color: '#15803D',
+            letterSpacing: '0.5px',
+            lineHeight: '1.2'
+          }}>அனுமதிக்கப்பட்டது</div>
+        </div>
       </div>
 
       {/* ── All 6 fields (full width) ── */}
@@ -253,32 +285,7 @@ function CardFront({ member }) {
             {member.memberId || 'TIWTN-2026-XXXXX'}
           </div>
         </div>
-        {/* APPROVED stamp */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '1.5px solid #15803D',
-          borderRadius: '4px',
-          padding: '3px 7px',
-          background: '#F0FDF4',
-        }}>
-          <div style={{
-            fontSize: '7px',
-            fontWeight: '900',
-            color: '#15803D',
-            letterSpacing: '1px',
-            lineHeight: '1.2'
-          }}>✓ APPROVED</div>
-          <div style={{
-            fontSize: '6px',
-            fontWeight: '700',
-            color: '#15803D',
-            letterSpacing: '0.5px',
-            lineHeight: '1.2'
-          }}>அனுமதிக்கப்பட்டது</div>
-        </div>
+        <img src={'/logo.png'} alt="TIWTN" style={{ width: '22px', height: '22px', borderRadius: '50%', border: '1px solid #FF6B00', opacity: 0.75 }} onError={(e) => { e.target.style.display = 'none'; }} />
       </div>
 
       {/* ── Signature section ── */}
