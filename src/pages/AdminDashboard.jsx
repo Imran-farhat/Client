@@ -307,7 +307,7 @@ function AdminDashboard() {
     while (hasMore) {
       const { data, error } = await supabase
         .from('members')
-        .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer, photo_url')
+        .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, org_address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer, photo_url')
         .order('registered_at', { ascending: false })
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
@@ -674,6 +674,7 @@ function AdminDashboard() {
         mobile: editMember.mobile,
         aadhar: editMember.aadhar,
         address: editMember.address,
+        org_address: editMember.org_address,
         district: editMember.district,
         branch: editMember.branch,
         blood_group: editMember.blood_group,
@@ -2203,6 +2204,7 @@ NEW MEMBER REGISTRATION DETAILS
                 { key: 'mobile',    label: 'கைபேசி / Mobile', type: 'tel' },
                 { key: 'aadhar',    label: 'ஆதார் / Aadhaar', type: 'text' },
                 { key: 'address',   label: 'முகவரி / Address', type: 'text' },
+                { key: 'org_address', label: 'நிறுவனத்தின் முகவரி / Org Address', type: 'text' },
                 { key: 'branch',    label: 'கிளை / Branch', type: 'text' },
                 { key: 'nominee_name', label: 'வாரிசுதாரர் / Nominee', type: 'text' },
               ].map(field => (
