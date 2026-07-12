@@ -679,6 +679,7 @@ function AdminDashboard() {
         branch: editMember.branch,
         blood_group: editMember.blood_group,
         nominee_name: editMember.nominee_name,
+        nominee_phone: editMember.nominee_phone,
         photo_url: newPhotoUrl || null,
         photo_base64: newPhotoBase64 || null
       })
@@ -2199,14 +2200,15 @@ NEW MEMBER REGISTRATION DETAILS
               {[
                 { key: 'full_name', label: 'பெயர் / Name', type: 'text' },
                 { key: 'posting',   label: 'பதவி / Posting', type: 'text' },
-                { key: 'dob',       label: 'பிறந்த தேதி / DOB', type: 'date' },
+                { key: 'dob',       label: 'பிறந்த தேதி / DOB (dd-mm-yyyy)', type: 'text' },
                 { key: 'blood_group', label: 'இரத்த பிரிவு / Blood Group', type: 'text' },
                 { key: 'mobile',    label: 'கைபேசி / Mobile', type: 'tel' },
                 { key: 'aadhar',    label: 'ஆதார் / Aadhaar', type: 'text' },
-                { key: 'address',   label: 'முகவரி / Address', type: 'text' },
-                { key: 'org_address', label: 'நிறுவனத்தின் முகவரி / Org Address', type: 'text' },
+                { key: 'address',   label: 'முகவரி / Address', type: 'textarea' },
+                { key: 'org_address', label: 'நிறுவனத்தின் முகவரி / Org Address', type: 'textarea' },
                 { key: 'branch',    label: 'கிளை / Branch', type: 'text' },
                 { key: 'nominee_name', label: 'வாரிசுதாரர் / Nominee', type: 'text' },
+                { key: 'nominee_phone', label: 'வாரிசுதாரர் கைபேசி / Nominee Phone', type: 'tel' },
               ].map(field => (
                 <div key={field.key} style={{ marginBottom: '12px' }}>
                   <label style={{
@@ -2214,20 +2216,38 @@ NEW MEMBER REGISTRATION DETAILS
                     color: 'var(--text-muted)',
                     display: 'block', marginBottom: '4px'
                   }}>{field.label}</label>
-                  <input
-                    type={field.type}
-                    value={editMember[field.key] || ''}
-                    onChange={e => setEditMember(prev => ({
-                      ...prev, [field.key]: e.target.value
-                    }))}
-                    style={{
-                      width: '100%', padding: '8px 12px',
-                      borderRadius: '8px', fontSize: '14px',
-                      background: 'var(--bg-secondary)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--text-primary)'
-                    }}
-                  />
+                  {field.type === 'textarea' ? (
+                    <textarea
+                      rows={3}
+                      value={editMember[field.key] || ''}
+                      onChange={e => setEditMember(prev => ({
+                        ...prev, [field.key]: e.target.value
+                      }))}
+                      style={{
+                        width: '100%', padding: '8px 12px',
+                        borderRadius: '8px', fontSize: '14px',
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-primary)',
+                        resize: 'vertical'
+                      }}
+                    />
+                  ) : (
+                    <input
+                      type={field.type}
+                      value={editMember[field.key] || ''}
+                      onChange={e => setEditMember(prev => ({
+                        ...prev, [field.key]: e.target.value
+                      }))}
+                      style={{
+                        width: '100%', padding: '8px 12px',
+                        borderRadius: '8px', fontSize: '14px',
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-primary)'
+                      }}
+                    />
+                  )}
                 </div>
               ))}
               <div>
