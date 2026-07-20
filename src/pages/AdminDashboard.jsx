@@ -1444,7 +1444,9 @@ NEW MEMBER REGISTRATION DETAILS
 
               {/* ── CLOUD STORAGE MONITOR ── */}
               {(() => {
-                const estimatedStorageMB = Math.round((members.length * 75) / 1024);
+                const memberStorageMB = (members.length * 75) / 1024;
+                const galleryStorageMB = (galleryItems.length * 150) / 1024;
+                const estimatedStorageMB = Math.round(memberStorageMB + galleryStorageMB);
                 const storagePercentage = Math.min(100, Math.round((estimatedStorageMB / 1024) * 100));
                 const isNearLimit = storagePercentage >= 80;
 
@@ -1461,7 +1463,7 @@ NEW MEMBER REGISTRATION DETAILS
                       <div>
                         <div style={{ fontWeight: '700', color: '#0A1628', fontSize: '14px' }}>Supabase Storage Monitor</div>
                         <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>
-                          Est. <strong>{estimatedStorageMB} MB</strong> used of <strong>1024 MB (1 GB)</strong> free tier capacity
+                          Est. <strong>{estimatedStorageMB} MB</strong> used of <strong>1024 MB (1 GB)</strong> free tier capacity ({members.length} member photos + {galleryItems.length} gallery photos)
                         </div>
                       </div>
                       <span style={{
@@ -1496,7 +1498,7 @@ NEW MEMBER REGISTRATION DETAILS
                         background: '#FFFBEB', border: '1px solid #FDE68A',
                         fontSize: '12px', color: '#B45309', fontWeight: '500'
                       }}>
-                        <strong>⚠️ Storage limit warning:</strong> Your cloud photo attachments are nearing the 1 GB free tier limit. Consider upgrading your Supabase bucket plan or cleaning up unused files to avoid registration failures.
+                        <strong>⚠️ Storage limit warning:</strong> Your combined cloud attachments (member photos + gallery images) are nearing the 1 GB free tier limit. Consider upgrading your Supabase bucket plan or cleaning up unused files to avoid registration failures.
                       </div>
                     )}
                   </div>
