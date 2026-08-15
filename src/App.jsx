@@ -88,7 +88,9 @@ function App() {
                   <Route path="/about" element={<About />} />
                   <Route path="/services" element={<Services />} />
                   <Route path="/gallery" element={<Gallery />} />
-                  <Route path="/register" element={<Register />} />
+                  <Route path="/register" element={
+                    <ProtectedRoute><Register /></ProtectedRoute>
+                  } />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Navigate to="/login" replace />} />

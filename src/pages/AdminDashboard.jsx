@@ -80,6 +80,7 @@ const EMPTY_REGISTER_FORM = {
 const NAV = [
   { id: 'overview', icon: '📊', label: 'Overview' },
   { id: 'pending',  icon: '⏳', label: 'Pending Approval' },
+  { id: 'rejected', icon: '❌', label: 'Rejected (Fix & Upload)' },
   { id: 'members',  icon: '👥', label: 'All Members' },
   { id: 'district', icon: '🗺️', label: 'By District' },
   { id: 'register', icon: '📝', label: 'Register Member' },
@@ -235,6 +236,9 @@ function AdminDashboard() {
   const [loadingData, setLoadingData]       = useState(true);
   const [searchQuery, setSearchQuery]       = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
+  const [rejectedDistrictFilter, setRejectedDistrictFilter] = useState('');
+  const [rejectedSearchQuery, setRejectedSearchQuery]       = useState('');
+  const [districtTabStatusFilter, setDistrictTabStatusFilter] = useState('all');
   const [selectedMember, setSelectedMember] = useState(null);
   const [editMember, setEditMember]         = useState(null);
   const [currentPage, setCurrentPage]       = useState(1);
@@ -243,6 +247,8 @@ function AdminDashboard() {
 
   const [editPhotoPreview, setEditPhotoPreview] = useState(null);
   const [editPhotoFile, setEditPhotoFile]       = useState(null);
+  const [savingEdit, setSavingEdit]             = useState(false);
+  const [regeneratingId, setRegeneratingId]     = useState(false);
 
   const [migrating, setMigrating]       = useState(false);
   const [syncRemaining, setSyncRemaining] = useState(0);
@@ -260,6 +266,8 @@ function AdminDashboard() {
       setEditPhotoFile(null);
       setEditMember(prev => ({
         ...prev,
+        _original_member_id: prev.member_id,
+        _original_district: prev.district,
         _original_photo_url: prev.photo_url,
         _original_photo_base64: prev.photo_base64
       }));
@@ -558,6 +566,36 @@ function AdminDashboard() {
 
   // ── Derived ─────────────────────────────────────────────────
   const pendingCount = useMemo(() => members.filter(m => m.status === 'pending').length, [members]);
+  const rejectedCount = useMemo(() => members.filter(m => m.status === 'rejected').length, [members]);
+  const approvedCount = useMemo(() => members.filter(m => m.status === 'approved').length, [members]);
+
+  const rejectedMembers = useMemo(() => {
+    return members.filter(m => m.status === 'rejected');
+  }, [members]);
+
+  const filteredRejectedMembers = useMemo(() => {
+    return rejectedMembers.filter(m => {
+      const q = rejectedSearchQuery.toLowerCase().trim();
+      const matchSearch = !q ||
+        m.full_name?.toLowerCase().includes(q) ||
+        m.mobile?.includes(q) ||
+        m.member_id?.toLowerCase().includes(q) ||
+        m.rejection_reason?.toLowerCase().includes(q) ||
+        m.aadhar?.includes(q);
+      const matchDistrict = !rejectedDistrictFilter || m.district === rejectedDistrictFilter;
+      return matchSearch && matchDistrict;
+    });
+  }, [rejectedMembers, rejectedSearchQuery, rejectedDistrictFilter]);
+
+  const rejectedDistrictsSummary = useMemo(() => {
+    const map = {};
+    rejectedMembers.forEach(m => {
+      if (m.district) {
+        map[m.district] = (map[m.district] || 0) + 1;
+      }
+    });
+    return Object.entries(map).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+  }, [rejectedMembers]);
 
   const filteredMembers = useMemo(() => {
     return members.filter(m => {
@@ -584,12 +622,47 @@ function AdminDashboard() {
   }, [members]);
 
   const districtsCount = useMemo(() => {
-    return TAMIL_NADU_DISTRICTS.map(dist => ({ name: dist, count: members.filter(m => m.district === dist).length }));
+    return TAMIL_NADU_DISTRICTS.map(dist => {
+      const distMembers = members.filter(m => m.district === dist);
+      const total = distMembers.length;
+      const approved = distMembers.filter(m => m.status === 'approved').length;
+      const pending = distMembers.filter(m => m.status === 'pending').length;
+      const rejected = distMembers.filter(m => m.status === 'rejected').length;
+      return {
+        name: dist,
+        count: total,
+        approved,
+        pending,
+        rejected
+      };
+    });
   }, [members]);
 
   const activeDistricts = useMemo(() => districtsCount.filter(d => d.count > 0).length, [districtsCount]);
 
   // ── Actions ──────────────────────────────────────────────────
+  const handleRegenerateDistrictId = async (targetDistrict) => {
+    if (!targetDistrict) {
+      alert('தயவுசெய்து மாவட்டத்தை தேர்ந்தெடுக்கவும் / Please select a district first');
+      return;
+    }
+    setRegeneratingId(true);
+    try {
+      const newId = await generateMemberId(targetDistrict);
+      setEditMember(prev => ({
+        ...prev,
+        member_id: newId,
+        district: targetDistrict
+      }));
+      alert(`✅ புதிய அடையாள எண் உருவாக்கப்பட்டது / Generated new ID: ${newId}`);
+    } catch (err) {
+      console.error('Error generating ID:', err);
+      alert('Error generating ID: ' + err.message);
+    } finally {
+      setRegeneratingId(false);
+    }
+  };
+
   const deleteMember = async (memberId, userId) => {
     if (!window.confirm('Delete this member?')) return;
     await supabase.from('members').delete().eq('member_id', memberId);
@@ -603,6 +676,7 @@ function AdminDashboard() {
       .from('members')
       .update({
         status: 'approved',
+        rejection_reason: null,
         approved_at: new Date().toISOString(),
         approved_by: userProfile?.name || 'Admin'
       })
@@ -678,81 +752,85 @@ function AdminDashboard() {
     );
   };
 
-  const saveEditMember = async () => {
-    let newPhotoUrl = editMember.photo_url;
-    let newPhotoBase64 = editMember.photo_base64;
+  const saveEditMember = async (andApprove = false) => {
+    setSavingEdit(true);
+    try {
+      let newPhotoUrl = editMember.photo_url;
+      let newPhotoBase64 = editMember.photo_base64;
+      const effectiveMemberId = editMember.member_id;
+      const oldMemberId = editMember._original_member_id || editMember.member_id;
 
-    // If admin selected a new photo file
-    if (editPhotoFile) {
-      try {
-        const path = `members/${editMember.member_id}`; // no extension!
-        // Compress before upload
-        const compressed = await compressImageFile(editPhotoFile);
-        const { data, error } = await supabase.storage
-          .from('member-photos')
-          .upload(path, compressed, {
-            contentType: 'image/jpeg',
-            upsert: true  // overwrite existing
-          });
+      // If admin selected a new photo file
+      if (editPhotoFile) {
+        try {
+          const path = `members/${effectiveMemberId}`; // no extension!
+          // Compress before upload
+          const compressed = await compressImageFile(editPhotoFile);
+          const { data, error } = await supabase.storage
+            .from('member-photos')
+            .upload(path, compressed, {
+              contentType: 'image/jpeg',
+              upsert: true  // overwrite existing
+            });
 
-        if (error) throw error;
+          if (error) throw error;
 
-        const { data: urlData } = supabase.storage
-          .from('member-photos')
-          .getPublicUrl(data.path);
+          const { data: urlData } = supabase.storage
+            .from('member-photos')
+            .getPublicUrl(data.path);
 
-        // Append cache-buster so browser fetches the fresh image (upsert keeps same URL)
-        newPhotoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-        newPhotoBase64 = null; // clear old base64
-      } catch (err) {
-        console.error('Photo upload failed:', err);
-        alert('படம் பதிவேற்றம் தோல்வி / Photo upload failed');
-        return;
-      }
-    }
-
-    // Sync the details to the users table if a user is linked
-    let userIdToUpdate = editMember.user_id;
-
-    if (!userIdToUpdate) {
-      // Check if there is a matching user by member_id
-      const { data: userByMemberId } = await supabase
-        .from('users')
-        .select('id')
-        .eq('member_id', editMember.member_id)
-        .maybeSingle();
-
-      if (userByMemberId) {
-        userIdToUpdate = userByMemberId.id;
-      } else if (editMember.mobile) {
-        // Fallback: check by mobile
-        const { data: userByMobile } = await supabase
-          .from('users')
-          .select('id')
-          .eq('mobile', editMember.mobile)
-          .maybeSingle();
-        if (userByMobile) {
-          userIdToUpdate = userByMobile.id;
+          // Append cache-buster so browser fetches the fresh image (upsert keeps same URL)
+          newPhotoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+          newPhotoBase64 = null; // clear old base64
+        } catch (err) {
+          console.error('Photo upload failed:', err);
+          alert('படம் பதிவேற்றம் தோல்வி / Photo upload failed');
+          setSavingEdit(false);
+          return;
         }
       }
-    }
 
-    if (userIdToUpdate) {
-      // Sync the user's name and mobile
-      await supabase
-        .from('users')
-        .update({
-          name: editMember.full_name,
-          mobile: editMember.mobile,
-          has_registered: true,
-          member_id: editMember.member_id
-        })
-        .eq('id', userIdToUpdate);
-    }
+      // Sync the details to the users table if a user is linked
+      let userIdToUpdate = editMember.user_id;
 
-    const { error } = await supabase
-      .from('members')
-      .update({
+      if (!userIdToUpdate) {
+        // Check if there is a matching user by member_id
+        const { data: userByMemberId } = await supabase
+          .from('users')
+          .select('id')
+          .or(`member_id.eq.${oldMemberId},member_id.eq.${effectiveMemberId}`)
+          .maybeSingle();
+
+        if (userByMemberId) {
+          userIdToUpdate = userByMemberId.id;
+        } else if (editMember.mobile) {
+          // Fallback: check by mobile
+          const { data: userByMobile } = await supabase
+            .from('users')
+            .select('id')
+            .eq('mobile', editMember.mobile)
+            .maybeSingle();
+          if (userByMobile) {
+            userIdToUpdate = userByMobile.id;
+          }
+        }
+      }
+
+      if (userIdToUpdate) {
+        // Sync the user's name, mobile, and member_id
+        await supabase
+          .from('users')
+          .update({
+            name: editMember.full_name,
+            mobile: editMember.mobile,
+            has_registered: true,
+            member_id: effectiveMemberId
+          })
+          .eq('id', userIdToUpdate);
+      }
+
+      const updatePayload = {
+        member_id: effectiveMemberId,
         user_id: userIdToUpdate || editMember.user_id || null,
         full_name: editMember.full_name,
         posting: editMember.posting,
@@ -768,18 +846,57 @@ function AdminDashboard() {
         nominee_phone: editMember.nominee_phone,
         photo_url: newPhotoUrl || null,
         photo_base64: newPhotoBase64 || null
-      })
-      .eq('member_id', editMember.member_id);
+      };
 
-    if (!error) {
+      if (andApprove) {
+        updatePayload.status = 'approved';
+        updatePayload.rejection_reason = null;
+        updatePayload.approved_at = new Date().toISOString();
+        updatePayload.approved_by = userProfile?.name || 'Admin';
+      }
+
+      let memberUpdateQuery = supabase.from('members').update(updatePayload);
+      if (editMember.id) {
+        memberUpdateQuery = memberUpdateQuery.eq('id', editMember.id);
+      } else {
+        memberUpdateQuery = memberUpdateQuery.eq('member_id', oldMemberId);
+      }
+
+      const { error } = await memberUpdateQuery;
+
+      if (error) throw error;
+
+      if (andApprove) {
+        try {
+          const payload = new FormData();
+          payload.append('access_key', import.meta.env.VITE_WEB3FORMS_KEY);
+          payload.append('subject', '✅ உறுப்பினர் அனுமதி / Membership Approved: ' + editMember.full_name);
+          payload.append('from_name', 'TIWTN Admin');
+          payload.append('message',
+            'அன்புள்ள ' + editMember.full_name + ',\n\n' +
+            'உங்கள் தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்க உறுப்பினர் விண்ணப்பம் அனுமதிக்கப்பட்டது!\n\n' +
+            'உறுப்பினர் எண் / Member ID: ' + effectiveMemberId + '\n' +
+            'மாவட்டம் / District: ' + editMember.district + '\n\n' +
+            'Dear ' + editMember.full_name + ',\n\nYour membership has been APPROVED!\n' +
+            'Login to download your ID card:\nhttps://www.thennindiaweldingthozhilaalargalnalasangam.org/profile\n\n- TIWTN Admin Team'
+          );
+          await fetch('https://api.web3forms.com/submit', { method: 'POST', body: payload });
+        } catch (err) {
+          console.error('Email error:', err);
+        }
+      }
+
       setEditMember(null);
       setEditPhotoPreview(null);
       setEditPhotoFile(null);
       await loadMembers();
       await loadUsers(); // Refresh users list too
-      alert('✅ திருத்தப்பட்டது / Updated!');
-    } else {
-      alert('Error: ' + error.message);
+      alert(andApprove ? '✅ திருத்தப்பட்டு அனுமதிக்கப்பட்டது! / Saved & Approved!' : '✅ திருத்தப்பட்டது / Updated!');
+    } catch (err) {
+      console.error('Save error:', err);
+      alert('Error: ' + err.message);
+    } finally {
+      setSavingEdit(false);
     }
   };
   const changeUserRole = async (userId, newRole) => {
@@ -1314,6 +1431,12 @@ NEW MEMBER REGISTRATION DETAILS
                     padding: '1px 7px', fontSize: '10px', fontWeight: '700', marginLeft: 'auto'
                   }}>{pendingCount}</span>
                 )}
+                {tab.id === 'rejected' && rejectedCount > 0 && (
+                  <span style={{
+                    background: '#DC2626', color: '#fff', borderRadius: '20px',
+                    padding: '1px 7px', fontSize: '10px', fontWeight: '700', marginLeft: 'auto'
+                  }}>{rejectedCount}</span>
+                )}
               </button>
             ))}
             <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
@@ -1393,6 +1516,14 @@ NEW MEMBER REGISTRATION DETAILS
                     icon: pendingCount > 0 ? '⏳' : '✅',
                     valueCls: pendingCount > 0 ? '#B45309' : '#16A34A',
                     onClick: pendingCount > 0 ? () => goTab('pending') : undefined
+                  },
+                  {
+                    label: 'Rejected Applications', value: rejectedCount,
+                    sub: rejectedCount > 0 ? 'Fix info / photo & approve' : 'No rejected applications',
+                    iconBg: rejectedCount > 0 ? 'linear-gradient(135deg,#DC2626,#EF4444)' : 'linear-gradient(135deg,#16A34A,#4ADE80)',
+                    icon: rejectedCount > 0 ? '❌' : '✅',
+                    valueCls: rejectedCount > 0 ? '#DC2626' : '#16A34A',
+                    onClick: rejectedCount > 0 ? () => goTab('rejected') : undefined
                   },
                   {
                     label: 'Pending Registration', value: notRegistered,
@@ -1685,6 +1816,222 @@ NEW MEMBER REGISTRATION DETAILS
                           style={{ padding: '10px 16px', background: 'transparent', color: '#EF4444', border: '2px solid #EF4444', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '800' }}>
                           ❌ நிராகரி / Reject
                         </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── REJECTED APPLICATIONS ── */}
+          {activeTab === 'rejected' && (
+            <div className="space-y-4 md:space-y-6 max-w-5xl">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold text-[#DC2626] flex items-center gap-2">
+                    <span>❌</span> நிராகரிக்கப்பட்டவை / Rejected ({rejectedCount})
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-1">
+                    தவறான விவரம் அல்லது புகைப்படம் காரணத்தால் நிராகரிக்கப்பட்டவர்கள். இங்கு நேரடியாக விவரங்களை திருத்தி, புதிய படம் பதிவேற்றி அனுமதிக்கலாம்.
+                  </p>
+                </div>
+                {rejectedCount > 0 && (
+                  <button
+                    onClick={() => { setRejectedDistrictFilter(''); setRejectedSearchQuery(''); }}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-white transition text-gray-700">
+                    🔄 Reset Filter
+                  </button>
+                )}
+              </div>
+
+              {/* District & Search Filters */}
+              <div className="bg-white p-4 rounded-xl border border-red-100 shadow-sm space-y-3">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    placeholder="Search by name, mobile, member ID, reason..."
+                    value={rejectedSearchQuery}
+                    onChange={e => setRejectedSearchQuery(e.target.value)}
+                    className="flex-1 p-2.5 rounded-lg border border-gray-200 text-black focus:outline-none focus:border-[#DC2626] text-sm"
+                  />
+                  <select
+                    value={rejectedDistrictFilter}
+                    onChange={e => setRejectedDistrictFilter(e.target.value)}
+                    className="w-full sm:w-56 p-2.5 rounded-lg border border-gray-200 text-black focus:outline-none focus:border-[#DC2626] text-sm font-medium">
+                    <option value="">All Districts ({rejectedCount})</option>
+                    {TAMIL_NADU_DISTRICTS.map(d => {
+                      const c = rejectedMembers.filter(m => m.district === d).length;
+                      return (
+                        <option key={d} value={d}>
+                          {d} {c > 0 ? `(${c})` : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                {/* District Quick-filter Pills */}
+                {rejectedDistrictsSummary.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-gray-100">
+                    <span className="text-xs font-bold text-gray-500 mr-1">Districts with Rejected:</span>
+                    <button
+                      type="button"
+                      onClick={() => setRejectedDistrictFilter('')}
+                      className={`text-xs px-2.5 py-1 rounded-full font-semibold transition ${
+                        rejectedDistrictFilter === ''
+                          ? 'bg-[#DC2626] text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}>
+                      All ({rejectedCount})
+                    </button>
+                    {rejectedDistrictsSummary.map(d => (
+                      <button
+                        key={d.name}
+                        type="button"
+                        onClick={() => setRejectedDistrictFilter(d.name)}
+                        className={`text-xs px-2.5 py-1 rounded-full font-semibold transition flex items-center gap-1 ${
+                          rejectedDistrictFilter === d.name
+                            ? 'bg-[#DC2626] text-white shadow-sm'
+                            : 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
+                        }`}>
+                        <span>{d.name}</span>
+                        <span className="text-[10px] bg-white/60 px-1.5 py-0.2 rounded-full font-bold text-red-900">
+                          {d.count}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Members List */}
+              {rejectedCount === 0 ? (
+                <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '3rem' }}>🎉</div>
+                  <div style={{ marginTop: '1rem', fontWeight: '600' }}>நிராகரிக்கப்பட்ட விண்ணப்பங்கள் இல்லை<br/>No rejected applications</div>
+                </div>
+              ) : filteredRejectedMembers.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '2rem' }}>🔍</div>
+                  <div style={{ marginTop: '0.5rem' }}>பொருந்தும் விண்ணப்பங்கள் இல்லை / No matching applications found for this filter</div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {filteredRejectedMembers.map(member => (
+                    <div key={member.member_id} style={{
+                      background: '#fff', border: '1px solid #FECACA',
+                      borderLeft: '5px solid #DC2626',
+                      borderRadius: '12px', padding: '1.2rem',
+                      display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap',
+                      boxShadow: '0 1px 4px rgba(220,38,38,0.08)'
+                    }}>
+                      {/* Photo */}
+                      <div style={{ flexShrink: 0 }}>
+                        {(member.photo_url || member.photo_base64) ? (
+                          <img
+                            src={member.photo_url || member.photo_base64}
+                            crossOrigin="anonymous"
+                            style={{ width: '75px', height: '90px', objectFit: 'cover', borderRadius: '6px', border: '2px solid #DC2626' }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '75px', height: '90px', borderRadius: '6px',
+                            background: '#EF4444', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', fontSize: '1.8rem', color: '#fff', fontWeight: '800'
+                          }}>
+                            {member.full_name?.charAt(0)?.toUpperCase() || '?'}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Details */}
+                      <div style={{ flex: 1, minWidth: '220px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '16px', fontWeight: '800', color: '#0A1628' }}>
+                            {member.full_name}
+                          </span>
+                          <span style={{
+                            background: '#FEE2E2', color: '#DC2626', fontSize: '11px',
+                            fontWeight: '700', padding: '2px 8px', borderRadius: '12px', border: '1px solid #FCA5A5'
+                          }}>
+                            ❌ Rejected
+                          </span>
+                        </div>
+
+                        {/* Rejection reason box */}
+                        <div style={{
+                          background: '#FEF2F2', border: '1px solid #FCA5A5',
+                          borderRadius: '8px', padding: '8px 12px', marginBottom: '10px',
+                          fontSize: '12px'
+                        }}>
+                          <span style={{ color: '#DC2626', fontWeight: '800' }}>⚠️ நிராகரிப்பு காரணம் / Reason: </span>
+                          <span style={{ color: '#991B1B', fontWeight: '600' }}>{member.rejection_reason || 'Information or Photo mismatch'}</span>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px', fontSize: '12px' }}>
+                          {[
+                            ['Member ID', member.member_id],
+                            ['மாவட்டம்', member.district],
+                            ['பதவி', member.posting],
+                            ['கைபேசி', member.mobile],
+                            ['ஆதார்', displayAadhar(member.aadhar)],
+                            ['இரத்த பிரிவு', member.blood_group],
+                            ['DOB', member.dob],
+                            ['கிளை', member.branch || '-'],
+                          ].map(([label, value]) => (
+                            <div key={label}>
+                              <span style={{ color: '#6B7280' }}>{label}: </span>
+                              <span style={{ fontWeight: '700', color: '#0A1628' }}>{value || '-'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0, width: '165px' }}>
+                        <button
+                          onClick={() => setEditMember(member)}
+                          style={{
+                            padding: '9px 12px', background: '#003366', color: '#fff',
+                            border: 'none', borderRadius: '8px', cursor: 'pointer',
+                            fontSize: '12px', fontWeight: '700', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center', gap: '6px'
+                          }}>
+                          ✏️ திருத்து & படம் ஏற்று
+                        </button>
+                        <button
+                          onClick={() => approveMember(member)}
+                          style={{
+                            padding: '9px 12px', background: '#16A34A', color: '#fff',
+                            border: 'none', borderRadius: '8px', cursor: 'pointer',
+                            fontSize: '12px', fontWeight: '700', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center', gap: '6px'
+                          }}>
+                          ✅ அனுமதி / Approve
+                        </button>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            onClick={() => handlePrintMember(member)}
+                            title="படிவம் காண்க"
+                            style={{
+                              flex: 1, padding: '7px', background: '#F0F4F9', color: '#003366',
+                              border: '1px solid #D1D9E6', borderRadius: '6px', cursor: 'pointer',
+                              fontSize: '11px', fontWeight: '600'
+                            }}>
+                            🖨️ படிவம்
+                          </button>
+                          <button
+                            onClick={() => deleteMember(member.member_id, member.user_id)}
+                            title="விண்ணப்பத்தை நீக்கு"
+                            style={{
+                              padding: '7px 10px', background: '#FEE2E2', color: '#DC2626',
+                              border: '1px solid #FCA5A5', borderRadius: '6px', cursor: 'pointer',
+                              fontSize: '11px', fontWeight: '600'
+                            }}>
+                            🗑️
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -2189,26 +2536,100 @@ NEW MEMBER REGISTRATION DETAILS
           {activeTab === 'district' && (
             <div className="max-w-6xl">
               <div className="flex flex-wrap gap-3 items-center justify-between mb-4 md:mb-6">
-                <h2 className="text-xl md:text-2xl font-bold text-[#003366]">Members by District</h2>
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold text-[#003366]">Members by District</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">மாவட்ட வாரியாக உறுப்பினர்கள் விவரம்</p>
+                </div>
                 <button onClick={exportCSV} className="bg-[#FFB347] text-black px-3 py-2 rounded font-semibold text-sm shadow-sm hover:opacity-90">
                   📥 Export CSV
                 </button>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
-                {districtsCount.map(d => (
-                  <button key={d.name}
-                    onClick={() => { setDistrictFilter(d.name); goTab('members'); setCurrentPage(1); }}
-                    disabled={d.count === 0}
-                    className={`p-3 rounded-xl border text-left transition ${
-                      d.count > 0 ? 'bg-white border-[#FFB347] shadow-sm hover:-translate-y-1 hover:shadow-md active:scale-95' : 'bg-gray-50 border-gray-200 opacity-50 cursor-not-allowed'
-                    }`}>
-                    <p className={`font-semibold text-xs md:text-sm leading-tight ${d.count > 0 ? 'text-[#003366]' : 'text-gray-500'}`}>{d.name}</p>
-                    <div className="mt-2 flex justify-between items-center">
-                      <span className="text-[10px] text-gray-500">Members</span>
-                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${d.count > 0 ? 'bg-[#FFB347]/20 text-[#FF6B00]' : 'bg-gray-200 text-gray-500'}`}>{d.count}</span>
-                    </div>
+
+              {/* Status filter tabs */}
+              <div className="flex items-center gap-2 mb-5 flex-wrap bg-white p-2 rounded-xl border border-gray-200">
+                {[
+                  { id: 'all', label: 'All Members', count: members.length, bg: 'bg-blue-50 text-blue-800' },
+                  { id: 'approved', label: 'Approved', count: approvedCount, bg: 'bg-green-50 text-green-800' },
+                  { id: 'pending', label: 'Pending', count: pendingCount, bg: 'bg-amber-50 text-amber-800' },
+                  { id: 'rejected', label: 'Rejected', count: rejectedCount, bg: 'bg-red-50 text-red-800' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setDistrictTabStatusFilter(tab.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                      districtTabStatusFilter === tab.id
+                        ? 'bg-[#003366] text-white shadow-sm'
+                        : `${tab.bg} hover:opacity-80`
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${districtTabStatusFilter === tab.id ? 'bg-white/20 text-white' : 'bg-black/10'}`}>
+                      {tab.count}
+                    </span>
                   </button>
                 ))}
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
+                {districtsCount.map(d => {
+                  const displayCount = 
+                    districtTabStatusFilter === 'approved' ? d.approved :
+                    districtTabStatusFilter === 'pending' ? d.pending :
+                    districtTabStatusFilter === 'rejected' ? d.rejected : d.count;
+
+                  const hasCount = displayCount > 0;
+
+                  return (
+                    <button key={d.name}
+                      onClick={() => {
+                        if (districtTabStatusFilter === 'rejected') {
+                          setRejectedDistrictFilter(d.name);
+                          goTab('rejected');
+                        } else if (districtTabStatusFilter === 'pending') {
+                          goTab('pending');
+                        } else {
+                          setDistrictFilter(d.name);
+                          goTab('members');
+                          setCurrentPage(1);
+                        }
+                      }}
+                      disabled={!hasCount}
+                      className={`p-3 rounded-xl border text-left transition ${
+                        hasCount
+                          ? districtTabStatusFilter === 'rejected'
+                            ? 'bg-red-50/50 border-red-200 shadow-sm hover:-translate-y-1 hover:shadow-md hover:border-red-400 active:scale-95'
+                            : 'bg-white border-[#FFB347] shadow-sm hover:-translate-y-1 hover:shadow-md active:scale-95'
+                          : 'bg-gray-50 border-gray-200 opacity-50 cursor-not-allowed'
+                      }`}>
+                      <p className={`font-semibold text-xs md:text-sm leading-tight ${hasCount ? (districtTabStatusFilter === 'rejected' ? 'text-red-900' : 'text-[#003366]') : 'text-gray-500'}`}>{d.name}</p>
+                      
+                      <div className="mt-2 flex justify-between items-center">
+                        <span className="text-[10px] text-gray-500">
+                          {districtTabStatusFilter === 'rejected' ? 'Rejected' :
+                           districtTabStatusFilter === 'pending' ? 'Pending' :
+                           districtTabStatusFilter === 'approved' ? 'Approved' : 'Members'}
+                        </span>
+                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
+                          hasCount
+                            ? districtTabStatusFilter === 'rejected'
+                              ? 'bg-red-200 text-red-900'
+                              : 'bg-[#FFB347]/20 text-[#FF6B00]'
+                            : 'bg-gray-200 text-gray-500'
+                        }`}>
+                          {displayCount}
+                        </span>
+                      </div>
+
+                      {/* Sub-counts in All View */}
+                      {districtTabStatusFilter === 'all' && (d.pending > 0 || d.rejected > 0) && (
+                        <div className="mt-1.5 pt-1.5 border-t border-gray-100 flex items-center gap-1 text-[9px] font-bold">
+                          {d.pending > 0 && <span className="text-amber-600">⏳ {d.pending}</span>}
+                          {d.rejected > 0 && <span className="text-red-600">❌ {d.rejected}</span>}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -2423,6 +2844,21 @@ NEW MEMBER REGISTRATION DETAILS
               </div>
             </div>
 
+            {/* Rejection reason banner if rejected */}
+            {editMember.rejection_reason && (
+              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-red-800 mb-1">
+                  <span>❌</span> நிராகரிப்பு காரணம் / Rejection Reason:
+                </div>
+                <div className="text-xs text-red-900 font-medium bg-white/60 p-2 rounded-lg border border-red-100">
+                  {editMember.rejection_reason}
+                </div>
+                <div className="text-[11px] text-red-600 mt-1.5">
+                  💡 சரியான விவரங்களை திருத்தி / புதிய புகைப்படத்தை பதிவேற்றி கீழே உள்ள <b>&quot;சேமித்து அனுமதி&quot;</b> பட்டனை அழுத்தவும்.
+                </div>
+              </div>
+            )}
+
             <div className="space-y-3 text-sm">
               {[
                 { key: 'full_name', label: 'பெயர் / Name', type: 'text' },
@@ -2478,17 +2914,79 @@ NEW MEMBER REGISTRATION DETAILS
                 </div>
               ))}
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">District</label>
+                <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">District / மாவட்டம்</label>
                 <select value={editMember.district || ''} onChange={e => setEditMember(prev => ({ ...prev, district: e.target.value }))}
                   className="w-full rounded-lg border border-gray-200 px-3 py-2 text-black focus:outline-none focus:border-[#FFB347] text-sm">
                   <option value="">-- Select --</option>
                   {TAMIL_NADU_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
+
+              {/* District Member ID Sync Tool */}
+              <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[#003366]">
+                    உறுப்பினர் எண் / Member ID
+                  </label>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    editMember.status === 'approved' ? 'bg-green-100 text-green-800' :
+                    editMember.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    Status: {editMember.status || 'pending'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editMember.member_id || ''}
+                    onChange={e => setEditMember(prev => ({ ...prev, member_id: e.target.value }))}
+                    className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-black font-mono text-xs font-bold bg-white focus:outline-none focus:border-[#003366]"
+                    placeholder="e.g. TIWTN-2026-CHN-001"
+                  />
+                  <button
+                    type="button"
+                    disabled={regeneratingId || !editMember.district}
+                    onClick={() => handleRegenerateDistrictId(editMember.district)}
+                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#003366] text-white hover:bg-[#002244] transition flex items-center gap-1 shadow-sm whitespace-nowrap disabled:opacity-50"
+                    title="Generate correct district ID code for the selected district"
+                  >
+                    {regeneratingId ? '⏳ Generating...' : '🔄 மாவட்ட ID உருவாக்கு'}
+                  </button>
+                </div>
+                {editMember._original_district && editMember.district && editMember._original_district !== editMember.district && (
+                  <p className="text-[11px] text-amber-700 font-semibold">
+                    ⚠️ மாவட்டம் &quot;{editMember._original_district}&quot; இலிருந்து &quot;{editMember.district}&quot; என மாற்றப்பட்டது. புதிய மாவட்ட ID உருவாக்க &quot;மாவட்ட ID உருவாக்கு&quot; பட்டனை அழுத்தவும்.
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="mt-5 flex gap-3">
-              <button onClick={saveEditMember} className="flex-1 rounded-lg bg-[#FFB347] text-black py-2.5 font-semibold hover:opacity-90 transition text-sm">Save Changes</button>
-              <button onClick={() => setEditMember(null)} className="flex-1 rounded-lg border border-gray-300 py-2.5 text-gray-600 hover:bg-gray-50 transition text-sm">Cancel</button>
+            <div className="mt-6 flex flex-col sm:flex-row gap-2.5">
+              {(editMember.status === 'rejected' || editMember.status === 'pending') && (
+                <button
+                  type="button"
+                  disabled={savingEdit}
+                  onClick={() => saveEditMember(true)}
+                  className="flex-1 rounded-lg bg-[#16A34A] text-white py-2.5 px-3 font-bold hover:bg-[#15803D] transition text-sm flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
+                >
+                  {savingEdit ? '⏳ சேமிக்கிறது...' : '✅ சேமித்து அனுமதி / Save & Approve'}
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={savingEdit}
+                onClick={() => saveEditMember(false)}
+                className="flex-1 rounded-lg bg-[#FFB347] text-black py-2.5 px-3 font-bold hover:opacity-90 transition text-sm flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
+              >
+                {savingEdit ? '⏳ சேமிக்கிறது...' : '💾 மாற்றங்களை சேமி / Save Changes'}
+              </button>
+              <button
+                type="button"
+                disabled={savingEdit}
+                onClick={() => setEditMember(null)}
+                className="rounded-lg border border-gray-300 py-2.5 px-4 text-gray-600 hover:bg-gray-50 transition text-sm font-semibold"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
