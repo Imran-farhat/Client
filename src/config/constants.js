@@ -1,5 +1,5 @@
 export const SITE_URL = import.meta.env.VITE_SITE_URL ||
-  'https://client-five-gamma-62.vercel.app'
+  'https://thennindiaweldingthozhilaalargalnalasangam.org'
 
 export const ADMIN_EMAIL =
   import.meta.env.VITE_ADMIN_EMAIL ||
