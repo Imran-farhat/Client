@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import IDCard from '../components/IDCard';
 import OrgLogo from '../components/OrgLogo';
@@ -76,6 +76,8 @@ const initialForm = {
   profilePhoto: null,
   photoPreview: null,
   photoFile: null,
+  photo_url: null,
+  photo_base64: null,
 };
 
 const BiLabel = ({ tamil, english, required }) => (
@@ -115,6 +117,21 @@ function formatDateDisplay() {
 function Register() {
   const { currentUser, userProfile, refreshProfile, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isExplicitEdit = searchParams.get('mode') === 'edit';
+
+  const [form, setForm] = useState(initialForm);
+  const [errors, setErrors] = useState({});
+  const [member, setMember] = useState(null);
+  const [memberId, setMemberId] = useState('TIWTN-2026-_____');
+  const [existingMember, setExistingMember] = useState(null);
+  const [cardReady, setCardReady] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPending, setShowPending] = useState(false);
+  const [loadingExisting, setLoadingExisting] = useState(true);
+  const cardRef = useRef(null);
+  const formRef = useRef(null);
+  const joiningDate = useMemo(() => formatDateDisplay(), []);
 
   useEffect(() => {
     if (!loading && !currentUser) {
@@ -127,47 +144,85 @@ function Register() {
     }
   }, [currentUser, loading, navigate]);
 
+  // Load existing member record if available (for editing/correcting after rejection or pending)
   useEffect(() => {
-    if (currentUser && userProfile?.has_registered) {
-      navigate('/profile');
+    const loadExistingRecord = async () => {
+      if (!currentUser) {
+        setLoadingExisting(false);
+        return;
+      }
+
+      try {
+        let { data, error } = await supabase
+          .from('members')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+
+        if (!data && userProfile?.mobile) {
+          const { data: data2 } = await supabase
+            .from('members')
+            .select('*')
+            .eq('mobile', userProfile.mobile)
+            .maybeSingle();
+          data = data2;
+        }
+
+        if (data) {
+          // If already approved and user didn't ask to explicitly edit, redirect to profile
+          if (data.status === 'approved' && !isExplicitEdit) {
+            navigate('/profile');
+            return;
+          }
+
+          // Otherwise, user is either rejected, pending, or in edit mode
+          setExistingMember(data);
+          setMemberId(data.member_id);
+          setForm({
+            fullName: data.full_name || '',
+            posting: data.posting || '',
+            address: data.address || '',
+            companyAddress: data.org_address || '',
+            bloodGroup: data.blood_group || '',
+            dob: data.dob || '',
+            aadhaar: data.aadhar || '',
+            mobile: data.mobile || '',
+            nomineeName: data.nominee_name || '',
+            nomineeMobile: data.nominee_phone || '',
+            referral: data.referrer || '',
+            pledgeName: data.full_name || '',
+            pledgeDistrict: data.district || '',
+            pledgeBranch: data.branch || '',
+            profilePhoto: null,
+            photoPreview: data.photo_url || data.photo_base64 || null,
+            photoFile: null,
+            photo_url: data.photo_url || null,
+            photo_base64: data.photo_base64 || null,
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching existing member record:', err);
+      } finally {
+        setLoadingExisting(false);
+      }
+    };
+
+    if (!loading && currentUser) {
+      loadExistingRecord();
     }
-  }, [currentUser, userProfile, navigate]);
-
-  if (loading) return (
-    <div style={{
-      display: 'flex', justifyContent: 'center',
-      alignItems: 'center', height: '60vh',
-      color: '#FF6B00', fontSize: '16px'
-    }}>Loading...</div>
-  );
-
-  if (!currentUser) return null;
-
-  const [form, setForm] = useState(initialForm);
-  const [errors, setErrors] = useState({});
-  const [member, setMember] = useState(null);
-  const [memberId, setMemberId] = useState('TIWTN-2026-_____');
-  const [cardReady, setCardReady] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPending, setShowPending] = useState(false);
-  const cardRef = useRef(null);
-  const formRef = useRef(null);
-  const joiningDate = useMemo(() => formatDateDisplay(), []);
+  }, [currentUser, userProfile, loading, isExplicitEdit, navigate]);
 
   const maskAadhar = (aadhar) => {
-    // Store last 4 digits only for display
-    // Store full number encrypted
-    return aadhar // keep full for now
-    // Note: implement proper encryption later
-  }
+    return aadhar;
+  };
 
-  const saveToSupabase = async (formData, memberId, photoUrl = null) => {
+  const saveToSupabase = async (formData, effectiveMemberId, photoUrl = null, isUpdate = false) => {
     try {
-      console.log('Saving to Supabase...', memberId);
+      console.log('Saving to Supabase...', effectiveMemberId, isUpdate ? '(UPDATE)' : '(INSERT)');
       console.log('Current user:', currentUser?.id);
 
       const memberRecord = {
-        member_id: memberId,
+        member_id: effectiveMemberId,
         user_id: currentUser?.id || null,
         full_name: formData.fullName,
         posting: formData.posting,
@@ -183,41 +238,59 @@ function Register() {
         nominee_phone: formData.nomineeMobile || '',
         join_date: joiningDate,
         referrer: formData.referral || '',
-        photo_url: photoUrl,
-        photo_base64: photoUrl ? null : (formData.photoPreview || null),
+        photo_url: photoUrl || formData.photo_url || null,
+        photo_base64: photoUrl ? null : (formData.photoPreview || formData.photo_base64 || null),
+        status: 'pending', // Re-submission goes to pending review
+        rejection_reason: null, // Clear any previous rejection reason
         registered_at: new Date().toISOString()
       };
 
       console.log('Member record:', memberRecord);
 
-      const { data, error } = await supabase
-        .from('members')
-        .insert(memberRecord)
-        .select();
+      let saveError = null;
 
-      if (error) {
-        console.error('Supabase insert error:', error);
-        alert('பதிவு சேமிக்கப்படவில்லை: ' + error.message);
+      if (isUpdate) {
+        // Update existing member record using SAME original member_id
+        const { error: updateErr } = await supabase
+          .from('members')
+          .update(memberRecord)
+          .eq('member_id', effectiveMemberId);
+        saveError = updateErr;
+      } else {
+        // Insert new member record
+        const { error: insertErr } = await supabase
+          .from('members')
+          .insert(memberRecord);
+        saveError = insertErr;
+      }
+
+      if (saveError) {
+        console.error('Supabase save error:', saveError);
+        alert('பதிவு சேமிக்கப்படவில்லை: ' + saveError.message);
         return false;
       }
 
-      console.log('Saved successfully:', data);
+      console.log('Saved successfully');
 
       // Update user profile if logged in
       if (currentUser?.id) {
         const { error: updateError } = await supabase
           .from('users')
-          .update({ has_registered: true, member_id: memberId })
+          .update({
+            has_registered: true,
+            member_id: effectiveMemberId,
+            name: formData.fullName,
+            mobile: formData.mobile
+          })
           .eq('id', currentUser.id);
 
         if (updateError) {
-          console.error('User update error:', updateError);
-        } else {
-          await refreshProfile();
+          console.warn('User update warning:', updateError.message);
         }
+        await refreshProfile();
       }
 
-      // Clean up any legacy localStorage entries
+      // Clean up legacy localStorage entries
       localStorage.removeItem('tiwtn_registered');
       localStorage.removeItem('tiwtn_member_data');
 
@@ -229,26 +302,28 @@ function Register() {
     }
   };
 
-  const sendAdminNotification = async (formData, memberId) => {
+  const sendAdminNotification = async (formData, effectiveMemberId, isUpdate = false) => {
     try {
-      const payload = new FormData()
+      const payload = new FormData();
       payload.append(
         'access_key',
         import.meta.env.VITE_WEB3FORMS_KEY
-      )
+      );
       payload.append(
         'subject',
-        `புதிய உறுப்பினர் பதிவு: ${formData.fullName} | ${memberId}`
-      )
-      payload.append('from_name', 'TIWTN Registration System')
-      payload.append('email', 'idhreesufiyaidhreesufiya@gmail.com')
+        isUpdate
+          ? `விண்ணப்பம் திருத்தப்பட்டு சமர்ப்பிக்கப்பட்டது / Application Corrected: ${formData.fullName} | ${effectiveMemberId}`
+          : `புதிய உறுப்பினர் பதிவு: ${formData.fullName} | ${effectiveMemberId}`
+      );
+      payload.append('from_name', 'TIWTN Registration System');
+      payload.append('email', 'idhreesufiyaidhreesufiya@gmail.com');
       payload.append('message', `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-புதிய உறுப்பினர் பதிவு விவரங்கள்
-NEW MEMBER REGISTRATION DETAILS
+${isUpdate ? 'உறுப்பினர் விண்ணப்பம் திருத்தப்பட்டு மீண்டும் சமர்ப்பிக்கப்பட்டது' : 'புதிய உறுப்பினர் பதிவு விவரங்கள்'}
+${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTRATION DETAILS'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-உறுப்பினர் எண் / Member ID : ${memberId}
+உறுப்பினர் எண் / Member ID : ${effectiveMemberId}
 பெயர் / Full Name          : ${formData.fullName}
 பதவி / Posting            : ${formData.posting}
 பிறந்த தேதி / DOB          : ${formData.dob}
@@ -268,16 +343,16 @@ NEW MEMBER REGISTRATION DETAILS
 }
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    `)
+    `);
 
       const res = await fetch(
         'https://api.web3forms.com/submit',
         { method: 'POST', body: payload }
-      )
-      const result = await res.json()
-      console.log('Email sent:', result)
+      );
+      const result = await res.json();
+      console.log('Email sent:', result);
     } catch (err) {
-      console.error('Email error:', err)
+      console.error('Email error:', err);
     }
   };
 
@@ -345,37 +420,37 @@ NEW MEMBER REGISTRATION DETAILS
   });
 
   const handlePhotoUpload = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('படக் கோப்பு மட்டுமே / Images only')
-      return
+      alert('படக் கோப்பு மட்டுமே / Images only');
+      return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      alert('2MB க்கு கீழ் / Max 2MB')
-      return
+      alert('2MB க்கு கீழ் / Max 2MB');
+      return;
     }
 
     // Show local preview immediately (UX)
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onloadend = () => {
       setForm(prev => ({
         ...prev,
-        photoPreview: reader.result,  // for display only
+        photoPreview: reader.result,  // for display
         profilePhoto: file,           // for validation
         photoFile: file               // actual file for upload
-      }))
-    }
-    reader.readAsDataURL(file)
-  }
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
 
-  const uploadPhotoToStorage = async (file, memberId) => {
+  const uploadPhotoToStorage = async (file, currentMemberId) => {
     if (!file) return null;
     try {
       // Compress to JPEG (max 800px, 75% quality) before uploading
       const compressed = await compressImageFile(file);
-      const path = `members/${memberId}`; // no extension!
+      const path = `members/${currentMemberId}`; // no extension!
       const { data, error } = await supabase.storage
         .from('member-photos')
         .upload(path, compressed, {
@@ -392,7 +467,7 @@ NEW MEMBER REGISTRATION DETAILS
       console.error('Storage upload failed:', err);
       return null;
     }
-  }
+  };
 
   const handleChange = (field) => (event) => {
     const value = event.target.value;
@@ -421,44 +496,66 @@ NEW MEMBER REGISTRATION DETAILS
     if (!form.pledgeName.trim()) nextErrors.pledgeName = 'இந்த தகவல் அவசியம்';
     if (!form.pledgeDistrict || form.pledgeDistrict === '') nextErrors.pledgeDistrict = 'மாவட்டம் தேர்வு செய்க';
     if (!form.pledgeBranch.trim()) nextErrors.pledgeBranch = 'இந்த தகவல் அவசியம்';
-    if (!form.profilePhoto) nextErrors.profilePhoto = 'படத்தை பதிவேற்றவும்';
-    else if (!form.profilePhoto.type.startsWith('image/')) nextErrors.profilePhoto = 'படத்தை பதிவேற்றவும்';
-    else if (form.profilePhoto.size > 2_000_000) nextErrors.profilePhoto = 'படத்தை 2MB limit';
+    
+    // Photo validation: allow existing photo or new upload
+    if (!form.profilePhoto && !form.photoPreview && !form.photo_url) {
+      nextErrors.profilePhoto = 'படத்தை பதிவேற்றவும்';
+    } else if (form.profilePhoto) {
+      if (!form.profilePhoto.type?.startsWith('image/')) {
+        nextErrors.profilePhoto = 'படத்தை பதிவேற்றவும் (Image only)';
+      } else if (form.profilePhoto.size > 2_000_000) {
+        nextErrors.profilePhoto = 'படத்தை 2MB limit';
+      }
+    }
     return nextErrors;
   };
 
-  const createMemberId = () => {
-    return `TIWTN-${new Date().getFullYear()}-${String(Math.floor(10000 + Math.random() * 90000)).padStart(5, '0')}`;
-  };
-
-  const checkDuplicate = async (mobile, aadhar) => {
-    const { data: mobileCheck } = await supabase
+  const checkDuplicate = async (mobile, aadhar, currentMemberId = null) => {
+    // Check mobile: exclude own member record and own user account
+    let mobileQuery = supabase
       .from('members')
-      .select('member_id')
-      .eq('mobile', mobile)
-      .maybeSingle()
+      .select('member_id, user_id')
+      .eq('mobile', mobile);
+
+    if (currentMemberId) {
+      mobileQuery = mobileQuery.neq('member_id', currentMemberId);
+    }
+    if (currentUser?.id) {
+      mobileQuery = mobileQuery.neq('user_id', currentUser.id);
+    }
+
+    const { data: mobileCheck } = await mobileQuery.maybeSingle();
 
     if (mobileCheck) {
       throw new Error(
-        'இந்த கைபேசி எண் ஏற்கனவே பதிவாகியுள்ளது / ' +
-        'This mobile number is already registered. ' +
+        'இந்த கைபேசி எண் ஏற்கனவே வேறொரு பதிவில் உள்ளது / ' +
+        'This mobile number is already registered with another member. ' +
         'Member ID: ' + mobileCheck.member_id
-      )
+      );
     }
 
-    const { data: aadharCheck } = await supabase
+    // Check Aadhaar: exclude own member record and own user account
+    let aadharQuery = supabase
       .from('members')
-      .select('member_id')
-      .eq('aadhar', aadhar)
-      .maybeSingle()
+      .select('member_id, user_id')
+      .eq('aadhar', aadhar);
+
+    if (currentMemberId) {
+      aadharQuery = aadharQuery.neq('member_id', currentMemberId);
+    }
+    if (currentUser?.id) {
+      aadharQuery = aadharQuery.neq('user_id', currentUser.id);
+    }
+
+    const { data: aadharCheck } = await aadharQuery.maybeSingle();
 
     if (aadharCheck) {
       throw new Error(
-        'இந்த ஆதார் எண் ஏற்கனவே பதிவாகியுள்ளது / ' +
-        'This Aadhaar is already registered.'
-      )
+        'இந்த ஆதார் எண் ஏற்கனவே வேறொரு பதிவில் உள்ளது / ' +
+        'This Aadhaar is already registered with another member.'
+      );
     }
-  }
+  };
 
   const handleSubmit = async (event) => {
     if (event) {
@@ -475,36 +572,41 @@ NEW MEMBER REGISTRATION DETAILS
         return;
       }
 
-      await checkDuplicate(form.mobile, form.aadhaar);
+      const isUpdate = !!existingMember;
+      const targetMemberId = existingMember ? existingMember.member_id : await generateMemberId(form.pledgeDistrict);
 
-      const generatedId = await generateMemberId(form.pledgeDistrict);
+      // Check duplicates excluding own record
+      await checkDuplicate(form.mobile, form.aadhaar, existingMember?.member_id);
 
-      // Upload photo to Storage
-      const photoUrl = await uploadPhotoToStorage(form.photoFile, generatedId);
+      // Upload photo to Storage if a new file was chosen
+      let photoUrl = form.photo_url || null;
+      if (form.photoFile) {
+        const uploaded = await uploadPhotoToStorage(form.photoFile, targetMemberId);
+        if (uploaded) photoUrl = uploaded;
+      }
 
       const memberData = {
         ...form,
         joiningDate,
-        memberId: generatedId,
+        memberId: targetMemberId,
         photo_url: photoUrl,
         photo_base64: photoUrl ? null : (form.photoPreview || null)
       };
 
-      // Await save so errors surface before showing card
-      const saved = await saveToSupabase(form, generatedId, photoUrl);
+      // Save to Supabase (update if existing member, insert if new)
+      const saved = await saveToSupabase(form, targetMemberId, photoUrl, isUpdate);
       console.log('Save result:', saved);
 
       if (saved) {
-        await sendAdminNotification(form, generatedId);
+        await sendAdminNotification(form, targetMemberId, isUpdate);
         
-        // Show pending screen instead of ID card
+        // Show pending screen
         setErrors({});
-        setMemberId(generatedId);
+        setMemberId(targetMemberId);
         setMember(memberData);
         setShowPending(true);
         setCardReady(false);
       } else {
-        // Registration failed (alert already shown inside saveToSupabase)
         setIsSubmitting(false);
         return;
       }
@@ -571,6 +673,18 @@ NEW MEMBER REGISTRATION DETAILS
   const errorBorder = (field) => {
     return errors[field] ? '1.5px solid #E53E3E' : '1.5px solid #D1C8BC';
   };
+
+  if (loading || loadingExisting) {
+    return (
+      <div style={{
+        display: 'flex', justifyContent: 'center',
+        alignItems: 'center', height: '60vh',
+        color: '#FF6B00', fontSize: '16px'
+      }}>ஏற்றுகிறது... / Loading...</div>
+    );
+  }
+
+  if (!currentUser) return null;
 
   return (
     <section className="bg-secondary px-6 py-16 text-primary md:px-10 tamil-font">
@@ -662,6 +776,74 @@ NEW MEMBER REGISTRATION DETAILS
               </div>
               <div className="border-t border-[#E5DDD0]" />
               <p className="text-center text-lg font-semibold underline decoration-amber decoration-2 underline-offset-4" style={{ color: '#1A1A2E' }}>(உறுப்பினர் படிவம்)</p>
+
+              {/* EDIT / CORRECTION BANNER IF REJECTED OR EDITING */}
+              {existingMember && (
+                <div style={{
+                  background: existingMember.status === 'rejected' ? '#FEF2F2' : '#EFF6FF',
+                  border: existingMember.status === 'rejected' ? '1.5px solid #EF4444' : '1.5px solid #3B82F6',
+                  borderRadius: '12px',
+                  padding: '1rem 1.25rem',
+                  marginBottom: '1rem'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '8px',
+                    marginBottom: '6px'
+                  }}>
+                    <span style={{
+                      fontWeight: '800',
+                      color: existingMember.status === 'rejected' ? '#DC2626' : '#1D4ED8',
+                      fontSize: '14px'
+                    }}>
+                      {existingMember.status === 'rejected'
+                        ? '⚠️ விண்ணப்பத்தை திருத்துதல் / Correcting Rejected Application'
+                        : '✏️ விண்ணப்ப விவரங்களை புதுப்பித்தல் / Edit Application'}
+                    </span>
+                    <span style={{
+                      background: '#FFFFFF',
+                      border: '1px solid #D1D5DB',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontFamily: 'Courier New, monospace',
+                      fontWeight: '800',
+                      fontSize: '12px',
+                      color: '#FF6B00'
+                    }}>
+                      ID: {existingMember.member_id}
+                    </span>
+                  </div>
+
+                  {existingMember.status === 'rejected' && existingMember.rejection_reason && (
+                    <div style={{
+                      marginTop: '8px',
+                      padding: '8px 12px',
+                      background: '#FFFFFF',
+                      borderRadius: '8px',
+                      border: '1px solid #FCA5A5'
+                    }}>
+                      <div style={{ fontSize: '11px', color: '#DC2626', fontWeight: '700', marginBottom: '2px' }}>
+                        நிராகரிப்பு காரணம் / Rejection Reason:
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#1F2937', fontWeight: '600' }}>
+                        {existingMember.rejection_reason}
+                      </div>
+                    </div>
+                  )}
+
+                  <p style={{
+                    fontSize: '12px',
+                    color: existingMember.status === 'rejected' ? '#B91C1C' : '#1E40AF',
+                    marginTop: '8px',
+                    lineHeight: '1.5'
+                  }}>
+                    💡 தவறான விவரங்கள் அல்லது புகைப்படத்தை திருத்தி கீழே உள்ள பட்டனை அழுத்தி மீண்டும் சமர்ப்பிக்கவும். உங்கள் பழைய உறுப்பினர் எண் ({existingMember.member_id}) மாறாது.
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-4 rounded-[12px] p-5" style={{ border: '1.5px solid #E5DDD0' }}>
                 <label className="block">
@@ -944,11 +1126,17 @@ NEW MEMBER REGISTRATION DETAILS
                 background: '#FF6B00',
                 color: '#FFFFFF',
                 opacity: isSubmitting ? 0.7 : 1,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                boxShadow: '0 4px 12px rgba(255, 107, 0, 0.25)'
               }}
             >
               {isSubmitting ? (
-                'பதிவு செய்கிறது... / Registering...'
+                'பதிவு செய்கிறது... / Submitting...'
+              ) : existingMember ? (
+                <>
+                  🔄 திருத்தி மீண்டும் சமர்ப்பிக்க
+                  <span className="ml-3 text-xs uppercase tracking-[0.2em]">Save & Re-Submit</span>
+                </>
               ) : (
                 <>
                   பதிவு செய்க

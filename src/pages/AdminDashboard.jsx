@@ -1042,48 +1042,76 @@ NEW MEMBER REGISTRATION DETAILS
     const errs = validateReg();
     if (Object.keys(errs).length) { setRegErrors(errs); return; }
     setRegSubmitting(true);
-    const memberId = await generateMemberId(newMember.pledgeDistrict);
 
-    let photoUrl = null;
-    if (newMember.photoFile) {
-      try {
-        const file = newMember.photoFile;
-        const path = `members/${memberId}`; // no extension!
-        // Compress before upload
-        const compressed = await compressImageFile(file);
-        const { data, error } = await supabase.storage
-          .from('member-photos')
-          .upload(path, compressed, {
-            contentType: 'image/jpeg',
-            upsert: true
-          });
-        if (error) throw error;
-        const { data: urlData } = supabase.storage
-          .from('member-photos')
-          .getPublicUrl(data.path);
-        // Append cache-buster so browser fetches the fresh image
-        photoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-      } catch (err) {
-        console.error('Admin photo upload failed:', err);
+    try {
+      // Check duplicate mobile in members
+      const { data: dupMobile } = await supabase
+        .from('members')
+        .select('member_id, full_name')
+        .eq('mobile', newMember.mobile)
+        .maybeSingle();
+
+      if (dupMobile) {
+        alert(`இந்த கைபேசி எண் ஏற்கனவே பதிவாகியுள்ளது / This mobile number is already registered.\nMember: ${dupMobile.full_name} (${dupMobile.member_id})`);
+        setRegSubmitting(false);
+        return;
       }
-    }
 
-    const record = {
-      member_id: memberId, user_id: null, full_name: newMember.fullName,
-      posting: newMember.posting,
-      dob: newMember.dob,
-      blood_group: newMember.bloodGroup, mobile: newMember.mobile, aadhar: newMember.aadhaar,
-      address: newMember.address, org_address: newMember.companyAddress || '', district: newMember.pledgeDistrict,
-      branch: newMember.pledgeBranch || '', nominee_name: newMember.nomineeName || '',
-      nominee_phone: newMember.nomineeMobile || '', join_date: joiningDate,
-      referrer: newMember.referral || '', 
-      photo_url: photoUrl,
-      photo_base64: photoUrl ? null : (newMember.photoPreview || null),
-      registered_at: new Date().toISOString(),
-    };
-    const { data, error } = await supabase.from('members').insert(record).select().single();
-    setRegSubmitting(false);
-    if (error) { alert('Error: ' + error.message); return; }
+      // Check duplicate Aadhaar in members
+      const { data: dupAadhaar } = await supabase
+        .from('members')
+        .select('member_id, full_name')
+        .eq('aadhar', newMember.aadhaar)
+        .maybeSingle();
+
+      if (dupAadhaar) {
+        alert(`இந்த ஆதார் எண் ஏற்கனவே பதிவாகியுள்ளது / This Aadhaar is already registered.\nMember: ${dupAadhaar.full_name} (${dupAadhaar.member_id})`);
+        setRegSubmitting(false);
+        return;
+      }
+
+      const memberId = await generateMemberId(newMember.pledgeDistrict);
+
+      let photoUrl = null;
+      if (newMember.photoFile) {
+        try {
+          const file = newMember.photoFile;
+          const path = `members/${memberId}`; // no extension!
+          // Compress before upload
+          const compressed = await compressImageFile(file);
+          const { data, error } = await supabase.storage
+            .from('member-photos')
+            .upload(path, compressed, {
+              contentType: 'image/jpeg',
+              upsert: true
+            });
+          if (error) throw error;
+          const { data: urlData } = supabase.storage
+            .from('member-photos')
+            .getPublicUrl(data.path);
+          // Append cache-buster so browser fetches the fresh image
+          photoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+        } catch (err) {
+          console.error('Admin photo upload failed:', err);
+        }
+      }
+
+      const record = {
+        member_id: memberId, user_id: null, full_name: newMember.fullName,
+        posting: newMember.posting,
+        dob: newMember.dob,
+        blood_group: newMember.bloodGroup, mobile: newMember.mobile, aadhar: newMember.aadhaar,
+        address: newMember.address, org_address: newMember.companyAddress || '', district: newMember.pledgeDistrict,
+        branch: newMember.pledgeBranch || '', nominee_name: newMember.nomineeName || '',
+        nominee_phone: newMember.nomineeMobile || '', join_date: joiningDate,
+        referrer: newMember.referral || '', 
+        photo_url: photoUrl,
+        photo_base64: photoUrl ? null : (newMember.photoPreview || null),
+        status: 'pending',
+        registered_at: new Date().toISOString(),
+      };
+      const { data, error } = await supabase.from('members').insert(record).select().single();
+      if (error) throw error;
 
     // Fix: mark matching user as registered (find by mobile number)
     if (newMember.mobile) {
@@ -1115,9 +1143,15 @@ NEW MEMBER REGISTRATION DETAILS
       }
     }
 
-    await sendAdminNotification(newMember, memberId);
-    setRegSuccess(data);
-    await loadMembers();
+      await sendAdminNotification(newMember, memberId);
+      setRegSuccess(data);
+      await loadMembers();
+    } catch (err) {
+      console.error('Admin reg error:', err);
+      alert('Error: ' + err.message);
+    } finally {
+      setRegSubmitting(false);
+    }
   };
   const resetRegForm = () => { setNewMember(EMPTY_REGISTER_FORM); setRegErrors({}); setRegSuccess(null); };
 

@@ -293,35 +293,39 @@ function Profile() {
                   விண்ணப்பம் நிராகரிக்கப்பட்டது
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '1rem' }}>
-                  Your application was rejected.
+                  Your application was rejected. Please correct the details/photo and re-submit.
                 </p>
                 {memberData.rejection_reason && (
                   <div style={{
                     background: '#FEE2E2', border: '1px solid #EF4444',
                     borderRadius: '8px', padding: '0.8rem 1rem',
-                    marginBottom: '1.5rem', textAlign: 'left'
+                    marginBottom: '1rem', textAlign: 'left'
                   }}>
                     <div style={{ fontSize: '11px', color: '#DC2626', fontWeight: '700', marginBottom: '4px' }}>காரணம் / Reason:</div>
-                    <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{memberData.rejection_reason}</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>{memberData.rejection_reason}</div>
                   </div>
                 )}
+                <div style={{
+                  background: '#FEF3C7', border: '1px solid #F59E0B',
+                  borderRadius: '8px', padding: '0.8rem 1rem', marginBottom: '1.2rem'
+                }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>உறுப்பினர் எண் / Member ID</div>
+                  <div style={{ fontFamily: 'Courier New, monospace', fontSize: '13px', fontWeight: '900', color: '#FF6B00' }}>
+                    {memberData.member_id}
+                  </div>
+                </div>
                 <button
-                  onClick={async () => {
-                    if (window.confirm('மீண்டும் விண்ணப்பிக்கவா? / Apply again?')) {
-                      await supabase.from('members').delete().eq('member_id', memberData.member_id);
-                      await supabase.from('users').update({ has_registered: false, member_id: null }).eq('id', currentUser.id);
-                      await refreshProfile();
-                      setMemberData(null);
-                      navigate('/register');
-                    }
+                  onClick={() => {
+                    navigate('/register?mode=edit');
                   }}
                   style={{
                     background: '#FF6B00', color: '#fff', border: 'none',
                     borderRadius: '8px', padding: '12px 24px', fontSize: '14px',
-                    fontWeight: '700', cursor: 'pointer', width: '100%'
+                    fontWeight: '700', cursor: 'pointer', width: '100%',
+                    boxShadow: '0 4px 12px rgba(255, 107, 0, 0.2)'
                   }}
                 >
-                  🔄 மீண்டும் விண்ணப்பிக்க / Re-Apply
+                  ✏️ விவரங்களை திருத்தி மீண்டும் சமர்ப்பிக்க / Edit & Re-Submit Application
                 </button>
               </div>
 
