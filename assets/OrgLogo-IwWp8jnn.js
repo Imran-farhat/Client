@@ -1,0 +1,1 @@
+import{j as o}from"./index-C59T_q-U.js";const r="/assets/logo-lsy9egl_.jpeg";function t({size:e=56}){return o.jsx("div",{className:"inline-flex items-center justify-center overflow-hidden rounded-full border-2 border-amber bg-[#003366]",style:{width:e,height:e,minWidth:e},children:o.jsx("img",{src:r,alt:"TIWTN Logo",className:"h-full w-full object-cover"})})}export{t as O};
