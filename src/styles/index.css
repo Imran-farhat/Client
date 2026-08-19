@@ -88,17 +88,42 @@ button {
 
 input, select, textarea {
   width: 100%;
-  background: var(--input-bg);
-  border: 1.5px solid var(--input-border);
-  color: var(--input-text);
+  background-color: var(--input-bg, #FFFFFF);
+  border: 1.5px solid var(--input-border, #D1C8BC);
+  color: var(--input-text, #1A1A2E);
+  -webkit-text-fill-color: var(--input-text, #1A1A2E);
   padding: 0.9rem 1rem;
   border-radius: 0.75rem;
-  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #FFFFFF inset !important;
+  -webkit-text-fill-color: #1A1A2E !important;
+  box-shadow: 0 0 0px 1000px #FFFFFF inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover, 
+html.dark input:-webkit-autofill:focus,
+html.dark textarea:-webkit-autofill,
+html.dark textarea:-webkit-autofill:hover,
+html.dark textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #111111 inset !important;
+  -webkit-text-fill-color: #F0F0F0 !important;
+  box-shadow: 0 0 0px 1000px #111111 inset !important;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--input-placeholder);
+  color: var(--input-placeholder, #6B7280);
+  opacity: 1;
 }
 
 select {
@@ -113,8 +138,14 @@ select {
 }
 
 select option {
-  background: var(--bg-card);
-  color: var(--text-primary);
+  background-color: var(--bg-card, #FFFFFF);
+  color: var(--text-primary, #1A1A2E);
+  padding: 8px 12px;
+}
+
+html.dark select option {
+  background-color: #1C1C1C;
+  color: #F0F0F0;
 }
 
 input:focus, select:focus, textarea:focus {

@@ -248,6 +248,7 @@ function Register() {
       console.log('Member record:', memberRecord);
 
       let saveError = null;
+      let finalMemberId = effectiveMemberId;
 
       if (isUpdate) {
         // Update existing member record using SAME original member_id
@@ -257,20 +258,39 @@ function Register() {
           .eq('member_id', effectiveMemberId);
         saveError = updateErr;
       } else {
-        // Insert new member record
-        const { error: insertErr } = await supabase
-          .from('members')
-          .insert(memberRecord);
-        saveError = insertErr;
+        // Insert new member record with auto-retry if member_id collides
+        let currentId = effectiveMemberId;
+        let insertSuccess = false;
+        let retryCount = 0;
+
+        while (!insertSuccess && retryCount < 10) {
+          memberRecord.member_id = currentId;
+          const { error: insertErr } = await supabase
+            .from('members')
+            .insert(memberRecord);
+
+          if (!insertErr) {
+            insertSuccess = true;
+            finalMemberId = currentId;
+            saveError = null;
+          } else if (insertErr.message?.includes('members_member_id_key') || insertErr.message?.includes('duplicate key') || insertErr.code === '23505') {
+            console.warn(`member_id ${currentId} collided, retrying with next sequence...`);
+            retryCount++;
+            currentId = await generateMemberId(formData.pledgeDistrict, retryCount);
+          } else {
+            saveError = insertErr;
+            break;
+          }
+        }
       }
 
       if (saveError) {
         console.error('Supabase save error:', saveError);
         alert('பதிவு சேமிக்கப்படவில்லை: ' + saveError.message);
-        return false;
+        return { success: false, memberId: finalMemberId };
       }
 
-      console.log('Saved successfully');
+      console.log('Saved successfully with ID:', finalMemberId);
 
       // Update user profile if logged in
       if (currentUser?.id) {
@@ -278,7 +298,7 @@ function Register() {
           .from('users')
           .update({
             has_registered: true,
-            member_id: effectiveMemberId,
+            member_id: finalMemberId,
             name: formData.fullName,
             mobile: formData.mobile
           })
@@ -294,7 +314,7 @@ function Register() {
       localStorage.removeItem('tiwtn_registered');
       localStorage.removeItem('tiwtn_member_data');
 
-      return true;
+      return { success: true, memberId: finalMemberId };
     } catch (err) {
       console.error('Save error:', err);
       alert('பிழை: ' + err.message);
@@ -594,15 +614,18 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
       };
 
       // Save to Supabase (update if existing member, insert if new)
-      const saved = await saveToSupabase(form, targetMemberId, photoUrl, isUpdate);
-      console.log('Save result:', saved);
+      const saveResult = await saveToSupabase(form, targetMemberId, photoUrl, isUpdate);
+      console.log('Save result:', saveResult);
 
-      if (saved) {
-        await sendAdminNotification(form, targetMemberId, isUpdate);
+      if (saveResult?.success) {
+        const assignedId = saveResult.memberId || targetMemberId;
+        memberData.memberId = assignedId;
+        
+        await sendAdminNotification(form, assignedId, isUpdate);
         
         // Show pending screen
         setErrors({});
-        setMemberId(targetMemberId);
+        setMemberId(assignedId);
         setMember(memberData);
         setShowPending(true);
         setCardReady(false);
@@ -853,7 +876,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                       value={form.fullName}
                       onChange={handleChange('fullName')}
                       placeholder="பெயர் / Full Name"
-                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('fullName'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
+                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('fullName'), width: '100%', backgroundColor: '#FFFFFF', color: '#1A1A2E', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: '#1A1A2E', caretColor: '#FF6B00' }}
                       className="focus:border-amber"
                     />
                   </div>
@@ -867,7 +890,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                       value={form.posting}
                       onChange={handleChange('posting')}
                       placeholder="பதவி / Posting (வெல்டர் / Welder)"
-                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('posting'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
+                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('posting'), width: '100%', backgroundColor: '#FFFFFF', color: '#1A1A2E', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: '#1A1A2E', caretColor: '#FF6B00' }}
                       className="focus:border-amber"
                     />
                   </div>
@@ -882,7 +905,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                       value={form.address}
                       onChange={handleChange('address')}
                       placeholder="முகவரி / Address"
-                      style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('address'), width: '100%', resize: 'vertical', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', minHeight: '44px', WebkitTextFillColor: 'var(--text-primary)' }}
+                      style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('address'), width: '100%', resize: 'vertical', backgroundColor: '#FFFFFF', color: '#1A1A2E', fontFamily: 'Catamaran, sans-serif', outline: 'none', minHeight: '44px', WebkitTextFillColor: '#1A1A2E' }}
                       className="focus:border-amber"
                     />
                   </div>
@@ -897,7 +920,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                       value={form.companyAddress}
                       onChange={handleChange('companyAddress')}
                       placeholder="நிறுவன முகவரி / Organization Address"
-                      style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('companyAddress'), width: '100%', resize: 'vertical', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', minHeight: '44px', WebkitTextFillColor: 'var(--text-primary)' }}
+                      style={{ padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('companyAddress'), width: '100%', resize: 'vertical', backgroundColor: '#FFFFFF', color: '#1A1A2E', fontFamily: 'Catamaran, sans-serif', outline: 'none', minHeight: '44px', WebkitTextFillColor: '#1A1A2E' }}
                       className="focus:border-amber"
                     />
                   </div>
@@ -913,7 +936,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                         placeholder="இரத்த பிரிவு / Blood Group"
                         value={form.bloodGroup}
                         onChange={handleChange('bloodGroup')}
-                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('bloodGroup'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
+                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('bloodGroup'), width: '100%', backgroundColor: '#FFFFFF', color: '#1A1A2E', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: '#1A1A2E', caretColor: '#FF6B00' }}
                         className="focus:border-amber"
                       />
                     </div>
@@ -927,7 +950,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                         type="date"
                         value={form.dob}
                         onChange={handleChange('dob')}
-                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('dob'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
+                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('dob'), width: '100%', backgroundColor: '#FFFFFF', color: '#1A1A2E', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: '#1A1A2E', caretColor: '#FF6B00' }}
                         className="focus:border-amber"
                       />
                     </div>
@@ -945,7 +968,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                         maxLength={12}
                         onChange={handleChange('aadhaar')}
                         placeholder="12 இலக்கங்கள் / 12 digits"
-                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('aadhaar'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
+                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('aadhaar'), width: '100%', backgroundColor: '#FFFFFF', color: '#1A1A2E', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: '#1A1A2E', caretColor: '#FF6B00' }}
                         className="focus:border-amber"
                       />
                     </div>
@@ -961,7 +984,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                         maxLength={10}
                         onChange={handleChange('mobile')}
                         placeholder="10 இலக்கங்கள் / 10 digits"
-                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('mobile'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
+                        style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('mobile'), width: '100%', backgroundColor: '#FFFFFF', color: '#1A1A2E', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: '#1A1A2E', caretColor: '#FF6B00' }}
                         className="focus:border-amber"
                       />
                     </div>
@@ -976,7 +999,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                       value={form.nomineeName}
                       onChange={handleChange('nomineeName')}
                       placeholder="வாரிசுதாரர் பெயர் / Nominee Name"
-                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('nomineeName'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
+                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('nomineeName'), width: '100%', backgroundColor: '#FFFFFF', color: '#1A1A2E', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: '#1A1A2E', caretColor: '#FF6B00' }}
                       className="focus:border-amber"
                     />
                   </div>
@@ -992,7 +1015,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                       maxLength={10}
                       onChange={handleChange('nomineeMobile')}
                       placeholder="10 இலக்கங்கள் / 10 digits"
-                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('nomineeMobile'), width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: 'var(--text-primary)', caretColor: 'var(--text-primary)' }}
+                      style={{ height: '44px', padding: '10px 14px', fontSize: '14px', borderRadius: '8px', border: errorBorder('nomineeMobile'), width: '100%', backgroundColor: '#FFFFFF', color: '#1A1A2E', fontFamily: 'Catamaran, sans-serif', outline: 'none', WebkitTextFillColor: '#1A1A2E', caretColor: '#FF6B00' }}
                       className="focus:border-amber"
                     />
                   </div>
@@ -1036,12 +1059,12 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                       onChange={handleChange('pledgeDistrict')}
                       style={{
                         height: '44px',
-                        background: 'var(--bg-card)',
-                        border: errors.pledgeDistrict ? '1.5px solid #E53E3E' : '1.5px solid var(--border)',
+                        backgroundColor: '#FFFFFF',
+                        border: errors.pledgeDistrict ? '1.5px solid #E53E3E' : '1.5px solid var(--border, #D1C8BC)',
                         borderRadius: '8px',
                         padding: '10px 14px',
                         fontSize: '14px',
-                        color: 'var(--text-primary)',
+                        color: '#1A1A2E',
                         fontFamily: 'Catamaran, sans-serif',
                         width: '100%',
                         outline: 'none',
@@ -1049,9 +1072,9 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                         appearance: 'auto'
                       }}
                     >
-                      <option value="">-- மாவட்டம் தேர்வு செய்க --</option>
+                      <option value="" style={{ color: '#1A1A2E', backgroundColor: '#FFFFFF' }}>-- மாவட்டம் தேர்வு செய்க / Select District --</option>
                       {TAMIL_NADU_DISTRICTS.map((district) => (
-                        <option key={district} value={district}>{district}</option>
+                        <option key={district} value={district} style={{ color: '#1A1A2E', backgroundColor: '#FFFFFF' }}>{district}</option>
                       ))}
                     </select>
                   </div>
@@ -1067,11 +1090,49 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                 </div>
                 <p className="text-[13px] leading-[1.8] md:text-sm" style={{ color: '#1A1A2E' }}>
                   ஐயா,
-                  <input value={form.pledgeName} onChange={handleChange('pledgeName')} placeholder="Name" style={{ background: 'transparent', border: 'none', borderBottom: '1.5px solid #003366', color: '#1A1A2E', WebkitTextFillColor: '#1A1A2E', fontFamily: 'inherit', fontSize: 'inherit', padding: '0 4px', width: '180px', borderRadius: '0', display: 'inline', outline: 'none' }} />
+                  <input
+                    value={form.pledgeName}
+                    onChange={handleChange('pledgeName')}
+                    placeholder="Name"
+                    style={{
+                      backgroundColor: '#FFFFFF',
+                      border: '1.5px solid #003366',
+                      color: '#1A1A2E',
+                      WebkitTextFillColor: '#1A1A2E',
+                      fontFamily: 'inherit',
+                      fontSize: 'inherit',
+                      padding: '4px 10px',
+                      width: '200px',
+                      borderRadius: '8px',
+                      display: 'inline-block',
+                      outline: 'none',
+                      margin: '0 4px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                    }}
+                  />
                   ஆகிய நான் தென் இந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கத்தின்
                   {' '}<strong>{form.pledgeDistrict || '___________'}</strong>{' '}
                   மாவட்டம்
-                  <input value={form.pledgeBranch} onChange={handleChange('pledgeBranch')} placeholder="Branch" style={{ background: 'transparent', border: 'none', borderBottom: '1.5px solid #003366', color: '#1A1A2E', WebkitTextFillColor: '#1A1A2E', fontFamily: 'inherit', fontSize: 'inherit', padding: '0 4px', width: '140px', borderRadius: '0', display: 'inline', outline: 'none' }} />
+                  <input
+                    value={form.pledgeBranch}
+                    onChange={handleChange('pledgeBranch')}
+                    placeholder="Branch"
+                    style={{
+                      backgroundColor: '#FFFFFF',
+                      border: '1.5px solid #003366',
+                      color: '#1A1A2E',
+                      WebkitTextFillColor: '#1A1A2E',
+                      fontFamily: 'inherit',
+                      fontSize: 'inherit',
+                      padding: '4px 10px',
+                      width: '160px',
+                      borderRadius: '8px',
+                      display: 'inline-block',
+                      outline: 'none',
+                      margin: '0 4px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                    }}
+                  />
                   கிளைசங்கத்தில் உறுப்பினராக சேர்ந்து பணியாற்ற சம்மதிக்கின்றேன்.
                 </p>
                 <p className="mt-4 text-[13px] leading-[1.8] md:text-sm" style={{ color: '#1A1A2E' }}>
@@ -1092,7 +1153,23 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                 <div className="flex flex-col gap-3 rounded-[12px] p-4" style={{ border: '1.5px solid #E5DDD0' }}>
                   <div className="flex items-center gap-3 text-sm">
                     <span className="font-semibold" style={{ color: '#2C3E6B' }}>பரிந்துரை / Referral:</span>
-                    <input value={form.referral} onChange={handleChange('referral')} placeholder="பரிந்துரை / Referral name" style={{ border: 'none', background: 'transparent', color: '#1A1A2E', WebkitTextFillColor: '#1A1A2E', padding: '0', outline: 'none', fontFamily: 'inherit', fontSize: 'inherit', flex: 1 }} />
+                    <input
+                      value={form.referral}
+                      onChange={handleChange('referral')}
+                      placeholder="பரிந்துரை / Referral name"
+                      style={{
+                        border: '1.5px solid #E5DDD0',
+                        backgroundColor: '#FFFFFF',
+                        color: '#1A1A2E',
+                        WebkitTextFillColor: '#1A1A2E',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        outline: 'none',
+                        fontFamily: 'inherit',
+                        fontSize: '14px',
+                        flex: 1
+                      }}
+                    />
                   </div>
                   <div className="mt-3 pt-3 text-sm" style={{ borderTop: '1px solid #E5DDD0' }}>
                     <div className="font-semibold" style={{ color: '#2C3E6B' }}>உறுப்பினர் கையொப்பம்</div>
