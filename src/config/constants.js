@@ -16,3 +16,6 @@ export const ORG_ADDRESS =
 
 export const ORG_EMAIL = 'thenindiawelding@gmail.com'
 export const ORG_PHONE = '+91 98765 43210'
+
+export const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dejryogbg'
+export const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'member_preset'

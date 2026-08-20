@@ -6,11 +6,12 @@ import { generateMemberId } from '../utils/memberIdUtils';
 import { printMemberForm } from '../utils/printMemberForm';
 import { bulkDownloadMembers } from '../utils/bulkDownload.jsx';
 import PageLoader from '../components/PageLoader';
+import { uploadToCloudinary } from '../utils/cloudinary';
 
 const getPhotoSrc = (member) =>
+  member?.photoPreview ||
   member?.photo_url ||
   member?.photo_base64 ||
-  member?.photoPreview ||
   null;
 
 const TAMIL_NADU_DISTRICTS = [
@@ -763,25 +764,33 @@ function AdminDashboard() {
       // If admin selected a new photo file
       if (editPhotoFile) {
         try {
-          const path = `members/${effectiveMemberId}`; // no extension!
           // Compress before upload
           const compressed = await compressImageFile(editPhotoFile);
-          const { data, error } = await supabase.storage
-            .from('member-photos')
-            .upload(path, compressed, {
-              contentType: 'image/jpeg',
-              upsert: true  // overwrite existing
-            });
 
-          if (error) throw error;
+          // 1. Upload to Cloudinary (Primary)
+          const cloudinaryUrl = await uploadToCloudinary(compressed, effectiveMemberId);
+          if (cloudinaryUrl) {
+            newPhotoUrl = cloudinaryUrl;
+            newPhotoBase64 = null;
+          } else {
+            // 2. Fallback to Supabase Storage
+            const path = `members/${effectiveMemberId}`;
+            const { data, error } = await supabase.storage
+              .from('member-photos')
+              .upload(path, compressed, {
+                contentType: 'image/jpeg',
+                upsert: true
+              });
 
-          const { data: urlData } = supabase.storage
-            .from('member-photos')
-            .getPublicUrl(data.path);
+            if (error) throw error;
 
-          // Append cache-buster so browser fetches the fresh image (upsert keeps same URL)
-          newPhotoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-          newPhotoBase64 = null; // clear old base64
+            const { data: urlData } = supabase.storage
+              .from('member-photos')
+              .getPublicUrl(data.path);
+
+            newPhotoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+            newPhotoBase64 = null;
+          }
         } catch (err) {
           console.error('Photo upload failed:', err);
           alert('படம் பதிவேற்றம் தோல்வி / Photo upload failed');
@@ -1076,21 +1085,28 @@ NEW MEMBER REGISTRATION DETAILS
       if (newMember.photoFile) {
         try {
           const file = newMember.photoFile;
-          const path = `members/${memberId}`; // no extension!
           // Compress before upload
           const compressed = await compressImageFile(file);
-          const { data, error } = await supabase.storage
-            .from('member-photos')
-            .upload(path, compressed, {
-              contentType: 'image/jpeg',
-              upsert: true
-            });
-          if (error) throw error;
-          const { data: urlData } = supabase.storage
-            .from('member-photos')
-            .getPublicUrl(data.path);
-          // Append cache-buster so browser fetches the fresh image
-          photoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+          // 1. Upload to Cloudinary
+          const cloudinaryUrl = await uploadToCloudinary(compressed, memberId);
+          if (cloudinaryUrl) {
+            photoUrl = cloudinaryUrl;
+          } else {
+            // 2. Fallback to Supabase Storage
+            const path = `members/${memberId}`;
+            const { data, error } = await supabase.storage
+              .from('member-photos')
+              .upload(path, compressed, {
+                contentType: 'image/jpeg',
+                upsert: true
+              });
+            if (error) throw error;
+            const { data: urlData } = supabase.storage
+              .from('member-photos')
+              .getPublicUrl(data.path);
+            photoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+          }
         } catch (err) {
           console.error('Admin photo upload failed:', err);
         }

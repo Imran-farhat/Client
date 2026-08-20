@@ -6,6 +6,7 @@ import OrgLogo from '../components/OrgLogo';
 import { supabase } from '../supabase/client';
 import { useAuth } from '../context/AuthContext';
 import { generateMemberId } from '../utils/memberIdUtils';
+import { uploadToCloudinary } from '../utils/cloudinary';
 
 const getPhotoSrc = (member) =>
   member?.photoPreview ||
@@ -492,7 +493,16 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
     try {
       // Compress to JPEG (max 800px, 75% quality) before uploading
       const compressed = await compressImageFile(file);
-      const path = `members/${currentMemberId}`; // no extension!
+
+      // 1. Primary: Cloudinary (25GB Free, Fast CDN, Zero Bandwidth Limit)
+      const cloudinaryUrl = await uploadToCloudinary(compressed, currentMemberId);
+      if (cloudinaryUrl) {
+        console.log('Photo uploaded to Cloudinary:', cloudinaryUrl);
+        return cloudinaryUrl;
+      }
+
+      // 2. Fallback: Supabase Storage if needed
+      const path = `members/${currentMemberId}`;
       const { data, error } = await supabase.storage
         .from('member-photos')
         .upload(path, compressed, {
@@ -503,7 +513,6 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
       const { data: urlData } = supabase.storage
         .from('member-photos')
         .getPublicUrl(data.path);
-      // Append cache-buster so browser fetches the fresh image (upsert keeps same URL)
       return `${urlData.publicUrl}?t=${Date.now()}`;
     } catch (err) {
       console.error('Storage upload failed:', err);
