@@ -1262,7 +1262,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                   <div style={{ height: '1px', background: '#E5DDD0' }} />
                 </div>
                 <div className="rounded-[12px] p-4 text-center text-sm" style={{ border: '1.5px solid #E5DDD0' }}>
-                  <div className="mb-3 font-semibold" style={{ color: '#1A1A2E' }}>மாநில செயலாளர்</div>
+                  <div className="mb-3 font-semibold" style={{ color: '#1A1A2E' }}>பொதுச்செயலாளர்</div>
                   <div style={{ height: '1px', background: '#E5DDD0' }} />
                 </div>
                 <div className="rounded-[12px] p-4 text-center text-sm" style={{ border: '1.5px solid #E5DDD0' }}>
@@ -1355,7 +1355,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                 </div>
                 <div style={{ textAlign: 'center', flex: 1 }}>
                   <div style={{ width: '160px', height: '1px', background: '#003366', margin: '0 auto 8px' }} />
-                  <p style={{ color: '#666', fontSize: '11px' }}>மாநில செயலாளர்</p>
+                  <p style={{ color: '#666', fontSize: '11px' }}>பொதுச்செயலாளர்</p>
                 </div>
                 <div style={{ textAlign: 'center', flex: 1 }}>
                   <div style={{ width: '160px', height: '1px', background: '#003366', margin: '0 auto 8px' }} />

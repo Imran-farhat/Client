@@ -20,8 +20,8 @@ const AUTHORITIES = [
   {
     sign: idhreesSign,
     nameTamil: 'ம. முகமது இத்ரீஸ்',
-    role: 'மாநில செயலாளர்',
-    roleEn: 'State Secretary'
+    role: 'பொதுச்செயலாளர்',
+    roleEn: 'General Secretary'
   },
   {
     sign: muraliSign,

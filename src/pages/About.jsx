@@ -7,7 +7,7 @@ import SEO from '../components/SEO';
 function About() {
   const team = [
     { name: 'A.பாலாஜி ', role: 'மாநில தலைவர்', photo: balajiPhoto, photoPosition: 'center center' },
-    { name: 'M.முகமது இத்ரீஸ்', role: 'மாநில செயலாளர்', photo: idhreesPhoto, photoPosition: 'center 25%' },
+    { name: 'M.முகமது இத்ரீஸ்', role: 'பொதுச்செயலாளர்', photo: idhreesPhoto, photoPosition: 'center 25%' },
     { name: 'A.முரளிதரன்', role: 'மாநில பொருளாளர்', photo: muraliPhoto, photoPosition: 'center center' },
   ];
 

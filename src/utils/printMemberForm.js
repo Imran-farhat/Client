@@ -450,7 +450,7 @@ export const printMemberForm = (member) => {
 <!-- AUTHORITY ROW -->
 <div class="authority-section">
   <div class="auth-col">மாநில தலைவர்</div>
-  <div class="auth-col">மாநில செயலாளர்</div>
+  <div class="auth-col">பொதுச்செயலாளர்</div>
   <div class="auth-col">மாநில பொருளாளர்</div>
 </div>
 

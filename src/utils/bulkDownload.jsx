@@ -179,7 +179,7 @@ const buildFormPage = (member) => {
     '<div class="sign-right"><div class="sign-line">உறுப்பினர் கையொப்பம்</div></div>',
     '</div>',
     '<div class="authority-section">',
-    '<div class="auth-col">மாநில தலைவர்</div><div class="auth-col">மாநில செயலாளர்</div><div class="auth-col">மாநில பொருளாளர்</div>',
+    '<div class="auth-col">மாநில தலைவர்</div><div class="auth-col">பொதுச்செயலாளர்</div><div class="auth-col">மாநில பொருளாளர்</div>',
     '</div>',
     '</div>'
   ].join('\n');
