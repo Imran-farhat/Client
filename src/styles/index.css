@@ -148,6 +148,38 @@ html.dark select option {
   color: #F0F0F0;
 }
 
+/* Register form select — always light bg / dark text regardless of theme */
+.register-form select {
+  appearance: menulist !important;
+  -webkit-appearance: menulist !important;
+  -moz-appearance: menulist !important;
+  background-image: none !important;
+  background-color: #FFFFFF !important;
+  color: #1A1A2E !important;
+  -webkit-text-fill-color: #1A1A2E !important;
+  opacity: 1 !important;
+}
+
+.register-form select option {
+  background-color: #FFFFFF !important;
+  color: #1A1A2E !important;
+}
+
+html.dark .register-form select {
+  appearance: menulist !important;
+  -webkit-appearance: menulist !important;
+  -moz-appearance: menulist !important;
+  background-image: none !important;
+  background-color: #FFFFFF !important;
+  color: #1A1A2E !important;
+  -webkit-text-fill-color: #1A1A2E !important;
+}
+
+html.dark .register-form select option {
+  background-color: #FFFFFF !important;
+  color: #1A1A2E !important;
+}
+
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--amber);

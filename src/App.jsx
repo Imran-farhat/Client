@@ -33,7 +33,7 @@ const pageTitles = {
   '/admin': 'Admin Dashboard | தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்',
 };
 
-const MAINTENANCE_MODE = true; // Set to true to block access, false to resume live site
+const MAINTENANCE_MODE = false; // Set to true to block access, false to resume live site
 
 function App() {
   const location = useLocation();

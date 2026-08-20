@@ -129,16 +129,27 @@ function Navbar() {
                   cursor: 'pointer',
                   color: '#fff', fontWeight: '800',
                   fontSize: '15px',
-                  border: '2px solid #FFB347'
+                  border: '2px solid #FFB347',
+                  overflow: 'hidden'
                 }}
               >
-                {currentUser?.user_metadata?.avatar_url
-                  ? <img src={currentUser.user_metadata.avatar_url}
-                      style={{ width:'100%', height:'100%',
-                      borderRadius:'50%', objectFit:'cover' }} alt="Avatar" />
-                  : (currentUser?.user_metadata?.full_name ||
-                     currentUser?.email)?.charAt(0).toUpperCase()
-                }
+                {currentUser?.user_metadata?.avatar_url ? (
+                  <img
+                    src={currentUser.user_metadata.avatar_url}
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement.setAttribute('data-fallback', 'true');
+                    }}
+                    style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', display: 'block' }}
+                    alt="Avatar"
+                  />
+                ) : (
+                  <span style={{ lineHeight: 1 }}>
+                    {(currentUser?.user_metadata?.full_name || currentUser?.email)?.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
 
               {/* Dropdown — only shown when dropOpen */}

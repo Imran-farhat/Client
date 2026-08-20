@@ -20,16 +20,44 @@ export const AuthProvider = ({ children }) => {
       
       if (error) {
         console.error('Error fetching profile:', error.message)
-        return
       }
 
+      // Check members table directly to ensure registration status is 100% accurate
+      let memberRec = null;
+      try {
+        const { data: mData } = await supabase
+          .from('members')
+          .select('member_id, status')
+          .eq('user_id', userId)
+          .maybeSingle();
+        memberRec = mData;
+      } catch (mErr) {
+        console.warn('Could not query members table for registration check:', mErr.message);
+      }
+
+      const isRegistered = Boolean(data?.has_registered || memberRec);
+      const effectiveMemberId = data?.member_id || memberRec?.member_id || null;
+
       if (data) {
-        setUserProfile(data)
-        setIsAdmin(data.role === 'admin')
+        const updatedProfile = {
+          ...data,
+          has_registered: isRegistered,
+          member_id: effectiveMemberId
+        };
+        setUserProfile(updatedProfile);
+        setIsAdmin(data.role === 'admin');
+
+        // Auto-sync users table if members record exists but users row was out of sync
+        if (memberRec && (!data.has_registered || !data.member_id)) {
+          supabase
+            .from('users')
+            .update({ has_registered: true, member_id: memberRec.member_id })
+            .eq('id', userId)
+            .then(() => {});
+        }
       } else {
         // User logged in but profile row doesn't exist yet (e.g. initial write failed)
-        // Let's lazy-create the profile row now.
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           const newProfile = {
             id: session.user.id,
@@ -39,24 +67,26 @@ export const AuthProvider = ({ children }) => {
             photo: session.user.user_metadata?.avatar_url || null,
             provider: session.user.app_metadata?.provider || 'email',
             role: 'member',
-            has_registered: false,
+            has_registered: isRegistered,
+            member_id: effectiveMemberId,
             last_login: new Date().toISOString()
-          }
+          };
           
           const { error: insertError } = await supabase
             .from('users')
-            .insert(newProfile)
+            .insert(newProfile);
           
           if (!insertError) {
-            setUserProfile(newProfile)
-            setIsAdmin(newProfile.role === 'admin')
+            setUserProfile(newProfile);
+            setIsAdmin(newProfile.role === 'admin');
           } else {
-            console.error('Failed to lazy-create user profile:', insertError.message)
+            console.error('Failed to lazy-create user profile:', insertError.message);
+            setUserProfile(newProfile); // Still set in state so UI functions
           }
         }
       }
     } catch (err) {
-      console.error('Exception fetching profile:', err)
+      console.error('Exception fetching profile:', err);
     }
   }
 

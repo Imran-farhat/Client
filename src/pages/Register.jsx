@@ -8,55 +8,70 @@ import { useAuth } from '../context/AuthContext';
 import { generateMemberId } from '../utils/memberIdUtils';
 
 const getPhotoSrc = (member) =>
+  member?.photoPreview ||
   member?.photo_url ||
   member?.photo_base64 ||
-  member?.photoPreview ||
   null;
 
 
 
 const TAMIL_NADU_DISTRICTS = [
   "அரியலூர்",
-  "ஈரோடு",
-  "காஞ்சிபுரம்",
-  "காரைக்கால்",
-  "கடலூர்",
-  "கரூர்",
-  "கன்னியாகுமரி",
-  "கள்ளக்குறிச்சி",
-  "கிருஷ்ணகிரி",
-  "கோயம்புத்தூர்",
-  "சிவகங்கை",
-  "சேலம்",
   "செங்கல்பட்டு",
   "சென்னை",
-  "தஞ்சாவூர்",
+  "கோயம்புத்தூர்",
+  "கடலூர்",
   "தர்மபுரி",
   "திண்டுக்கல்",
-  "திருச்சிராப்பள்ளி",
-  "திருநெல்வேலி",
-  "திருப்பத்தூர்",
-  "திருப்பூர்",
-  "திருவண்ணாமலை",
-  "திருவாரூர்",
-  "திருவள்ளூர்",
-  "தூத்துக்குடி",
-  "தேனி",
-  "தென்காசி",
+  "ஈரோடு",
+  "கள்ளக்குறிச்சி",
+  "காஞ்சிபுரம்",
+  "காரைக்கால்",
+  "கன்னியாகுமரி",
+  "கரூர்",
+  "கிருஷ்ணகிரி",
+  "மதுரை",
+  "மயிலாடுதுறை",
   "நாகப்பட்டினம்",
   "நாமக்கல்",
   "நீலகிரி",
   "பெரம்பலூர்",
   "புதுக்கோட்டை",
   "புதுச்சேரி",
-  "மதுரை",
-  "மயிலாடுதுறை",
-  "ராணிப்பேட்டை",
   "ராமநாதபுரம்",
-  "விருதுநகர்",
+  "ராணிப்பேட்டை",
+  "சேலம்",
+  "சிவகங்கை",
+  "தென்காசி",
+  "தஞ்சாவூர்",
+  "தேனி",
+  "திருச்சிராப்பள்ளி",
+  "திருநெல்வேலி",
+  "திருப்பத்தூர்",
+  "திருப்பூர்",
+  "திருவள்ளூர்",
+  "திருவண்ணாமலை",
+  "திருவாரூர்",
+  "தூத்துக்குடி",
+  "வேலூர்",
   "விழுப்புரம்",
-  "வேலூர்"
+  "விருதுநகர்"
 ];
+
+// Find index of a district using NFC normalization
+// This handles cases where the DB returns a different Unicode form than the array
+const findDistrictIndex = (district) => {
+  if (!district) return -1;
+  const norm = district.normalize('NFC').trim();
+  return TAMIL_NADU_DISTRICTS.findIndex(d => d.normalize('NFC').trim() === norm);
+};
+
+// Resolve a raw district string to its canonical form in TAMIL_NADU_DISTRICTS
+const canonicalDistrict = (raw) => {
+  if (!raw) return '';
+  const idx = findDistrictIndex(raw);
+  return idx >= 0 ? TAMIL_NADU_DISTRICTS[idx] : raw;
+};
 
 const initialForm = {
   fullName: '',
@@ -123,7 +138,8 @@ function Register() {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [member, setMember] = useState(null);
-  const [memberId, setMemberId] = useState('TIWTN-2026-_____');
+  const [memberId, setMemberId] = useState('');
+  const [previewMemberId, setPreviewMemberId] = useState('');
   const [existingMember, setExistingMember] = useState(null);
   const [cardReady, setCardReady] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -191,7 +207,7 @@ function Register() {
             nomineeMobile: data.nominee_phone || '',
             referral: data.referrer || '',
             pledgeName: data.full_name || '',
-            pledgeDistrict: data.district || '',
+            pledgeDistrict: canonicalDistrict(data.district),
             pledgeBranch: data.branch || '',
             profilePhoto: null,
             photoPreview: data.photo_url || data.photo_base64 || null,
@@ -258,27 +274,26 @@ function Register() {
           .eq('member_id', effectiveMemberId);
         saveError = updateErr;
       } else {
-        // Insert new member record with auto-retry if member_id collides
+        // Use upsert to prevent "duplicate key violates unique constraint members_member_id_key"
+        // If a race condition or existing row exists for this member_id, it will update instead of error
         let currentId = effectiveMemberId;
         let insertSuccess = false;
         let retryCount = 0;
 
         while (!insertSuccess && retryCount < 10) {
           memberRecord.member_id = currentId;
-          const { error: insertErr } = await supabase
-            .from('members')
-            .insert(memberRecord);
 
-          if (!insertErr) {
+          const { error: upsertErr } = await supabase
+            .from('members')
+            .upsert(memberRecord, { onConflict: 'member_id', ignoreDuplicates: false });
+
+          if (!upsertErr) {
             insertSuccess = true;
             finalMemberId = currentId;
             saveError = null;
-          } else if (insertErr.message?.includes('members_member_id_key') || insertErr.message?.includes('duplicate key') || insertErr.code === '23505') {
-            console.warn(`member_id ${currentId} collided, retrying with next sequence...`);
-            retryCount++;
-            currentId = await generateMemberId(formData.pledgeDistrict, retryCount);
           } else {
-            saveError = insertErr;
+            console.warn('Upsert error:', upsertErr.message, upsertErr.code);
+            saveError = upsertErr;
             break;
           }
         }
@@ -356,11 +371,10 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
 வாரிசுதாரர் / Nominee      : ${formData.nomineeName || '-'}
 பரிந்துரை / Referrer        : ${formData.referral || '-'}
 இணைந்த தேதி / Joined       : ${joiningDate}
-பதிவு நேரம் / Registered   : ${
-  new Date().toLocaleString('en-IN', {
-    timeZone: 'Asia/Kolkata'
-  })
-}
+பதிவு நேரம் / Registered   : ${new Date().toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata'
+      })
+        }
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     `);
@@ -454,15 +468,23 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
 
     // Show local preview immediately (UX)
     const reader = new FileReader();
-    reader.onloadend = () => {
+    reader.onload = (event) => {
       setForm(prev => ({
         ...prev,
-        photoPreview: reader.result,  // for display
-        profilePhoto: file,           // for validation
-        photoFile: file               // actual file for upload
+        photoPreview: event.target.result, // for immediate display
+        profilePhoto: file,                // for validation
+        photoFile: file                    // actual file for upload
       }));
+      if (errors.profilePhoto) {
+        setErrors(prev => {
+          const next = { ...prev };
+          delete next.profilePhoto;
+          return next;
+        });
+      }
     };
     reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const uploadPhotoToStorage = async (file, currentMemberId) => {
@@ -486,6 +508,27 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
     } catch (err) {
       console.error('Storage upload failed:', err);
       return null;
+    }
+  };
+
+  // When district changes, update form AND auto-generate a preview member ID
+  const handleDistrictChange = async (event) => {
+    const idx = parseInt(event.target.value, 10);
+    const district = (idx >= 0 && idx < TAMIL_NADU_DISTRICTS.length)
+      ? TAMIL_NADU_DISTRICTS[idx]
+      : '';
+    setForm((prev) => ({ ...prev, pledgeDistrict: district }));
+    if (errors.pledgeDistrict) {
+      setErrors((prev) => { const n = { ...prev }; delete n.pledgeDistrict; return n; });
+    }
+    // Auto-preview a member ID for this district
+    if (district && !existingMember) {
+      try {
+        const preview = await generateMemberId(district);
+        setPreviewMemberId(preview);
+      } catch (_) {
+        // ignore preview errors — real ID generated at submit
+      }
     }
   };
 
@@ -516,7 +559,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
     if (!form.pledgeName.trim()) nextErrors.pledgeName = 'இந்த தகவல் அவசியம்';
     if (!form.pledgeDistrict || form.pledgeDistrict === '') nextErrors.pledgeDistrict = 'மாவட்டம் தேர்வு செய்க';
     if (!form.pledgeBranch.trim()) nextErrors.pledgeBranch = 'இந்த தகவல் அவசியம்';
-    
+
     // Photo validation: allow existing photo or new upload
     if (!form.profilePhoto && !form.photoPreview && !form.photo_url) {
       nextErrors.profilePhoto = 'படத்தை பதிவேற்றவும்';
@@ -620,9 +663,9 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
       if (saveResult?.success) {
         const assignedId = saveResult.memberId || targetMemberId;
         memberData.memberId = assignedId;
-        
+
         await sendAdminNotification(form, assignedId, isUpdate);
-        
+
         // Show pending screen
         setErrors({});
         setMemberId(assignedId);
@@ -645,7 +688,8 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
     setForm(initialForm);
     setErrors({});
     setMember(null);
-    setMemberId('TIWTN-2026-_____');
+    setMemberId('');
+    setPreviewMemberId('');
     setCardReady(false);
     setShowPending(false);
   };
@@ -749,12 +793,12 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
               margin: '1.5rem 0', textAlign: 'left'
             }}>
               <div style={{ fontSize: '13px', color: '#92400E', lineHeight: '1.8', fontFamily: 'Catamaran, sans-serif' }}>
-                ✅ உங்கள் விண்ணப்பம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது.<br/>
-                ✅ நிர்வாகி சரிபார்த்த பின்னர் உங்கள் அட்டை கிடைக்கும்.<br/>
-                ✅ அனுமதி கிடைத்தவுடன் உங்கள் சுயவிவரத்தில் காட்டப்படும்.<br/>
-                <br/>
-                ✅ Your application has been submitted.<br/>
-                ✅ ID card will be available after admin approval.<br/>
+                ✅ உங்கள் விண்ணப்பம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது.<br />
+                ✅ நிர்வாகி சரிபார்த்த பின்னர் உங்கள் அட்டை கிடைக்கும்.<br />
+                ✅ அனுமதி கிடைத்தவுடன் உங்கள் சுயவிவரத்தில் காட்டப்படும்.<br />
+                <br />
+                ✅ Your application has been submitted.<br />
+                ✅ ID card will be available after admin approval.<br />
                 ✅ You will see it in your profile once approved.
               </div>
             </div>
@@ -1028,7 +1072,22 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                   <p className="mb-3 text-sm font-semibold" style={{ color: '#2C3E6B' }}>உறுப்பினர் படம்</p>
                   <label className="group relative mx-auto block cursor-pointer" style={{ width: '120px', height: '140px' }}>
                     {getPhotoSrc(form) ? (
-                      <img src={getPhotoSrc(form)} alt="Member" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', border: '2px solid #003366' }} />
+                      <div className="relative h-full w-full">
+                        <img
+                          src={getPhotoSrc(form)}
+                          alt="Member"
+                          crossOrigin="anonymous"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', border: '2px solid #003366' }}
+                        />
+                        <div
+                          className="absolute inset-0 flex flex-col items-center justify-center rounded-[8px] bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
+                          style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold' }}
+                        >
+                          <span style={{ fontSize: '20px', marginBottom: '2px' }}>🔄</span>
+                          <span>மாற்ற கிளிக் செய்க</span>
+                          <span style={{ fontSize: '9px', opacity: 0.8 }}>Click to change</span>
+                        </div>
+                      </div>
                     ) : (
                       <div style={{ width: '100%', height: '100%', border: '2px dashed #CCCCCC', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#888888', fontSize: '12px' }}>
                         <span style={{ fontSize: '24px' }}>📷</span>
@@ -1037,13 +1096,27 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                     )}
                     <input type="file" accept="image/*" capture={false} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%', zIndex: 2 }} onChange={handlePhotoUpload} />
                   </label>
+                  {getPhotoSrc(form) && (
+                    <div style={{ marginTop: '8px' }}>
+                      <label style={{ display: 'inline-block', fontSize: '12px', color: '#FF6B00', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }}>
+                        🔄 புதிய படம் மாற்றவும் / Change Photo
+                        <input type="file" accept="image/*" capture={false} style={{ display: 'none' }} onChange={handlePhotoUpload} />
+                      </label>
+                    </div>
+                  )}
                   {errors.profilePhoto && <p style={{ color: '#E53E3E', fontSize: '12px', marginTop: '6px', textAlign: 'center' }}>{errors.profilePhoto}</p>}
                 </div>
 
                 <div className="w-full rounded-[12px] p-4 text-center" style={{ background: '#F0F7FF', border: '1.5px solid #003366' }}>
                   <p className="mb-2 text-xs" style={{ color: '#888888' }}>உறுப்பினர் பதிவு எண்</p>
                   <div style={{ fontFamily: "'Courier Prime', monospace", fontSize: '14px', letterSpacing: '1px', color: '#003366', padding: '8px', borderTop: '1px solid #003366' }}>
-                    {memberId === 'TIWTN-2026-_____' ? '-- -- -- -- --' : memberId}
+                    {existingMember?.member_id
+                      ? existingMember.member_id
+                      : previewMemberId
+                        ? previewMemberId
+                        : form.pledgeDistrict
+                          ? 'உருவாக்குகிறது...'
+                          : '-- மாவட்டம் தேர்வு செய்க --'}
                   </div>
                 </div>
               </div>
@@ -1053,28 +1126,33 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
               <div className="rounded-[12px] p-4" style={{ border: '1.5px solid #E5DDD0', marginBottom: '8px' }}>
                 <label className="block">
                   <BiLabel tamil="மாவட்டம்" english="District" required />
-                  <div style={{ marginTop: '4px' }}>
+                  <div style={{ marginTop: '4px', position: 'relative' }}>
                     <select
-                      value={form.pledgeDistrict}
-                      onChange={handleChange('pledgeDistrict')}
+                      value={findDistrictIndex(form.pledgeDistrict)}
+                      onChange={handleDistrictChange}
+                      size={1}
                       style={{
                         height: '44px',
                         backgroundColor: '#FFFFFF',
-                        border: errors.pledgeDistrict ? '1.5px solid #E53E3E' : '1.5px solid var(--border, #D1C8BC)',
+                        border: errors.pledgeDistrict ? '1.5px solid #E53E3E' : '1.5px solid #D1C8BC',
                         borderRadius: '8px',
-                        padding: '10px 14px',
-                        fontSize: '14px',
+                        padding: '0 14px',
+                        fontSize: '15px',
                         color: '#1A1A2E',
-                        fontFamily: 'Catamaran, sans-serif',
+                        WebkitTextFillColor: '#1A1A2E',
+                        fontFamily: 'Catamaran, Noto Sans Tamil, sans-serif',
                         width: '100%',
                         outline: 'none',
                         cursor: 'pointer',
-                        appearance: 'auto'
+                        WebkitAppearance: 'menulist',
+                        MozAppearance: 'menulist',
+                        appearance: 'menulist',
+                        opacity: 1
                       }}
                     >
-                      <option value="" style={{ color: '#1A1A2E', backgroundColor: '#FFFFFF' }}>-- மாவட்டம் தேர்வு செய்க / Select District --</option>
-                      {TAMIL_NADU_DISTRICTS.map((district) => (
-                        <option key={district} value={district} style={{ color: '#1A1A2E', backgroundColor: '#FFFFFF' }}>{district}</option>
+                      <option value={-1} style={{ color: '#6B7280', backgroundColor: '#FFFFFF' }}>-- மாவட்டம் தேர்வு செய்க / Select District --</option>
+                      {TAMIL_NADU_DISTRICTS.map((district, idx) => (
+                        <option key={idx} value={idx} style={{ color: '#1A1A2E', backgroundColor: '#FFFFFF' }}>{district}</option>
                       ))}
                     </select>
                   </div>

@@ -175,9 +175,16 @@ function Profile() {
             <div className="flex flex-col items-center">
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#FF6B00] text-3xl font-bold text-white border-4 border-[#FFB347] overflow-hidden">
                 {photoUrl ? (
-                  <img src={photoUrl} alt="Avatar" className="h-full w-full object-cover" />
+                  <img
+                    src={photoUrl}
+                    alt="Avatar"
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
-                  displayName?.charAt(0).toUpperCase()
+                  <span>{displayName?.charAt(0).toUpperCase()}</span>
                 )}
               </div>
               <div className="mt-4 flex gap-2">
@@ -297,20 +304,27 @@ function Profile() {
                 </p>
                 {memberData.rejection_reason && (
                   <div style={{
-                    background: '#FEE2E2', border: '1px solid #EF4444',
-                    borderRadius: '8px', padding: '0.8rem 1rem',
-                    marginBottom: '1rem', textAlign: 'left'
+                    background: '#FFFFFF', border: '2px solid #EF4444',
+                    borderRadius: '10px', padding: '0.9rem 1.1rem',
+                    marginBottom: '1.2rem', textAlign: 'left',
+                    boxShadow: '0 2px 8px rgba(239, 68, 68, 0.15)'
                   }}>
-                    <div style={{ fontSize: '11px', color: '#DC2626', fontWeight: '700', marginBottom: '4px' }}>காரணம் / Reason:</div>
-                    <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>{memberData.rejection_reason}</div>
+                    <div style={{ fontSize: '12px', color: '#DC2626', fontWeight: '800', marginBottom: '4px', letterSpacing: '0.3px' }}>
+                      ⚠️ காரணம் / Reason:
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#111827', fontWeight: '700', lineHeight: '1.5', WebkitTextFillColor: '#111827' }}>
+                      {memberData.rejection_reason}
+                    </div>
                   </div>
                 )}
                 <div style={{
-                  background: '#FEF3C7', border: '1px solid #F59E0B',
+                  background: '#FFFBEB', border: '1.5px solid #F59E0B',
                   borderRadius: '8px', padding: '0.8rem 1rem', marginBottom: '1.2rem'
                 }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>உறுப்பினர் எண் / Member ID</div>
-                  <div style={{ fontFamily: 'Courier New, monospace', fontSize: '13px', fontWeight: '900', color: '#FF6B00' }}>
+                  <div style={{ fontSize: '11px', color: '#92400E', fontWeight: '700', marginBottom: '3px' }}>
+                    உறுப்பினர் எண் / Member ID
+                  </div>
+                  <div style={{ fontFamily: 'Courier New, monospace', fontSize: '14px', fontWeight: '900', color: '#D97706' }}>
                     {memberData.member_id}
                   </div>
                 </div>
