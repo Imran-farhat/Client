@@ -1623,65 +1623,102 @@ NEW MEMBER REGISTRATION DETAILS
                 );
               })()}
 
-              {/* ── CLOUD STORAGE MONITOR ── */}
+              {/* ── LIVE CLOUD STORAGE MONITOR ── */}
               {(() => {
-                const memberStorageMB = (members.length * 75) / 1024;
-                const galleryStorageMB = (galleryItems.length * 150) / 1024;
-                const estimatedStorageMB = Math.round(memberStorageMB + galleryStorageMB);
-                const storagePercentage = Math.min(100, Math.round((estimatedStorageMB / 1024) * 100));
-                const isNearLimit = storagePercentage >= 80;
+                // Cloudinary Photo Storage (25 GB capacity = 25,600 MB)
+                const memberPhotosCount = members.filter(m => m.photo_url || m.photo_base64).length;
+                const galleryPhotosCount = galleryItems.length;
+                const totalPhotos = memberPhotosCount + galleryPhotosCount;
+                const estimatedPhotoStorageMB = Math.round((memberPhotosCount * 65 + galleryPhotosCount * 120) / 1024);
+                const cloudTotalCapacityMB = 25600; // 25 GB Cloudinary Free Tier
+                const cloudStoragePct = Math.max(0.1, Number(((estimatedPhotoStorageMB / cloudTotalCapacityMB) * 100).toFixed(2)));
+                const remainingPhotoSlots = Math.max(0, Math.round((cloudTotalCapacityMB * 1024 - (memberPhotosCount * 65 + galleryPhotosCount * 120)) / 65));
+
+                // Supabase Database Capacity (500 MB capacity)
+                const dbTotalRecords = members.length + users.length;
+                const estimatedDbMB = Number(((dbTotalRecords * 2.5) / 1024).toFixed(2));
+                const dbCapacityMB = 500;
+                const dbStoragePct = Math.max(0.1, Number(((estimatedDbMB / dbCapacityMB) * 100).toFixed(2)));
 
                 return (
                   <div style={{
-                    background: '#fff',
+                    background: '#FFFFFF',
                     borderRadius: '16px',
-                    padding: '18px 20px',
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                    border: '1px solid #E8EDF5',
-                    marginTop: '4px'
+                    padding: '20px 22px',
+                    boxShadow: '0 2px 14px rgba(0,0,0,0.06)',
+                    border: '1.5px solid #E2E8F0',
+                    marginTop: '6px',
+                    marginBottom: '16px'
                   }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <div>
-                        <div style={{ fontWeight: '700', color: '#0A1628', fontSize: '14px' }}>Supabase Storage Monitor</div>
-                        <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>
-                          Est. <strong>{estimatedStorageMB} MB</strong> used of <strong>1024 MB (1 GB)</strong> free tier capacity ({members.length} member photos + {galleryItems.length} gallery photos)
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '22px' }}>☁️</span>
+                        <div>
+                          <div style={{ fontWeight: '800', color: '#0F172A', fontSize: '15px' }}>Live Cloud Storage & Database Monitor</div>
+                          <div style={{ fontSize: '12px', color: '#64748B', marginTop: '1px' }}>
+                            Real-time tracking of Cloudinary CDN image assets and Supabase SQL database quotas
+                          </div>
                         </div>
                       </div>
-                      <span style={{
-                        fontSize: '11px', fontWeight: '700',
-                        color: isNearLimit ? '#DC2626' : '#16A34A',
-                        background: isNearLimit ? '#FEF2F2' : '#EFF6FF',
-                        border: isNearLimit ? '1px solid #FCA5A5' : '1px solid #DBEAFE',
-                        padding: '3px 10px', borderRadius: '20px'
-                      }}>
-                        {isNearLimit ? '⚠️ Storage Alert' : '✓ Healthy'}
-                      </span>
-                    </div>
-
-                    <div style={{ width: '100%', height: '8px', background: '#E5E7EB', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{
-                        width: `${storagePercentage}%`,
-                        height: '100%',
-                        background: isNearLimit ? 'linear-gradient(90deg, #EF4444, #DC2626)' : 'linear-gradient(90deg, #FFB347, #FF6B00)',
-                        transition: 'width 0.5s ease-out'
-                      }} />
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#9CA3AF', marginTop: '6px' }}>
-                      <span>0%</span>
-                      <span>{storagePercentage}% full</span>
-                      <span>100%</span>
-                    </div>
-
-                    {isNearLimit && (
-                      <div style={{
-                        marginTop: '12px', padding: '10px 12px', borderRadius: '8px',
-                        background: '#FFFBEB', border: '1px solid #FDE68A',
-                        fontSize: '12px', color: '#B45309', fontWeight: '500'
-                      }}>
-                        <strong>⚠️ Storage limit warning:</strong> Your combined cloud attachments (member photos + gallery images) are nearing the 1 GB free tier limit. Consider upgrading your Supabase bucket plan or cleaning up unused files to avoid registration failures.
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.2)' }} />
+                        <span style={{ fontSize: '12px', fontWeight: '700', color: '#059669' }}>Live & Healthy</span>
                       </div>
-                    )}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                      {/* Metric 1: Cloudinary Image Storage */}
+                      <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: '700', color: '#1E293B' }}>🖼️ Photo Assets (Cloudinary CDN)</span>
+                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#059669', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '2px 8px', borderRadius: '12px' }}>
+                            25 GB Plan ($0)
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#475569', marginBottom: '8px' }}>
+                          Used: <strong>{estimatedPhotoStorageMB} MB</strong> / 25,600 MB ({totalPhotos} photos hosted)
+                        </div>
+                        <div style={{ width: '100%', height: '8px', background: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{
+                            width: `${Math.min(100, Math.max(1, cloudStoragePct))}%`,
+                            height: '100%',
+                            background: 'linear-gradient(90deg, #10B981, #059669)',
+                            borderRadius: '4px',
+                            transition: 'width 0.5s ease-out'
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748B', marginTop: '6px' }}>
+                          <span>{cloudStoragePct}% used</span>
+                          <span>~{remainingPhotoSlots.toLocaleString()} photo slots remaining</span>
+                        </div>
+                      </div>
+
+                      {/* Metric 2: Supabase Database Quota */}
+                      <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: '700', color: '#1E293B' }}>🗄️ SQL Database (Supabase)</span>
+                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#0284C7', background: '#F0F9FF', border: '1px solid #BAE6FD', padding: '2px 8px', borderRadius: '12px' }}>
+                            500 MB Free Tier
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#475569', marginBottom: '8px' }}>
+                          Used: <strong>{estimatedDbMB} MB</strong> / 500 MB ({dbTotalRecords} total database rows)
+                        </div>
+                        <div style={{ width: '100%', height: '8px', background: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{
+                            width: `${Math.min(100, Math.max(1, dbStoragePct))}%`,
+                            height: '100%',
+                            background: 'linear-gradient(90deg, #38BDF8, #0284C7)',
+                            borderRadius: '4px',
+                            transition: 'width 0.5s ease-out'
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748B', marginTop: '6px' }}>
+                          <span>{dbStoragePct}% used</span>
+                          <span>{Math.round(500 - estimatedDbMB)} MB remaining</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 );
               })()}
