@@ -275,8 +275,9 @@ function Register() {
           .eq('member_id', effectiveMemberId);
         saveError = updateErr;
       } else {
-        // Use upsert to prevent "duplicate key violates unique constraint members_member_id_key"
-        // If a race condition or existing row exists for this member_id, it will update instead of error
+        // High Concurrency Safe Insertion:
+        // Attempt insert. If a concurrent user grabbed the same member_id in the exact same millisecond,
+        // catch the 23505 unique constraint violation, calculate the next sequential ID, and retry.
         let currentId = effectiveMemberId;
         let insertSuccess = false;
         let retryCount = 0;
@@ -284,19 +285,40 @@ function Register() {
         while (!insertSuccess && retryCount < 10) {
           memberRecord.member_id = currentId;
 
-          const { error: upsertErr } = await supabase
+          const { error: insertErr } = await supabase
             .from('members')
-            .upsert(memberRecord, { onConflict: 'member_id', ignoreDuplicates: false });
+            .insert(memberRecord);
 
-          if (!upsertErr) {
+          if (!insertErr) {
             insertSuccess = true;
             finalMemberId = currentId;
             saveError = null;
-          } else {
-            console.warn('Upsert error:', upsertErr.message, upsertErr.code);
-            saveError = upsertErr;
             break;
           }
+
+          // Check if unique key collision happened
+          const isConflict =
+            insertErr.code === '23505' ||
+            insertErr.message?.includes('members_member_id_key') ||
+            insertErr.message?.includes('unique constraint') ||
+            insertErr.message?.includes('duplicate key');
+
+          if (isConflict) {
+            console.warn(`[Concurrency Handler] ID ${currentId} taken by another registration. Re-generating next ID (attempt ${retryCount + 1})...`);
+            retryCount++;
+            // Random jitter delay (50ms - 150ms) to desynchronize concurrent requests
+            await new Promise(r => setTimeout(r, 50 + Math.random() * 100));
+            // Get fresh next member ID with offset
+            currentId = await generateMemberId(formData.pledgeDistrict, retryCount);
+          } else {
+            console.error('Insert error:', insertErr);
+            saveError = insertErr;
+            break;
+          }
+        }
+
+        if (!insertSuccess && !saveError) {
+          saveError = new Error('Could not assign a unique ID after multiple attempts. Please try again.');
         }
       }
 

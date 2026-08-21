@@ -1126,8 +1126,33 @@ NEW MEMBER REGISTRATION DETAILS
         status: 'pending',
         registered_at: new Date().toISOString(),
       };
-      const { data, error } = await supabase.from('members').insert(record).select().single();
-      if (error) throw error;
+      let currentMemberId = memberId;
+      let insertSuccess = false;
+      let retryCount = 0;
+
+      while (!insertSuccess && retryCount < 10) {
+        record.member_id = currentMemberId;
+        const { error: insertErr } = await supabase.from('members').insert(record);
+
+        if (!insertErr) {
+          insertSuccess = true;
+          break;
+        }
+
+        const isConflict =
+          insertErr.code === '23505' ||
+          insertErr.message?.includes('members_member_id_key') ||
+          insertErr.message?.includes('unique constraint') ||
+          insertErr.message?.includes('duplicate key');
+
+        if (isConflict) {
+          retryCount++;
+          await new Promise(r => setTimeout(r, 50 + Math.random() * 100));
+          currentMemberId = await generateMemberId(newMember.pledgeDistrict, retryCount);
+        } else {
+          throw insertErr;
+        }
+      }
 
     // Fix: mark matching user as registered (find by mobile number)
     if (newMember.mobile) {
