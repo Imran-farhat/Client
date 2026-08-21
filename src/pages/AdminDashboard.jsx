@@ -1229,6 +1229,17 @@ NEW MEMBER REGISTRATION DETAILS
     const compressedFile = await compressImage(file);
     if (!compressedFile) return null;
 
+    // 1. Upload to Cloudinary (Primary — 25GB Storage, Fast Global CDN)
+    try {
+      const cloudinaryUrl = await uploadToCloudinary(compressedFile, `gallery_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`);
+      if (cloudinaryUrl) {
+        return cloudinaryUrl;
+      }
+    } catch (cErr) {
+      console.warn('Cloudinary upload fallback to Supabase:', cErr);
+    }
+
+    // 2. Fallback to Supabase Storage if Cloudinary is unavailable
     const fileExt = 'jpg';
     const fileName = `gallery_${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
 
@@ -1258,11 +1269,6 @@ NEW MEMBER REGISTRATION DETAILS
     const invalidFiles = files.filter(file => !file.type.startsWith('image/'));
     if (invalidFiles.length > 0) {
       alert('படக் கோப்புகள் மட்டுமே அனுமதிக்கப்படும் / Only image files allowed');
-      return;
-    }
-
-    if (galleryItems.length + uploadedImageUrls.length + files.length > 30) {
-      alert('இலவச கணக்கு வரம்பு: கேலரியில் அதிகபட்சம் 30 படங்கள் மட்டுமே சேர்க்க முடியும். / Free Account Limit: You can only have up to 30 images in the gallery.');
       return;
     }
 
@@ -1356,11 +1362,6 @@ NEW MEMBER REGISTRATION DETAILS
     if (e) e.preventDefault();
     if (!newGalleryItem.title.trim() || uploadedImageUrls.length === 0) {
       alert('தலைப்பு மற்றும் படம் அவசியம் / Title and image are required');
-      return;
-    }
-
-    if (galleryItems.length + uploadedImageUrls.length > 30) {
-      alert('இலவச கணக்கு வரம்பு: கேலரியில் அதிகபட்சம் 30 படங்கள் மட்டுமே சேர்க்க முடியும். புதிய படத்தை சேர்க்க பழைய படத்தை நீக்கவும். / Free Account Limit: You can only have up to 30 images in the gallery. Please delete an old photo first.');
       return;
     }
 
