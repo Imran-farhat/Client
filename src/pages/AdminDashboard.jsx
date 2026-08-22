@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabase/client';
 import IDCard from '../components/IDCard';
-import { generateMemberId } from '../utils/memberIdUtils';
+import { generateMemberId, DISTRICT_LIST, TAMIL_NADU_DISTRICTS } from '../utils/memberIdUtils';
 import { printMemberForm } from '../utils/printMemberForm';
 import { bulkDownloadMembers } from '../utils/bulkDownload.jsx';
 import PageLoader from '../components/PageLoader';
@@ -13,49 +13,6 @@ const getPhotoSrc = (member) =>
   member?.photo_url ||
   member?.photo_base64 ||
   null;
-
-const TAMIL_NADU_DISTRICTS = [
-  "அரியலூர்",
-  "ஈரோடு",
-  "காஞ்சிபுரம்",
-  "காரைக்கால்",
-  "கடலூர்",
-  "கரூர்",
-  "கன்னியாகுமரி",
-  "கள்ளக்குறிச்சி",
-  "கிருஷ்ணகிரி",
-  "கோயம்புத்தூர்",
-  "சிவகங்கை",
-  "சேலம்",
-  "செங்கல்பட்டு",
-  "சென்னை",
-  "தஞ்சாவூர்",
-  "தர்மபுரி",
-  "திண்டுக்கல்",
-  "திருச்சிராப்பள்ளி",
-  "திருநெல்வேலி",
-  "திருப்பத்தூர்",
-  "திருப்பூர்",
-  "திருவண்ணாமலை",
-  "திருவாரூர்",
-  "திருவள்ளூர்",
-  "தூத்துக்குடி",
-  "தேனி",
-  "தென்காசி",
-  "நாகப்பட்டினம்",
-  "நாமக்கல்",
-  "நீலகிரி",
-  "பெரம்பலூர்",
-  "புதுக்கோட்டை",
-  "புதுச்சேரி",
-  "மதுரை",
-  "மயிலாடுதுறை",
-  "ராணிப்பேட்டை",
-  "ராமநாதபுரம்",
-  "விருதுநகர்",
-  "விழுப்புரம்",
-  "வேலூர்"
-];
 
 const ITEMS_PER_PAGE = 10;
 
@@ -2493,12 +2450,17 @@ NEW MEMBER REGISTRATION DETAILS
                       <select
                         value={newMember.pledgeDistrict}
                         onChange={handleRegChange('pledgeDistrict')}
-                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
+                        translate="no"
+                        className={`w-full notranslate rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
                           regErrors.pledgeDistrict ? 'border-red-400' : 'border-gray-200'
                         }`}
                       >
-                        <option value="">-- Select District --</option>
-                        {TAMIL_NADU_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                        <option value="" translate="no" className="notranslate">-- Select District --</option>
+                        {DISTRICT_LIST.map(d => (
+                          <option key={d.ta} value={d.ta} translate="no" className="notranslate">
+                            {d.ta} / {d.en}
+                          </option>
+                        ))}
                       </select>
                       {regErrors.pledgeDistrict && <p className="mt-0.5 text-xs text-red-500">{regErrors.pledgeDistrict}</p>}
                     </div>
@@ -3028,10 +2990,17 @@ NEW MEMBER REGISTRATION DETAILS
               ))}
               <div>
                 <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">District / மாவட்டம்</label>
-                <select value={editMember.district || ''} onChange={e => setEditMember(prev => ({ ...prev, district: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-black focus:outline-none focus:border-[#FFB347] text-sm">
-                  <option value="">-- Select --</option>
-                  {TAMIL_NADU_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                <select 
+                  value={editMember.district || ''} 
+                  onChange={e => setEditMember(prev => ({ ...prev, district: e.target.value }))}
+                  translate="no"
+                  className="w-full notranslate rounded-lg border border-gray-200 px-3 py-2 text-black focus:outline-none focus:border-[#FFB347] text-sm">
+                  <option value="" translate="no" className="notranslate">-- Select --</option>
+                  {DISTRICT_LIST.map(d => (
+                    <option key={d.ta} value={d.ta} translate="no" className="notranslate">
+                      {d.ta} / {d.en}
+                    </option>
+                  ))}
                 </select>
               </div>
 

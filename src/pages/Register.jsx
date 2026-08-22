@@ -5,7 +5,7 @@ import IDCard from '../components/IDCard';
 import OrgLogo from '../components/OrgLogo';
 import { supabase } from '../supabase/client';
 import { useAuth } from '../context/AuthContext';
-import { generateMemberId } from '../utils/memberIdUtils';
+import { generateMemberId, DISTRICT_LIST, TAMIL_NADU_DISTRICTS } from '../utils/memberIdUtils';
 import { uploadToCloudinary } from '../utils/cloudinary';
 
 const getPhotoSrc = (member) =>
@@ -14,64 +14,21 @@ const getPhotoSrc = (member) =>
   member?.photo_base64 ||
   null;
 
-
-
-const TAMIL_NADU_DISTRICTS = [
-  "அரியலூர்",
-  "செங்கல்பட்டு",
-  "சென்னை",
-  "கோயம்புத்தூர்",
-  "கடலூர்",
-  "தர்மபுரி",
-  "திண்டுக்கல்",
-  "ஈரோடு",
-  "கள்ளக்குறிச்சி",
-  "காஞ்சிபுரம்",
-  "காரைக்கால்",
-  "கன்னியாகுமரி",
-  "கரூர்",
-  "கிருஷ்ணகிரி",
-  "மதுரை",
-  "மயிலாடுதுறை",
-  "நாகப்பட்டினம்",
-  "நாமக்கல்",
-  "நீலகிரி",
-  "பெரம்பலூர்",
-  "புதுக்கோட்டை",
-  "புதுச்சேரி",
-  "ராமநாதபுரம்",
-  "ராணிப்பேட்டை",
-  "சேலம்",
-  "சிவகங்கை",
-  "தென்காசி",
-  "தஞ்சாவூர்",
-  "தேனி",
-  "திருச்சிராப்பள்ளி",
-  "திருநெல்வேலி",
-  "திருப்பத்தூர்",
-  "திருப்பூர்",
-  "திருவள்ளூர்",
-  "திருவண்ணாமலை",
-  "திருவாரூர்",
-  "தூத்துக்குடி",
-  "வேலூர்",
-  "விழுப்புரம்",
-  "விருதுநகர்"
-];
-
-// Find index of a district using NFC normalization
-// This handles cases where the DB returns a different Unicode form than the array
+// Find index of a district using NFC normalization and bilingual check
 const findDistrictIndex = (district) => {
   if (!district) return -1;
-  const norm = district.normalize('NFC').trim();
-  return TAMIL_NADU_DISTRICTS.findIndex(d => d.normalize('NFC').trim() === norm);
+  const norm = district.normalize('NFC').trim().toLowerCase();
+  return DISTRICT_LIST.findIndex(d => 
+    d.ta.normalize('NFC').trim().toLowerCase() === norm ||
+    d.en.toLowerCase() === norm
+  );
 };
 
-// Resolve a raw district string to its canonical form in TAMIL_NADU_DISTRICTS
+// Resolve a raw district string to its canonical Tamil form in DISTRICT_LIST
 const canonicalDistrict = (raw) => {
   if (!raw) return '';
   const idx = findDistrictIndex(raw);
-  return idx >= 0 ? TAMIL_NADU_DISTRICTS[idx] : raw;
+  return idx >= 0 ? DISTRICT_LIST[idx].ta : raw;
 };
 
 const initialForm = {
@@ -1162,6 +1119,8 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                       value={findDistrictIndex(form.pledgeDistrict)}
                       onChange={handleDistrictChange}
                       size={1}
+                      translate="no"
+                      className="notranslate focus:border-amber"
                       style={{
                         height: '44px',
                         backgroundColor: '#FFFFFF',
@@ -1181,9 +1140,13 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                         opacity: 1
                       }}
                     >
-                      <option value={-1} style={{ color: '#6B7280', backgroundColor: '#FFFFFF' }}>-- மாவட்டம் தேர்வு செய்க / Select District --</option>
-                      {TAMIL_NADU_DISTRICTS.map((district, idx) => (
-                        <option key={idx} value={idx} style={{ color: '#1A1A2E', backgroundColor: '#FFFFFF' }}>{district}</option>
+                      <option value={-1} translate="no" className="notranslate" style={{ color: '#6B7280', backgroundColor: '#FFFFFF' }}>
+                        -- மாவட்டம் தேர்வு செய்க / Select District --
+                      </option>
+                      {DISTRICT_LIST.map((d, idx) => (
+                        <option key={idx} value={idx} translate="no" className="notranslate" style={{ color: '#1A1A2E', backgroundColor: '#FFFFFF' }}>
+                          {d.ta} / {d.en}
+                        </option>
                       ))}
                     </select>
                   </div>
