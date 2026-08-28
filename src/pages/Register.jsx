@@ -102,7 +102,7 @@ function Register() {
   const [cardReady, setCardReady] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPending, setShowPending] = useState(false);
-  const [loadingExisting, setLoadingExisting] = useState(!authMemberData);
+  const [loadingExisting, setLoadingExisting] = useState(false);
   const cardRef = useRef(null);
   const formRef = useRef(null);
   const joiningDate = useMemo(() => formatDateDisplay(), []);
@@ -729,7 +729,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
     return errors[field] ? '1.5px solid #E53E3E' : '1.5px solid #D1C8BC';
   };
 
-  if (loading || loadingExisting) {
+  if (loading && !currentUser) {
     return (
       <div style={{
         display: 'flex', justifyContent: 'center',

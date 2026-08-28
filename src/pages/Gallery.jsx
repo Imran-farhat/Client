@@ -11,10 +11,12 @@ function Gallery() {
   const [filter, setFilter] = useState('ALL');
   const [galleryItems, setGalleryItems] = useState(cachedGalleryItems || []);
   const [loading, setLoading] = useState(!cachedGalleryItems);
+  const [fetchError, setFetchError] = useState(null);
   const [activeAlbum, setActiveAlbum] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const fetchGallery = async () => {
+    setFetchError(null);
     try {
       const { data, error } = await supabase
         .from('gallery')
@@ -22,10 +24,14 @@ function Gallery() {
         .order('created_at', { ascending: false });
       if (error) throw error;
       const items = data || [];
-      cachedGalleryItems = items;
+      // Only cache non-empty results so a failed/empty fetch doesn't freeze the view
+      if (items.length > 0) {
+        cachedGalleryItems = items;
+      }
       setGalleryItems(items);
     } catch (err) {
       console.error('Error fetching gallery:', err);
+      setFetchError('படங்களை ஏற்றுவதில் பிழை. மீண்டும் முயலவும். / Failed to load gallery. Please retry.');
     } finally {
       setLoading(false);
     }
@@ -132,7 +138,19 @@ function Gallery() {
             ))}
           </div>
 
-          {galleryAlbums.length === 0 ? (
+
+          {fetchError ? (
+            <div className="mt-12 text-center rounded-[28px] border border-red-200 bg-card p-12 shadow-sm">
+              <div className="text-4xl mb-4">⚠️</div>
+              <p className="text-base text-[var(--text-muted)] mb-4">{fetchError}</p>
+              <button
+                onClick={fetchGallery}
+                className="rounded-xl bg-amber px-6 py-3 text-sm font-bold text-black hover:opacity-90 transition"
+              >
+                🔄 மீண்டும் முயல் / Retry
+              </button>
+            </div>
+          ) : galleryAlbums.length === 0 ? (
           <div className="mt-12 text-center rounded-[28px] border border-[var(--border)] bg-card p-12 shadow-sm">
             <p className="text-lg text-[var(--text-muted)]">புகைப்படங்கள் ஏதும் இல்லை / No gallery images found</p>
           </div>

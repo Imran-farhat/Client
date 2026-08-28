@@ -28,7 +28,7 @@ function Contact() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
-          access_key: import.meta.env.VITE_WEB3FORMS_KEY || 'fecf7859-db02-4db0-9e17-08fedad22e49',
+          access_key: import.meta.env.VITE_WEB3FORMS_KEY || '',
           name: form.name.trim(),
           email: form.email.trim(),
           subject: form.subject.trim(),

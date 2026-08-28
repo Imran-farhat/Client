@@ -9,16 +9,33 @@ import AdminRoute from './components/AdminRoute';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import PageLoader from './components/PageLoader';
 
-const Home = lazy(() => import('./pages/Home'));
-const About = lazy(() => import('./pages/About'));
-const Services = lazy(() => import('./pages/Services'));
-const Gallery = lazy(() => import('./pages/Gallery'));
-const Register = lazy(() => import('./pages/Register'));
-const Contact = lazy(() => import('./pages/Contact'));
-const Login = lazy(() => import('./pages/Login'));
-const Profile = lazy(() => import('./pages/Profile'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const NotFound = lazy(() => import('./pages/NotFound'));
+// Dynamic import with auto-retry for deployed asset changes (prevents 404 chunk load issues)
+const lazyWithRetry = (componentImport) =>
+  lazy(async () => {
+    try {
+      return await componentImport();
+    } catch (error) {
+      console.warn('Chunk load error, refreshing to latest bundle:', error);
+      const isRetried = window.sessionStorage.getItem('chunk_retry_' + window.location.pathname);
+      if (!isRetried) {
+        window.sessionStorage.setItem('chunk_retry_' + window.location.pathname, 'true');
+        window.location.reload();
+        return { default: () => null };
+      }
+      throw error;
+    }
+  });
+
+const Home = lazyWithRetry(() => import('./pages/Home'));
+const About = lazyWithRetry(() => import('./pages/About'));
+const Services = lazyWithRetry(() => import('./pages/Services'));
+const Gallery = lazyWithRetry(() => import('./pages/Gallery'));
+const Register = lazyWithRetry(() => import('./pages/Register'));
+const Contact = lazyWithRetry(() => import('./pages/Contact'));
+const Login = lazyWithRetry(() => import('./pages/Login'));
+const Profile = lazyWithRetry(() => import('./pages/Profile'));
+const AdminDashboard = lazyWithRetry(() => import('./pages/AdminDashboard'));
+const NotFound = lazyWithRetry(() => import('./pages/NotFound'));
 
 const pageTitles = {
   '/': 'Home | தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்',
@@ -33,7 +50,7 @@ const pageTitles = {
   '/admin': 'Admin Dashboard | தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்',
 };
 
-const MAINTENANCE_MODE = false; // Set to true to block access, false to resume live site
+const MAINTENANCE_MODE = false;
 
 function App() {
   const location = useLocation();
@@ -41,26 +58,9 @@ function App() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     document.title = pageTitles[location.pathname] || 'தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்';
+    // Clear chunk retry lock on successful route navigation
+    window.sessionStorage.removeItem('chunk_retry_' + location.pathname);
   }, [location]);
-
-  // Preload lazy page components in idle time for instant route transitions
-  useEffect(() => {
-    const preloadRoutes = () => {
-      import('./pages/Home');
-      import('./pages/About');
-      import('./pages/Services');
-      import('./pages/Gallery');
-      import('./pages/Contact');
-      import('./pages/Profile');
-      import('./pages/Register');
-    };
-
-    if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(preloadRoutes);
-    } else {
-      setTimeout(preloadRoutes, 1000);
-    }
-  }, []);
 
   if (MAINTENANCE_MODE) {
     return (
@@ -131,6 +131,5 @@ function App() {
     </ThemeProvider>
   );
 }
-
 
 export default App;

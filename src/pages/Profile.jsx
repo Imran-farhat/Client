@@ -18,6 +18,7 @@ function Profile() {
   const [memberData, setMemberData] = useState(authMemberData || null);
   const [editName, setEditName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState(null); // { type: 'success'|'error', text: string }
 
   // Redirect if not logged in (only after auth finished initializing)
   useEffect(() => {
@@ -86,10 +87,12 @@ function Profile() {
       }
 
       await refreshProfile();
-      alert('✅ பெயர் சேமிக்கப்பட்டது / Name saved!');
+      setSaveMsg({ type: 'success', text: '✅ பெயர் சேமிக்கப்பட்டது / Name saved!' });
+      setTimeout(() => setSaveMsg(null), 3000);
     } catch (err) {
       console.error('Error saving name:', err.message || err);
-      alert('பெயர் சேமிக்கப்படவில்லை: ' + (err.message || err));
+      setSaveMsg({ type: 'error', text: '❌ பெயர் சேமிக்கப்படவில்லை / Save failed. Please try again.' });
+      setTimeout(() => setSaveMsg(null), 4000);
     } finally {
       setSaving(false);
     }
@@ -184,6 +187,16 @@ function Profile() {
               >
                 {saving ? 'சேமிக்கிறது...' : 'Save Changes'}
               </button>
+
+              {saveMsg && (
+                <div className={`mt-2 rounded-xl px-4 py-2 text-sm font-semibold text-center transition-all ${
+                  saveMsg.type === 'success'
+                    ? 'bg-green-50 border border-green-200 text-green-700'
+                    : 'bg-red-50 border border-red-200 text-red-600'
+                }`}>
+                  {saveMsg.text}
+                </div>
+              )}
 
               <button
                 onClick={logout}

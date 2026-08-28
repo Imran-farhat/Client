@@ -27,12 +27,16 @@ function Home() {
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const { count: total, error } = await supabase
+        const { count: rawCount, error } = await supabase
           .from('members')
           .select('*', { count: 'exact', head: true });
         if (error) throw error;
-        cachedMemberCount = total ?? 0;
-        setMemberCount(total ?? 0);
+        const total = rawCount ?? 0;
+        // Only cache when we have actual members (avoid caching 0 from cold start)
+        if (total > 0) {
+          cachedMemberCount = total;
+        }
+        setMemberCount(total);
       } catch (err) {
         console.error('Error fetching member count:', err);
         if (cachedMemberCount === null) setMemberCount(0);
