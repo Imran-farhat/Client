@@ -109,7 +109,28 @@ function Gallery() {
     setActiveImageIndex(prev => (prev === activeAlbum.images.length - 1 ? 0 : prev + 1));
   };
 
-  if (loading) return <PageLoader message="புகைப்படங்களை ஏற்றுகிறது..." />;
+  if (loading && galleryItems.length === 0) return (
+    <section className="bg-secondary px-6 py-16 text-primary md:px-10">
+      <div className="mx-auto max-w-7xl">
+        <div className="rounded-[32px] border border-[var(--border)] bg-primary p-10 shadow-sm animate-pulse">
+          <div className="h-3 bg-[var(--border)] rounded-full w-20 mb-4" />
+          <div className="h-8 bg-[var(--border)] rounded-full w-2/3 mb-4" />
+          <div className="h-4 bg-[var(--border)] rounded-full w-1/2" />
+        </div>
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} className="rounded-[28px] border border-[var(--border)] bg-card overflow-hidden animate-pulse">
+              <div className="h-72 bg-[var(--border)]" />
+              <div className="p-4 space-y-2">
+                <div className="h-3 bg-[var(--border)] rounded-full w-1/3" />
+                <div className="h-4 bg-[var(--border)] rounded-full w-3/4" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 
   return (
     <>

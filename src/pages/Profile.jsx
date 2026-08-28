@@ -12,13 +12,32 @@ const getPhotoSrc = (member) =>
   member?.photoPreview ||
   null;
 
+// Reads name instantly from Supabase local session cache (0ms)
+const getCachedName = (user) => {
+  if (!user) return '';
+  try {
+    const keys = Object.keys(localStorage);
+    const authKey = keys.find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    if (authKey) {
+      const item = JSON.parse(localStorage.getItem(authKey));
+      return item?.user?.user_metadata?.full_name || item?.user?.user_metadata?.name || '';
+    }
+  } catch {}
+  return user?.user_metadata?.full_name || user?.user_metadata?.name || '';
+};
+
 function Profile() {
   const { currentUser, userProfile, memberData: authMemberData, refreshProfile, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [memberData, setMemberData] = useState(authMemberData || null);
-  const [editName, setEditName] = useState('');
+  // Pre-populate name instantly from Google metadata — updates when userProfile loads from DB
+  const [editName, setEditName] = useState(
+    authMemberData?.full_name ||
+    getCachedName(currentUser) ||
+    ''
+  );
   const [saving, setSaving] = useState(false);
-  const [saveMsg, setSaveMsg] = useState(null); // { type: 'success'|'error', text: string }
+  const [saveMsg, setSaveMsg] = useState(null);
 
   // Redirect if not logged in (only after auth finished initializing)
   useEffect(() => {
@@ -211,8 +230,13 @@ function Profile() {
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-sm">
             <h2 className="mb-6 text-xl font-bold text-[var(--text-primary)]">📋 உறுப்பினர் அட்டை</h2>
 
-            {authLoading ? (
-              <PageLoader message="உறுப்பினர் விவரங்களை ஏற்றுகிறது..." />
+            {/* Compact inline skeleton while member data loads in background */}
+            {authLoading && !memberData ? (
+              <div className="space-y-3 animate-pulse">
+                <div className="h-4 bg-[var(--border)] rounded-full w-3/4" />
+                <div className="h-4 bg-[var(--border)] rounded-full w-1/2" />
+                <div className="h-4 bg-[var(--border)] rounded-full w-2/3" />
+              </div>
             ) : !memberData ? (
               // NOT REGISTERED STATE
               <div style={{ textAlign: 'center', paddingTop: '2rem', paddingBottom: '2rem' }}>

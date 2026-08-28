@@ -192,7 +192,7 @@ function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen]       = useState(false);
   const [members, setMembers]               = useState([]);
   const [users, setUsers]                   = useState([]);
-  const [loadingData, setLoadingData]       = useState(true);
+  const [loadingData, setLoadingData]       = useState(false);
   const [searchQuery, setSearchQuery]       = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
   const [rejectedDistrictFilter, setRejectedDistrictFilter] = useState('');
@@ -467,7 +467,9 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
-    Promise.all([loadMembers(), loadUsers(), loadGallery()]).finally(() => setLoadingData(false));
+    // Fetch members and users in parallel, gallery separately — all non-blocking
+    Promise.all([loadMembers(), loadUsers()]);
+    loadGallery();
     
     const handleRealtimeChange = () => {
       if (realtimeTimerRef.current) clearTimeout(realtimeTimerRef.current);
@@ -1557,9 +1559,7 @@ NEW MEMBER REGISTRATION DETAILS
   );
 
   // ─────────────────────────────────────────────────────────────
-  if (loadingData) {
-    return <PageLoader message="நிர்வாக பக்கத் தகவல்களை ஏற்றுகிறது..." />;
-  }
+
 
   return (
     <div className="min-h-screen admin-dashboard" style={{ background: '#F0F4F9' }}>
