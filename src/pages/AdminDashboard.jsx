@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabase/client';
 import IDCard from '../components/IDCard';
+import ImageCropperModal from '../components/ImageCropperModal';
 import { generateMemberId, DISTRICT_LIST, TAMIL_NADU_DISTRICTS } from '../utils/memberIdUtils';
 import { printMemberForm } from '../utils/printMemberForm';
 import { bulkDownloadMembers } from '../utils/bulkDownload.jsx';
@@ -207,6 +208,16 @@ function AdminDashboard() {
   const [editPhotoFile, setEditPhotoFile]       = useState(null);
   const [savingEdit, setSavingEdit]             = useState(false);
   const [regeneratingId, setRegeneratingId]     = useState(false);
+
+  // Photo Cropper Modal State
+  const [cropperState, setCropperState] = useState({
+    isOpen: false,
+    imageSrc: null,
+    member: null,
+    target: null, // 'edit' | 'register' | 'direct'
+    title: null
+  });
+  const [savingDirectCrop, setSavingDirectCrop] = useState(false);
 
   const [migrating, setMigrating]       = useState(false);
   const [syncRemaining, setSyncRemaining] = useState(0);
@@ -877,6 +888,165 @@ function AdminDashboard() {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `TIWTN_Members_${Date.now()}.csv`; a.click();
   };
   const toIdCardShape = (m) => m ? ({ memberId: m.member_id, fullName: m.full_name, posting: m.posting, dob: m.dob, bloodGroup: m.blood_group, mobile: m.mobile, district: m.district, address: m.address, nomineeName: m.nominee_name, joinDate: m.join_date, pledgeDistrict: m.district, pledgeBranch: m.branch, photo_url: m.photo_url, photo_base64: m.photo_base64, photoPreview: m.photo_base64, aadhar: m.aadhar, aadhaar: m.aadhar }) : null;
+
+  // ── Photo Cropper Handlers ────────────────────────────────────
+  const openCropper = ({ imageSrc, member = null, target = 'direct', title = null }) => {
+    const src = imageSrc || getPhotoSrc(member);
+    if (!src) {
+      alert('பயிர் செய்ய புகைப்படம் இல்லை / No photo available to crop');
+      return;
+    }
+    setCropperState({
+      isOpen: true,
+      imageSrc: src,
+      member,
+      target,
+      title
+    });
+  };
+
+  const closeCropper = () => {
+    setCropperState({
+      isOpen: false,
+      imageSrc: null,
+      member: null,
+      target: null,
+      title: null
+    });
+  };
+
+  const handleCropperComplete = (croppedBlob, croppedDataUrl, croppedFile) => {
+    if (cropperState.target === 'edit') {
+      setEditPhotoPreview(croppedDataUrl);
+      setEditPhotoFile(croppedFile);
+    } else if (cropperState.target === 'register') {
+      setAdminPhotoPreview(croppedDataUrl);
+      setNewMember(prev => ({
+        ...prev,
+        photoPreview: croppedDataUrl,
+        photoFile: croppedFile
+      }));
+    }
+    closeCropper();
+  };
+
+  const handleDirectCropSave = async (croppedBlob, croppedDataUrl, croppedFile, andApprove = false) => {
+    const targetMember = cropperState.member;
+    if (!targetMember) return;
+
+    setSavingDirectCrop(true);
+    try {
+      const effectiveMemberId = targetMember.member_id;
+      let newPhotoUrl = null;
+
+      // Compress and upload
+      const compressed = await compressImageFile(croppedFile);
+
+      // 1. Cloudinary
+      const cloudinaryUrl = await uploadToCloudinary(compressed, effectiveMemberId);
+      if (cloudinaryUrl) {
+        newPhotoUrl = cloudinaryUrl;
+      } else {
+        // 2. Supabase Storage fallback
+        const path = `members/${effectiveMemberId}`;
+        const { data, error } = await supabase.storage
+          .from('member-photos')
+          .upload(path, compressed, {
+            contentType: 'image/jpeg',
+            upsert: true
+          });
+        if (error) throw error;
+        const { data: urlData } = supabase.storage
+          .from('member-photos')
+          .getPublicUrl(data.path);
+        newPhotoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      }
+
+      const updatePayload = {
+        photo_url: newPhotoUrl,
+        photo_base64: null
+      };
+
+      if (andApprove) {
+        updatePayload.status = 'approved';
+        updatePayload.rejection_reason = null;
+        updatePayload.approved_at = new Date().toISOString();
+        updatePayload.approved_by = userProfile?.name || 'Admin';
+      }
+
+      let query = supabase.from('members').update(updatePayload);
+      if (targetMember.id) {
+        query = query.eq('id', targetMember.id);
+      } else {
+        query = query.eq('member_id', effectiveMemberId);
+      }
+
+      const { error: updateError } = await query;
+      if (updateError) throw updateError;
+
+      // If approved, send Web3Forms email notification
+      if (andApprove) {
+        try {
+          const payload = new FormData();
+          payload.append('access_key', import.meta.env.VITE_WEB3FORMS_KEY);
+          payload.append('subject', '✅ உறுப்பினர் அனுமதி / Membership Approved: ' + targetMember.full_name);
+          payload.append('from_name', 'TIWTN Admin');
+          payload.append('message',
+            'அன்புள்ள ' + targetMember.full_name + ',\n\n' +
+            'உங்கள் தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்க உறுப்பினர் விண்ணப்பம் அனுமதிக்கப்பட்டது!\n\n' +
+            'உறுப்பினர் எண் / Member ID: ' + effectiveMemberId + '\n' +
+            'மாவட்டம் / District: ' + targetMember.district + '\n\n' +
+            'Dear ' + targetMember.full_name + ',\n\nYour membership has been APPROVED!\n' +
+            'Login to download your ID card:\nhttps://www.thennindiaweldingthozhilaalargalnalasangam.org/profile\n\n- TIWTN Admin Team'
+          );
+          await fetch('https://api.web3forms.com/submit', { method: 'POST', body: payload });
+        } catch (err) {
+          console.error('Email notification error:', err);
+        }
+      }
+
+      // Update in local states
+      setMembers(prev => prev.map(m => {
+        if (m.member_id === effectiveMemberId || (targetMember.id && m.id === targetMember.id)) {
+          return {
+            ...m,
+            photo_url: newPhotoUrl,
+            photo_base64: null,
+            ...(andApprove ? { status: 'approved', rejection_reason: null } : {})
+          };
+        }
+        return m;
+      }));
+
+      if (selectedMember && selectedMember.member_id === effectiveMemberId) {
+        setSelectedMember(prev => ({
+          ...prev,
+          photo_url: newPhotoUrl,
+          photo_base64: null,
+          ...(andApprove ? { status: 'approved', rejection_reason: null } : {})
+        }));
+      }
+
+      if (editMember && editMember.member_id === effectiveMemberId) {
+        setEditMember(prev => ({
+          ...prev,
+          photo_url: newPhotoUrl,
+          photo_base64: null,
+          ...(andApprove ? { status: 'approved', rejection_reason: null } : {})
+        }));
+        setEditPhotoPreview(newPhotoUrl);
+      }
+
+      closeCropper();
+      await loadMembers();
+      alert(andApprove ? '✅ படம் பயிர் செய்யப்பட்டு அனுமதிக்கப்பட்டது! / Cropped & Approved!' : '✅ புகைப்படம் பயிர் செய்யப்பட்டு சேமிக்கப்பட்டது! / Photo Cropped & Saved!');
+    } catch (err) {
+      console.error('Direct crop save failed:', err);
+      alert('பயிர் செய்த படத்தை சேமிப்பதில் பிழை / Save failed: ' + err.message);
+    } finally {
+      setSavingDirectCrop(false);
+    }
+  };
 
   // ── Register on behalf ───────────────────────────────────────
   const handleRegChange = (field) => (e) => {
@@ -1872,6 +2042,11 @@ NEW MEMBER REGISTRATION DETAILS
                       {/* Action buttons */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
                         <button
+                          onClick={() => openCropper({ member, imageSrc: getPhotoSrc(member), target: 'direct', title: 'புகைப்படம் பயிர் செய் / Crop ID Photo' })}
+                          style={{ padding: '8px 16px', background: '#FF6B00', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          ✂️ படம் பயிர் செய்
+                        </button>
+                        <button
                           onClick={() => handlePrintMember(member)}
                           style={{ padding: '8px 16px', background: '#003366', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
                           🖨️ படிவம் காண்க
@@ -1999,11 +2174,21 @@ NEW MEMBER REGISTRATION DETAILS
                       {/* Photo */}
                       <div style={{ flexShrink: 0 }}>
                         {(member.photo_url || member.photo_base64) ? (
-                          <img
-                            src={member.photo_url || member.photo_base64}
-                            crossOrigin="anonymous"
-                            style={{ width: '75px', height: '90px', objectFit: 'cover', borderRadius: '6px', border: '2px solid #DC2626' }}
-                          />
+                          <div
+                            className="relative group cursor-pointer"
+                            title="படம் பயிர் செய்ய கிளிக் செய்யவும் / Click to Crop Photo"
+                            onClick={() => openCropper({ member, imageSrc: getPhotoSrc(member), target: 'direct', title: 'நிராகரிக்கப்பட்ட புகைப்படம் பயிர் செய் / Crop Rejected Photo' })}
+                          >
+                            <img
+                              src={member.photo_url || member.photo_base64}
+                              crossOrigin="anonymous"
+                              style={{ width: '75px', height: '90px', objectFit: 'cover', borderRadius: '6px', border: '2px solid #DC2626' }}
+                            />
+                            <div className="absolute inset-0 bg-black/60 rounded-[6px] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold transition">
+                              <span>✂️</span>
+                              <span>பயிர் செய்</span>
+                            </div>
+                          </div>
                         ) : (
                           <div style={{
                             width: '75px', height: '90px', borderRadius: '6px',
@@ -2059,11 +2244,21 @@ NEW MEMBER REGISTRATION DETAILS
                       </div>
 
                       {/* Action buttons */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0, width: '165px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flexShrink: 0, width: '165px' }}>
+                        <button
+                          onClick={() => openCropper({ member, imageSrc: getPhotoSrc(member), target: 'direct', title: 'நிராகரிக்கப்பட்ட புகைப்படம் பயிர் செய் / Crop Rejected Photo' })}
+                          style={{
+                            padding: '8px 12px', background: '#DC2626', color: '#fff',
+                            border: 'none', borderRadius: '8px', cursor: 'pointer',
+                            fontSize: '12px', fontWeight: '700', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center', gap: '6px'
+                          }}>
+                          ✂️ படம் பயிர் செய்
+                        </button>
                         <button
                           onClick={() => setEditMember(member)}
                           style={{
-                            padding: '9px 12px', background: '#003366', color: '#fff',
+                            padding: '8px 12px', background: '#003366', color: '#fff',
                             border: 'none', borderRadius: '8px', cursor: 'pointer',
                             fontSize: '12px', fontWeight: '700', display: 'flex',
                             alignItems: 'center', justifyContent: 'center', gap: '6px'
@@ -2073,7 +2268,7 @@ NEW MEMBER REGISTRATION DETAILS
                         <button
                           onClick={() => approveMember(member)}
                           style={{
-                            padding: '9px 12px', background: '#16A34A', color: '#fff',
+                            padding: '8px 12px', background: '#16A34A', color: '#fff',
                             border: 'none', borderRadius: '8px', cursor: 'pointer',
                             fontSize: '12px', fontWeight: '700', display: 'flex',
                             alignItems: 'center', justifyContent: 'center', gap: '6px'
@@ -2512,26 +2707,38 @@ NEW MEMBER REGISTRATION DETAILS
                     {/* Photo Upload Box */}
                     <div className="w-full sm:w-1/2 rounded-[12px] p-5 text-center" style={{ border: '1.5px solid #E5DDD0' }}>
                       <p className="mb-3 text-sm font-semibold text-[#003366]">படம் / Photo upload</p>
-                      <label className="group relative mx-auto block cursor-pointer" style={{ width: '120px', height: '140px' }}>
-                        {adminPhotoPreview ? (
-                          <img
-                            src={adminPhotoPreview}
-                            alt="Member"
-                            className="w-full h-full object-cover rounded-lg border-2 border-[#003366]"
+                      <div className="flex flex-col items-center gap-2">
+                        <label className="group relative mx-auto block cursor-pointer" style={{ width: '120px', height: '140px' }}>
+                          {adminPhotoPreview ? (
+                            <img
+                              src={adminPhotoPreview}
+                              alt="Member"
+                              className="w-full h-full object-cover rounded-lg border-2 border-[#003366]"
+                            />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', border: '2px dashed #CCCCCC', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#888888', fontSize: '12px' }}>
+                              <span style={{ fontSize: '24px' }}>📷</span>
+                              <span>படம் பதிவேற்று</span>
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-[2]"
+                            onChange={handleAdminPhoto}
                           />
-                        ) : (
-                          <div style={{ width: '100%', height: '100%', border: '2px dashed #CCCCCC', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#888888', fontSize: '12px' }}>
-                            <span style={{ fontSize: '24px' }}>📷</span>
-                            <span>படம் பதிவேற்று</span>
-                          </div>
+                        </label>
+
+                        {adminPhotoPreview && (
+                          <button
+                            type="button"
+                            onClick={() => openCropper({ imageSrc: adminPhotoPreview, target: 'register', title: 'பதிவு புகைப்படம் பயிர் செய் / Crop Member Photo' })}
+                            className="mt-1 px-3 py-1.5 bg-[#FF6B00] text-white rounded-lg text-xs font-bold hover:bg-[#e66000] transition flex items-center gap-1.5 shadow-sm"
+                          >
+                            ✂️ படம் பயிர் செய் / Crop Photo
+                          </button>
                         )}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-[2]"
-                          onChange={handleAdminPhoto}
-                        />
-                      </label>
+                      </div>
                     </div>
 
                     {/* ID Preview Box */}
@@ -2810,6 +3017,12 @@ NEW MEMBER REGISTRATION DETAILS
                 </div>
               </div>
               <div className="mt-4 flex gap-2">
+                <button
+                  onClick={() => openCropper({ member: selectedMember, imageSrc: getPhotoSrc(selectedMember), target: 'direct', title: 'உறுப்பினர் புகைப்படம் பயிர் செய் / Crop ID Photo' })}
+                  className="flex-1 rounded-lg bg-[#FF6B00] text-white py-2 font-bold text-sm hover:opacity-90 transition flex items-center justify-center gap-1.5"
+                >
+                  ✂️ Crop Photo
+                </button>
                 <button onClick={() => { setEditMember({ ...selectedMember }); setSelectedMember(null); }}
                   className="flex-1 rounded-lg bg-[#FFB347] text-black py-2 font-semibold text-sm hover:opacity-90 transition">✏️ Edit</button>
                 <button onClick={() => deleteMember(selectedMember.member_id, selectedMember.user_id)}
@@ -2842,16 +3055,26 @@ NEW MEMBER REGISTRATION DETAILS
               border: '1px solid var(--border)'
             }}>
               {/* Preview */}
-              <div style={{ flexShrink: 0 }}>
+              <div style={{ flexShrink: 0, position: 'relative' }}>
                 {editPhotoPreview ? (
-                  <img
-                    src={editPhotoPreview}
-                    style={{
-                      width: '80px', height: '96px',
-                      objectFit: 'cover', borderRadius: '6px',
-                      border: '2px solid #003366'
-                    }}
-                  />
+                  <div
+                    className="relative group cursor-pointer"
+                    title="படம் பயிர் செய்ய கிளிக் செய்யவும் / Click to Crop Photo"
+                    onClick={() => openCropper({ imageSrc: editPhotoPreview, member: editMember, target: 'edit', title: 'புகைப்படம் பயிர் செய் / Crop Photo' })}
+                  >
+                    <img
+                      src={editPhotoPreview}
+                      style={{
+                        width: '80px', height: '96px',
+                        objectFit: 'cover', borderRadius: '6px',
+                        border: '2px solid #003366'
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/60 rounded-[6px] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold transition">
+                      <span>✂️</span>
+                      <span>பயிர் செய்</span>
+                    </div>
+                  </div>
                 ) : (
                   <div style={{
                     width: '80px', height: '96px',
@@ -2880,42 +3103,62 @@ NEW MEMBER REGISTRATION DETAILS
                   marginBottom: '10px'
                 }}>JPG, PNG · Max 2MB</div>
 
-                <label style={{
-                  display: 'inline-block',
-                  padding: '7px 16px',
-                  background: '#003366', color: '#fff',
-                  borderRadius: '6px', fontSize: '12px',
-                  fontWeight: '700', cursor: 'pointer'
-                }}>
-                  📷 படம் தேர்வு / Choose Photo
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleEditPhotoUpload}
-                    style={{ display: 'none' }}
-                  />
-                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label style={{
+                    display: 'inline-block',
+                    padding: '7px 14px',
+                    background: '#003366', color: '#fff',
+                    borderRadius: '6px', fontSize: '12px',
+                    fontWeight: '700', cursor: 'pointer'
+                  }}>
+                    📷 தேர்வு / Choose
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleEditPhotoUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
 
-                {editPhotoFile && (
-                  <button
-                    onClick={() => {
-                      setEditPhotoPreview(
-                        editMember._original_photo_url ||
-                        editMember._original_photo_base64 ||
-                        null
-                      )
-                      setEditPhotoFile(null)
-                    }}
-                    style={{
-                      marginLeft: '8px', padding: '7px 12px',
-                      background: 'transparent',
-                      color: '#E53E3E',
-                      border: '1px solid #E53E3E',
-                      borderRadius: '6px', fontSize: '12px',
-                      cursor: 'pointer'
-                    }}
-                  >↩ Reset</button>
-                )}
+                  {editPhotoPreview && (
+                    <button
+                      type="button"
+                      onClick={() => openCropper({ imageSrc: editPhotoPreview, member: editMember, target: 'edit', title: 'புகைப்படம் பயிர் செய் / Crop Photo' })}
+                      style={{
+                        padding: '7px 14px',
+                        background: '#FF6B00', color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px', fontSize: '12px',
+                        fontWeight: '700', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: '4px'
+                      }}
+                    >
+                      ✂️ பயிர் செய் / Crop
+                    </button>
+                  )}
+
+                  {editPhotoFile && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditPhotoPreview(
+                          editMember._original_photo_url ||
+                          editMember._original_photo_base64 ||
+                          null
+                        )
+                        setEditPhotoFile(null)
+                      }}
+                      style={{
+                        padding: '7px 10px',
+                        background: 'transparent',
+                        color: '#E53E3E',
+                        border: '1px solid #E53E3E',
+                        borderRadius: '6px', fontSize: '12px',
+                        cursor: 'pointer'
+                      }}
+                    >↩ Reset</button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -3245,6 +3488,19 @@ NEW MEMBER REGISTRATION DETAILS
             </form>
           </div>
         </div>
+      )}
+
+      {/* ── PHOTO CROPPER MODAL ── */}
+      {cropperState.isOpen && (
+        <ImageCropperModal
+          imageSrc={cropperState.imageSrc}
+          member={cropperState.member}
+          title={cropperState.title}
+          onCropComplete={handleCropperComplete}
+          onDirectSave={cropperState.target === 'direct' ? handleDirectCropSave : null}
+          onClose={closeCropper}
+          saving={savingDirectCrop}
+        />
       )}
 
     </div>
