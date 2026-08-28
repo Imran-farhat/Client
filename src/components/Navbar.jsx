@@ -14,12 +14,16 @@ const links = [
 
 function Navbar() {
   const { theme, toggleTheme } = useContext(ThemeContext);
-  const { currentUser, isAdmin, logout, userProfile } = useAuth();
+  const { currentUser, isAdmin, logout, userProfile, loading } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [dropOpen, setDropOpen] = useState(false);
   const dropdownRef = useRef(null);
   const location = useLocation();
+
+  // Registration check: only show Register button if guest OR if logged in regular user who hasn't registered yet
+  const isRegisteredMember = Boolean(userProfile?.has_registered || userProfile?.member_id);
+  const showRegister = !currentUser || (!loading && !isAdmin && !isRegisteredMember);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -99,7 +103,7 @@ function Navbar() {
             </span>
           </div>
 
-          {(!currentUser || !userProfile?.has_registered) && (
+          {showRegister && (
             <NavLink to="/register" className="button-amber inline-flex px-4 py-2 text-sm font-semibold text-black">
               Register
             </NavLink>
@@ -259,7 +263,7 @@ function Navbar() {
             <span className="mr-2">{theme === 'dark' ? '🌙' : '☀️'}</span>
             Toggle Theme
           </button>
-          {(!currentUser || !userProfile?.has_registered) && (
+          {showRegister && (
             <NavLink to="/register" className="flex h-12 w-full items-center justify-center rounded-xl bg-amber font-semibold text-black transition hover:bg-amber-light" onClick={() => setOpen(false)}>
               Register
             </NavLink>

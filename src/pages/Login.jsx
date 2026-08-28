@@ -14,7 +14,7 @@ function Login() {
   useEffect(() => {
     if (currentUser) {
       const target = location.state?.redirectTo || (isAdmin ? '/admin' : '/profile');
-      navigate(target);
+      navigate(target, { replace: true });
     }
   }, [currentUser, isAdmin, navigate, location.state]);
 
@@ -33,13 +33,14 @@ function Login() {
           redirectTo,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent'
+            prompt: 'select_account'
           }
         }
       });
       if (error) throw error;
     } catch (err) {
-      setError(err.message);
+      console.error('Google login error:', err);
+      setError(err.message || 'உள்நுழைவதில் பிழை / Login failed');
       setLoading(false);
     }
   };
