@@ -17,8 +17,10 @@ const testimonials = [
   { quote: 'Their certification boosted my career and credibility instantly.', name: 'Meera Patel', role: 'Inspection Lead' },
 ];
 
+let cachedMemberCount = null;
+
 function Home() {
-  const [memberCount, setMemberCount] = useState(null);
+  const [memberCount, setMemberCount] = useState(cachedMemberCount ?? null);
   const [count, setCount] = useState([0, 0, 0]); // [members, years, branches]
 
   // Fetch live member count from Supabase
@@ -29,10 +31,11 @@ function Home() {
           .from('members')
           .select('*', { count: 'exact', head: true });
         if (error) throw error;
+        cachedMemberCount = total ?? 0;
         setMemberCount(total ?? 0);
       } catch (err) {
         console.error('Error fetching member count:', err);
-        setMemberCount(0);
+        if (cachedMemberCount === null) setMemberCount(0);
       }
     };
     fetchCount();

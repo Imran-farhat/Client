@@ -88,7 +88,7 @@ function formatDateDisplay() {
 }
 
 function Register() {
-  const { currentUser, userProfile, refreshProfile, loading } = useAuth();
+  const { currentUser, userProfile, memberData: authMemberData, refreshProfile, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isExplicitEdit = searchParams.get('mode') === 'edit';
@@ -98,11 +98,11 @@ function Register() {
   const [member, setMember] = useState(null);
   const [memberId, setMemberId] = useState('');
   const [previewMemberId, setPreviewMemberId] = useState('');
-  const [existingMember, setExistingMember] = useState(null);
+  const [existingMember, setExistingMember] = useState(authMemberData || null);
   const [cardReady, setCardReady] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPending, setShowPending] = useState(false);
-  const [loadingExisting, setLoadingExisting] = useState(true);
+  const [loadingExisting, setLoadingExisting] = useState(!authMemberData);
   const cardRef = useRef(null);
   const formRef = useRef(null);
   const joiningDate = useMemo(() => formatDateDisplay(), []);
@@ -127,11 +127,15 @@ function Register() {
       }
 
       try {
-        let { data, error } = await supabase
-          .from('members')
-          .select('*')
-          .eq('user_id', currentUser.id)
-          .maybeSingle();
+        let data = authMemberData;
+        if (!data) {
+          const { data: mData } = await supabase
+            .from('members')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .maybeSingle();
+          data = mData;
+        }
 
         if (!data && userProfile?.mobile) {
           const { data: data2 } = await supabase
@@ -562,45 +566,40 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
   };
 
   const checkDuplicate = async (mobile, aadhar, currentMemberId = null) => {
-    // Check mobile: exclude own member record and own user account
+    // Check mobile and Aadhaar in parallel
     let mobileQuery = supabase
       .from('members')
       .select('member_id, user_id')
       .eq('mobile', mobile);
 
-    if (currentMemberId) {
-      mobileQuery = mobileQuery.neq('member_id', currentMemberId);
-    }
-    if (currentUser?.id) {
-      mobileQuery = mobileQuery.neq('user_id', currentUser.id);
-    }
-
-    const { data: mobileCheck } = await mobileQuery.maybeSingle();
-
-    if (mobileCheck) {
-      throw new Error(
-        'இந்த கைபேசி எண் ஏற்கனவே வேறொரு பதிவில் உள்ளது / ' +
-        'This mobile number is already registered with another member. ' +
-        'Member ID: ' + mobileCheck.member_id
-      );
-    }
-
-    // Check Aadhaar: exclude own member record and own user account
     let aadharQuery = supabase
       .from('members')
       .select('member_id, user_id')
       .eq('aadhar', aadhar);
 
     if (currentMemberId) {
+      mobileQuery = mobileQuery.neq('member_id', currentMemberId);
       aadharQuery = aadharQuery.neq('member_id', currentMemberId);
     }
     if (currentUser?.id) {
+      mobileQuery = mobileQuery.neq('user_id', currentUser.id);
       aadharQuery = aadharQuery.neq('user_id', currentUser.id);
     }
 
-    const { data: aadharCheck } = await aadharQuery.maybeSingle();
+    const [mobileRes, aadharRes] = await Promise.all([
+      mobileQuery.maybeSingle(),
+      aadharQuery.maybeSingle()
+    ]);
 
-    if (aadharCheck) {
+    if (mobileRes.data) {
+      throw new Error(
+        'இந்த கைபேசி எண் ஏற்கனவே வேறொரு பதிவில் உள்ளது / ' +
+        'This mobile number is already registered with another member. ' +
+        'Member ID: ' + mobileRes.data.member_id
+      );
+    }
+
+    if (aadharRes.data) {
       throw new Error(
         'இந்த ஆதார் எண் ஏற்கனவே வேறொரு பதிவில் உள்ளது / ' +
         'This Aadhaar is already registered with another member.'
@@ -626,7 +625,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
       const isUpdate = !!existingMember;
       const targetMemberId = existingMember ? existingMember.member_id : await generateMemberId(form.pledgeDistrict);
 
-      // Check duplicates excluding own record
+      // Check duplicates in parallel excluding own record
       await checkDuplicate(form.mobile, form.aadhaar, existingMember?.member_id);
 
       // Upload photo to Storage if a new file was chosen
@@ -652,9 +651,10 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
         const assignedId = saveResult.memberId || targetMemberId;
         memberData.memberId = assignedId;
 
-        await sendAdminNotification(form, assignedId, isUpdate);
+        // Fire admin email in background (non-blocking)
+        sendAdminNotification(form, assignedId, isUpdate).catch(e => console.warn('Email notify error:', e));
 
-        // Show pending screen
+        // Show pending confirmation screen immediately
         setErrors({});
         setMemberId(assignedId);
         setMember(memberData);

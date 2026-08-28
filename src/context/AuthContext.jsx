@@ -1,60 +1,109 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase/client'
-import { SITE_URL } from '../config/constants'
+import { SITE_URL, ADMIN_EMAIL } from '../config/constants'
 
 const AuthContext = createContext()
 
-const CACHE_PREFIX = 'wpa_user_profile_'
+const CACHE_PROFILE_KEY = 'wpa_user_profile_'
+const CACHE_MEMBER_KEY = 'wpa_member_data_'
 
-const getCachedProfile = (userId) => {
-  if (!userId) return null
+const ADMIN_EMAILS = [
+  ADMIN_EMAIL?.toLowerCase(),
+  'thenindiawelding@gmail.com',
+  'idhreesufiyaidhreesufiya@gmail.com'
+].filter(Boolean)
+
+const checkIsAdmin = (email, role) => {
+  if (role === 'admin') return true
+  if (email && ADMIN_EMAILS.includes(email.toLowerCase())) return true
+  return false
+}
+
+// Helpers for fast local cache
+const getCached = (key) => {
   try {
-    const raw = localStorage.getItem(`${CACHE_PREFIX}${userId}`)
+    const raw = localStorage.getItem(key)
     return raw ? JSON.parse(raw) : null
   } catch {
     return null
   }
 }
 
-const setCachedProfile = (userId, profile) => {
-  if (!userId || !profile) return
+const setCached = (key, val) => {
   try {
-    localStorage.setItem(`${CACHE_PREFIX}${userId}`, JSON.stringify(profile))
+    if (val) localStorage.setItem(key, JSON.stringify(val))
+    else localStorage.removeItem(key)
   } catch {}
 }
 
-const clearCachedProfile = (userId = null) => {
+const clearAllAuthCache = () => {
   try {
-    if (userId) {
-      localStorage.removeItem(`${CACHE_PREFIX}${userId}`)
-    } else {
-      Object.keys(localStorage)
-        .filter(k => k.startsWith(CACHE_PREFIX))
-        .forEach(k => localStorage.removeItem(k))
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('wpa_'))
+      .forEach(k => localStorage.removeItem(k))
+  } catch {}
+}
+
+// Helper to check existing Supabase token synchronously
+const getInitialStoredSession = () => {
+  try {
+    const keys = Object.keys(localStorage)
+    const authKey = keys.find(k => k.startsWith('sb-') && k.endsWith('-auth-token'))
+    if (authKey) {
+      const item = JSON.parse(localStorage.getItem(authKey))
+      return item?.user || null
     }
   } catch {}
+  return null
 }
 
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null)
-  const [userProfile, setUserProfile] = useState(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
+  // 1. Instant 0ms synchronous state initialization from local storage
+  const [currentUser, setCurrentUser] = useState(() => getInitialStoredSession())
 
-  // In-flight fetch deduplication promise ref
+  const [userProfile, setUserProfile] = useState(() => {
+    const user = getInitialStoredSession()
+    return user?.id ? getCached(`${CACHE_PROFILE_KEY}${user.id}`) : null
+  })
+
+  const [memberData, setMemberData] = useState(() => {
+    const user = getInitialStoredSession()
+    return user?.id ? getCached(`${CACHE_MEMBER_KEY}${user.id}`) : null
+  })
+
+  const [isAdmin, setIsAdmin] = useState(() => {
+    const user = getInitialStoredSession()
+    if (!user) return false
+    const cachedProfile = user.id ? getCached(`${CACHE_PROFILE_KEY}${user.id}`) : null
+    return checkIsAdmin(user.email, cachedProfile?.role)
+  })
+
+  const [loading, setLoading] = useState(() => {
+    // If URL contains OAuth callback tokens, keep loading true until Supabase processes it
+    if (typeof window !== 'undefined') {
+      const hasAuthHash = window.location.hash.includes('access_token') || 
+                          window.location.hash.includes('error') ||
+                          window.location.search.includes('code')
+      if (hasAuthHash) return true
+    }
+    // Otherwise if we have stored session or no session, not loading
+    return false
+  })
+
+  // In-flight fetch deduplication ref
   const inFlightFetchRef = useRef(null)
 
-  const fetchProfile = async (userId) => {
+  // Fast single unified fetch for both User and Member profiles
+  const fetchProfile = async (userId, userEmail = null, userMetadata = null) => {
     if (!userId) return null
 
-    // Deduplicate in-flight fetch for same userId
     if (inFlightFetchRef.current) {
       return inFlightFetchRef.current
     }
 
-    const fetchPromise = (async () => {
+    const promise = (async () => {
       try {
-        // Query users table and members table in parallel for maximum speed
+        // Query users table and members table in parallel
         const [userRes, memberRes] = await Promise.allSettled([
           supabase
             .from('users')
@@ -63,94 +112,91 @@ export const AuthProvider = ({ children }) => {
             .maybeSingle(),
           supabase
             .from('members')
-            .select('member_id, status, mobile')
+            .select('*')
             .eq('user_id', userId)
             .maybeSingle()
         ])
 
         const userData = userRes.status === 'fulfilled' ? userRes.value.data : null
-        let memberRec = memberRes.status === 'fulfilled' ? memberRes.value.data : null
+        let member = memberRes.status === 'fulfilled' ? memberRes.value.data : null
 
-        // Fallback: check members table by mobile if not found by user_id
-        if (!memberRec && userData?.mobile) {
+        // Fallback: check members table by mobile if not linked by user_id
+        if (!member && (userData?.mobile || userMetadata?.phone)) {
+          const mob = userData?.mobile || userMetadata?.phone
           try {
             const { data: mByMob } = await supabase
               .from('members')
-              .select('member_id, status, mobile')
-              .eq('mobile', userData.mobile)
+              .select('*')
+              .eq('mobile', mob)
               .maybeSingle()
-            if (mByMob) memberRec = mByMob
-          } catch (mErr) {
-            console.warn('Fallback members query error:', mErr)
-          }
+            if (mByMob) {
+              member = mByMob
+              // Auto link member with user_id in background
+              supabase.from('members').update({ user_id: userId }).eq('id', mByMob.id).then(() => {})
+            }
+          } catch {}
         }
 
-        const isRegistered = Boolean(userData?.has_registered || memberRec)
-        const effectiveMemberId = userData?.member_id || memberRec?.member_id || null
+        const isRegistered = Boolean(userData?.has_registered || member)
+        const effectiveMemberId = userData?.member_id || member?.member_id || null
+        const emailToCheck = userData?.email || userEmail || ''
+        const adminStatus = checkIsAdmin(emailToCheck, userData?.role)
+
+        let resolvedProfile = null
 
         if (userData) {
-          const updatedProfile = {
+          resolvedProfile = {
             ...userData,
             has_registered: isRegistered,
             member_id: effectiveMemberId,
-            member_status: memberRec?.status || null
+            member_status: member?.status || null
           }
-          setUserProfile(updatedProfile)
-          setIsAdmin(userData.role === 'admin')
-          setCachedProfile(userId, updatedProfile)
-
-          // Auto-sync users table in background if members record exists but user row was out of sync
-          if (memberRec && (!userData.has_registered || !userData.member_id)) {
+          // Auto sync user row if member exists
+          if (member && (!userData.has_registered || !userData.member_id)) {
             supabase
               .from('users')
-              .update({ has_registered: true, member_id: memberRec.member_id })
+              .update({ has_registered: true, member_id: member.member_id })
               .eq('id', userId)
               .then(() => {})
           }
-
-          return updatedProfile
         } else {
-          // Lazy create user profile for new login
-          const { data: { session } } = await supabase.auth.getSession()
-          const authUser = session?.user
-          if (authUser && authUser.id === userId) {
-            const newProfile = {
-              id: authUser.id,
-              name: authUser.user_metadata?.full_name ||
-                    authUser.email?.split('@')[0] || '',
-              email: authUser.email || '',
-              photo: authUser.user_metadata?.avatar_url || null,
-              provider: authUser.app_metadata?.provider || 'google',
-              role: 'member',
-              has_registered: isRegistered,
-              member_id: effectiveMemberId,
-              last_login: new Date().toISOString()
-            }
-
-            setUserProfile(newProfile)
-            setIsAdmin(newProfile.role === 'admin')
-            setCachedProfile(userId, newProfile)
-
-            // Upsert profile in background
-            supabase.from('users').upsert(newProfile).then(() => {})
-            return newProfile
+          // Fast lazy create user record if first-time login
+          resolvedProfile = {
+            id: userId,
+            name: userMetadata?.full_name || userEmail?.split('@')[0] || 'Member',
+            email: userEmail || '',
+            photo: userMetadata?.avatar_url || null,
+            provider: 'google',
+            role: adminStatus ? 'admin' : 'member',
+            has_registered: isRegistered,
+            member_id: effectiveMemberId,
+            last_login: new Date().toISOString()
           }
+          supabase.from('users').upsert(resolvedProfile).then(() => {})
         }
+
+        // Update states and caches
+        setUserProfile(resolvedProfile)
+        setMemberData(member)
+        setIsAdmin(adminStatus)
+        setCached(`${CACHE_PROFILE_KEY}${userId}`, resolvedProfile)
+        setCached(`${CACHE_MEMBER_KEY}${userId}`, member)
+
+        return { profile: resolvedProfile, member }
       } catch (err) {
-        console.error('Exception fetching profile:', err)
+        console.error('Error fetching profile:', err)
       } finally {
         inFlightFetchRef.current = null
       }
       return null
     })()
 
-    inFlightFetchRef.current = fetchPromise
-    return fetchPromise
+    inFlightFetchRef.current = promise
+    return promise
   }
 
   const updateLastLogin = (userId) => {
     if (!userId) return
-    // Fire-and-forget: update last_login in background without blocking UI
     supabase
       .from('users')
       .update({ last_login: new Date().toISOString() })
@@ -161,29 +207,28 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     let isMounted = true
 
-    // 1. Initial Session Check (Fast synchronous check from local storage session)
+    // Fast session verification
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!isMounted) return
 
       if (session?.user) {
         setCurrentUser(session.user)
+        setIsAdmin(checkIsAdmin(session.user.email, userProfile?.role))
 
-        // Instant local cache restore
-        const cached = getCachedProfile(session.user.id)
-        if (cached) {
-          setUserProfile(cached)
-          setIsAdmin(cached.role === 'admin')
-          setLoading(false)
-        }
-
-        // Fetch fresh profile in background
-        fetchProfile(session.user.id).finally(() => {
+        // Background profile sync
+        fetchProfile(
+          session.user.id,
+          session.user.email,
+          session.user.user_metadata
+        ).finally(() => {
           if (isMounted) setLoading(false)
         })
+
         updateLastLogin(session.user.id)
       } else {
         setCurrentUser(null)
         setUserProfile(null)
+        setMemberData(null)
         setIsAdmin(false)
         setLoading(false)
       }
@@ -191,15 +236,16 @@ export const AuthProvider = ({ children }) => {
       if (isMounted) setLoading(false)
     })
 
-    // 2. Auth State Change Listener
+    // Auth State Change Listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return
 
       if (event === 'SIGNED_OUT' || !session?.user) {
         setCurrentUser(null)
         setUserProfile(null)
+        setMemberData(null)
         setIsAdmin(false)
-        clearCachedProfile()
+        clearAllAuthCache()
         setLoading(false)
 
         const protectedPaths = ['/profile', '/admin']
@@ -211,17 +257,17 @@ export const AuthProvider = ({ children }) => {
 
       if (session?.user) {
         setCurrentUser(session.user)
+        setIsAdmin(checkIsAdmin(session.user.email, userProfile?.role))
 
-        // Instant local cache restore
-        const cached = getCachedProfile(session.user.id)
-        if (cached) {
-          setUserProfile(cached)
-          setIsAdmin(cached.role === 'admin')
-        }
+        // Instantly stop loading indicator since user is authenticated
+        setLoading(false)
 
-        // Fetch latest profile
-        await fetchProfile(session.user.id)
-        if (isMounted) setLoading(false)
+        // Sync profile and member records in background
+        await fetchProfile(
+          session.user.id,
+          session.user.email,
+          session.user.user_metadata
+        )
 
         if (event === 'SIGNED_IN') {
           updateLastLogin(session.user.id)
@@ -241,7 +287,7 @@ export const AuthProvider = ({ children }) => {
       ? `http://localhost:5173${target}`
       : `${window.location.origin}${target}`
 
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo,
@@ -251,7 +297,11 @@ export const AuthProvider = ({ children }) => {
         }
       }
     })
+
     if (error) throw error
+    if (data?.url) {
+      window.location.href = data.url
+    }
   }
 
   const loginWithEmail = async (email, password) => {
@@ -288,25 +338,33 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      clearCachedProfile(currentUser?.id)
+      clearAllAuthCache()
       await supabase.auth.signOut()
     } catch (err) {
       console.warn('Sign out error:', err)
     } finally {
       setCurrentUser(null)
       setUserProfile(null)
+      setMemberData(null)
       setIsAdmin(false)
     }
   }
 
   const refreshProfile = async () => {
-    if (currentUser) await fetchProfile(currentUser.id)
+    if (currentUser) {
+      await fetchProfile(
+        currentUser.id,
+        currentUser.email,
+        currentUser.user_metadata
+      )
+    }
   }
 
   return (
     <AuthContext.Provider value={{
       currentUser,
       userProfile,
+      memberData,
       isAdmin,
       loading,
       loginWithGoogle,

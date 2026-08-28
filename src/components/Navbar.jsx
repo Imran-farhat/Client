@@ -21,9 +21,8 @@ function Navbar() {
   const dropdownRef = useRef(null);
   const location = useLocation();
 
-  // Registration check: only show Register button if guest OR if logged in regular user who hasn't registered yet
-  const isRegisteredMember = Boolean(userProfile?.has_registered || userProfile?.member_id);
-  const showRegister = !currentUser || (!loading && !isAdmin && !isRegisteredMember);
+  // Only show Register button for unauthenticated guest visitors
+  const showRegister = !currentUser;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);

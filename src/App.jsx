@@ -43,6 +43,25 @@ function App() {
     document.title = pageTitles[location.pathname] || 'தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்';
   }, [location]);
 
+  // Preload lazy page components in idle time for instant route transitions
+  useEffect(() => {
+    const preloadRoutes = () => {
+      import('./pages/Home');
+      import('./pages/About');
+      import('./pages/Services');
+      import('./pages/Gallery');
+      import('./pages/Contact');
+      import('./pages/Profile');
+      import('./pages/Register');
+    };
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(preloadRoutes);
+    } else {
+      setTimeout(preloadRoutes, 1000);
+    }
+  }, []);
+
   if (MAINTENANCE_MODE) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#003366] text-white p-6 text-center font-sans">

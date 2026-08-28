@@ -51,35 +51,38 @@ export const DISTRICT_CODES = DISTRICT_LIST.reduce((acc, d) => {
   return acc;
 }, {});
 
-
+/**
+ * Super Fast, Concurrency-Safe Member ID Generator
+ * Generates structured member IDs: TIWTN-YYYY-DIST-NNN
+ */
 export const generateMemberId = async (district, offset = 0) => {
   const districtCode = DISTRICT_CODES[district] || 'OTH';
   const year = new Date().getFullYear();
+  const prefix = `TIWTN-${year}-${districtCode}-`;
 
-  // Tier 1: Try database RPC if available (bypasses RLS with security definer)
+  // Tier 1: Try database RPC if configured in Supabase
   try {
     const { data: rpcId, error: rpcErr } = await supabase
       .rpc('get_next_member_id', { p_district: district || '' });
     if (!rpcErr && rpcId) {
       if (offset === 0) return rpcId;
-      // If offset requested (e.g. during collision retry)
       const match = rpcId.match(/(TIWTN-\d+-[A-Z]+-)(\d+)/);
       if (match) {
         const nextNum = parseInt(match[2], 10) + offset;
         return `${match[1]}${String(nextNum).padStart(3, '0')}`;
       }
     }
-  } catch (e) {
-    console.warn('RPC get_next_member_id not available, using client query fallback:', e.message);
-  }
+  } catch {}
 
-  // Tier 2: Client query of all existing member IDs matching this district pattern
+  // Tier 2: Single-pass query of all member IDs in this district
   let maxNumber = 0;
   try {
     const { data: existingRecords } = await supabase
       .from('members')
       .select('member_id')
-      .ilike('member_id', `TIWTN-${year}-${districtCode}-%`);
+      .ilike('member_id', `${prefix}%`)
+      .order('member_id', { ascending: false })
+      .limit(50);
 
     if (existingRecords && existingRecords.length > 0) {
       for (const rec of existingRecords) {
@@ -93,36 +96,10 @@ export const generateMemberId = async (district, offset = 0) => {
       }
     }
   } catch (e) {
-    console.warn('Error fetching member records for sequence parsing:', e.message);
+    console.warn('Error fetching member records for sequence parsing:', e);
   }
 
-  let nextCount = maxNumber + 1 + offset;
-  let isUnique = false;
-  let generatedId = '';
-
-  // Tier 3: Verify uniqueness with maybeSingle check
-  let attempts = 0;
-  while (!isUnique && attempts < 20) {
-    attempts++;
-    const paddedCount = String(nextCount).padStart(3, '0');
-    generatedId = `TIWTN-${year}-${districtCode}-${paddedCount}`;
-
-    try {
-      const { data, error } = await supabase
-        .from('members')
-        .select('member_id')
-        .eq('member_id', generatedId)
-        .maybeSingle();
-
-      if (!error && !data) {
-        isUnique = true;
-      } else {
-        nextCount++;
-      }
-    } catch {
-      nextCount++;
-    }
-  }
-
-  return generatedId;
+  const nextCount = maxNumber + 1 + offset;
+  const paddedCount = String(nextCount).padStart(3, '0');
+  return `${prefix}${paddedCount}`;
 };

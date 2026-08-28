@@ -13,11 +13,10 @@ const getPhotoSrc = (member) =>
   null;
 
 function Profile() {
-  const { currentUser, userProfile, refreshProfile, logout, loading: authLoading } = useAuth();
+  const { currentUser, userProfile, memberData: authMemberData, refreshProfile, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [memberData, setMemberData] = useState(null);
+  const [memberData, setMemberData] = useState(authMemberData || null);
   const [editName, setEditName] = useState('');
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   // Redirect if not logged in (only after auth finished initializing)
@@ -34,49 +33,12 @@ function Profile() {
     }
   }, [userProfile]);
 
-  // Load member registration from Supabase
+  // Keep memberData in sync with AuthContext
   useEffect(() => {
-    const loadMember = async () => {
-      if (!currentUser) return;
-      setLoading(true);
-
-      try {
-        // Try by user_id first
-        let { data, error } = await supabase
-          .from('members')
-          .select('*')
-          .eq('user_id', currentUser.id)
-          .maybeSingle();
-
-        if (error) throw error;
-
-        // Fallback: try by mobile from userProfile
-        if (!data && userProfile?.mobile) {
-          const { data: data2, error: error2 } = await supabase
-            .from('members')
-            .select('*')
-            .eq('mobile', userProfile.mobile)
-            .maybeSingle();
-          if (error2) throw error2;
-          data = data2;
-        }
-
-        if (data) {
-          console.log('Member found:', data);
-          setMemberData(data);
-        } else {
-          console.log('No member found for user:', currentUser.id);
-          setMemberData(null);
-        }
-      } catch (err) {
-        console.error("Error loading member details:", err.message || err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (currentUser) loadMember();
-  }, [currentUser, userProfile]);
+    if (authMemberData) {
+      setMemberData(authMemberData);
+    }
+  }, [authMemberData]);
 
   const handleSaveName = async () => {
     if (!currentUser) return;
@@ -236,7 +198,7 @@ function Profile() {
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-sm">
             <h2 className="mb-6 text-xl font-bold text-[var(--text-primary)]">📋 உறுப்பினர் அட்டை</h2>
 
-            {loading ? (
+            {authLoading ? (
               <PageLoader message="உறுப்பினர் விவரங்களை ஏற்றுகிறது..." />
             ) : !memberData ? (
               // NOT REGISTERED STATE

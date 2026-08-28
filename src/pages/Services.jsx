@@ -1,7 +1,4 @@
-import { useState, useEffect } from 'react';
-import OrgLogo from '../components/OrgLogo';
 import SEO from '../components/SEO';
-import PageLoader from '../components/PageLoader';
 
 const services = [
   { title: 'Membership Registration', description: 'Fast-track access to our welding association network, certifications, and events.', icon: '⚙️' },
@@ -13,7 +10,6 @@ const services = [
 ];
 
 function Services() {
-
   return (
     <>
       <SEO

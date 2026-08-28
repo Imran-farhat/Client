@@ -5,10 +5,12 @@ import PageLoader from '../components/PageLoader';
 
 const categories = ['ALL', 'EVENTS', 'WORKSHOPS'];
 
+let cachedGalleryItems = null;
+
 function Gallery() {
   const [filter, setFilter] = useState('ALL');
-  const [galleryItems, setGalleryItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [galleryItems, setGalleryItems] = useState(cachedGalleryItems || []);
+  const [loading, setLoading] = useState(!cachedGalleryItems);
   const [activeAlbum, setActiveAlbum] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
@@ -19,7 +21,9 @@ function Gallery() {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      setGalleryItems(data || []);
+      const items = data || [];
+      cachedGalleryItems = items;
+      setGalleryItems(items);
     } catch (err) {
       console.error('Error fetching gallery:', err);
     } finally {
