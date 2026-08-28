@@ -7,27 +7,57 @@ import { supabase } from '../supabase/client';
 function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { currentUser, isAdmin } = useAuth();
+  const { currentUser, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
+  // If already logged in, redirect immediately
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !authLoading) {
       const target = location.state?.redirectTo || (isAdmin ? '/admin' : '/profile');
       navigate(target, { replace: true });
     }
-  }, [currentUser, isAdmin, navigate, location.state]);
+  }, [currentUser, isAdmin, authLoading, navigate, location.state]);
+
+  // Handle mobile Back-Forward Cache (bfcache) - reset loading if user presses back
+  useEffect(() => {
+    const handlePageShow = (e) => {
+      if (e.persisted) {
+        setLoading(false);
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
+
+  // Check URL hash/params for OAuth errors
+  useEffect(() => {
+    if (window.location.hash) {
+      const params = new URLSearchParams(window.location.hash.substring(1));
+      const errorMsg = params.get('error_description') || params.get('error');
+      if (errorMsg) {
+        setError(decodeURIComponent(errorMsg));
+        setLoading(false);
+      }
+    }
+  }, []);
 
   const handleGoogleLogin = async () => {
     try {
       setError('');
       setLoading(true);
+
+      // Auto reset loading after 8s if user cancels/navigation stalls
+      const timeoutId = setTimeout(() => {
+        setLoading(false);
+      }, 8000);
+
       const target = location.state?.redirectTo || '/profile';
       const redirectTo = window.location.hostname === 'localhost'
         ? `http://localhost:5173${target}`
         : `${window.location.origin}${target}`;
 
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo,
@@ -37,10 +67,19 @@ function Login() {
           }
         }
       });
-      if (error) throw error;
+
+      if (error) {
+        clearTimeout(timeoutId);
+        throw error;
+      }
+
+      // Explicitly trigger navigation if URL is returned (ensures mobile webviews/browsers always redirect)
+      if (data?.url) {
+        window.location.href = data.url;
+      }
     } catch (err) {
       console.error('Google login error:', err);
-      setError(err.message || 'உள்நுழைவதில் பிழை / Login failed');
+      setError(err.message || 'உள்நுழைவதில் பிழை / Login failed. Please try again.');
       setLoading(false);
     }
   };

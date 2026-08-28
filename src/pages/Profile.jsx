@@ -13,19 +13,19 @@ const getPhotoSrc = (member) =>
   null;
 
 function Profile() {
-  const { currentUser, userProfile, refreshProfile, logout } = useAuth();
+  const { currentUser, userProfile, refreshProfile, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [memberData, setMemberData] = useState(null);
   const [editName, setEditName] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Redirect if not logged in
+  // Redirect if not logged in (only after auth finished initializing)
   useEffect(() => {
-    if (!currentUser) {
+    if (!authLoading && !currentUser) {
       navigate('/login');
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, authLoading, navigate]);
 
   // Sync edit name from profile
   useEffect(() => {
