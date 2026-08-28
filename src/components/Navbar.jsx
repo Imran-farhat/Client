@@ -14,7 +14,7 @@ const links = [
 
 function Navbar() {
   const { theme, toggleTheme } = useContext(ThemeContext);
-  const { currentUser, isAdmin, logout, userProfile, loading } = useAuth();
+  const { currentUser, isAdmin, logout, userProfile, memberData, loading } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [dropOpen, setDropOpen] = useState(false);
@@ -23,6 +23,9 @@ function Navbar() {
 
   // Only show Register button for unauthenticated guest visitors
   const showRegister = !currentUser;
+
+  const navPhoto = memberData?.photo_url || memberData?.photo_base64 || userProfile?.photo || currentUser?.user_metadata?.avatar_url;
+  const navName = memberData?.full_name || userProfile?.name || currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || '';
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -136,9 +139,9 @@ function Navbar() {
                   overflow: 'hidden'
                 }}
               >
-                {currentUser?.user_metadata?.avatar_url ? (
+                {navPhoto ? (
                   <img
-                    src={currentUser.user_metadata.avatar_url}
+                    src={navPhoto}
                     referrerPolicy="no-referrer"
                     crossOrigin="anonymous"
                     onError={(e) => {
@@ -150,7 +153,7 @@ function Navbar() {
                   />
                 ) : (
                   <span style={{ lineHeight: 1 }}>
-                    {(currentUser?.user_metadata?.full_name || currentUser?.email)?.charAt(0).toUpperCase()}
+                    {navName?.charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>

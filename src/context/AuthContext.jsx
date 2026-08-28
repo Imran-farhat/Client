@@ -94,8 +94,15 @@ export const AuthProvider = ({ children }) => {
   const inFlightFetchRef = useRef(null)
 
   // Fast single unified fetch for both User and Member profiles
-  const fetchProfile = async (userId, userEmail = null, userMetadata = null) => {
+  const fetchProfile = async (userId, userEmail = null, userMetadata = null, force = false) => {
     if (!userId) return null
+
+    // If force=true (called after an edit), clear stale caches and reset in-flight guard
+    if (force) {
+      inFlightFetchRef.current = null
+      setCached(`${CACHE_PROFILE_KEY}${userId}`, null)
+      setCached(`${CACHE_MEMBER_KEY}${userId}`, null)
+    }
 
     if (inFlightFetchRef.current) {
       return inFlightFetchRef.current
@@ -120,7 +127,24 @@ export const AuthProvider = ({ children }) => {
         const userData = userRes.status === 'fulfilled' ? userRes.value.data : null
         let member = memberRes.status === 'fulfilled' ? memberRes.value.data : null
 
-        // Fallback: check members table by mobile if not linked by user_id
+        // Fallback 1: check members table by member_id if recorded on user row
+        if (!member && userData?.member_id) {
+          try {
+            const { data: mById } = await supabase
+              .from('members')
+              .select('*')
+              .eq('member_id', userData.member_id)
+              .maybeSingle()
+            if (mById) {
+              member = mById
+              if (!mById.user_id) {
+                supabase.from('members').update({ user_id: userId }).eq('id', mById.id).then(() => {})
+              }
+            }
+          } catch {}
+        }
+
+        // Fallback 2: check members table by mobile if not linked by user_id
         if (!member && (userData?.mobile || userMetadata?.phone)) {
           const mob = userData?.mobile || userMetadata?.phone
           try {
@@ -360,6 +384,19 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // Force-refresh: clears stale localStorage caches and re-fetches from DB
+  // Use after any edit (name save, photo update, admin approval, etc.)
+  const forceRefreshProfile = async () => {
+    if (currentUser) {
+      await fetchProfile(
+        currentUser.id,
+        currentUser.email,
+        currentUser.user_metadata,
+        true // force = bypass cache + inFlight guard
+      )
+    }
+  }
+
   return (
     <AuthContext.Provider value={{
       currentUser,
@@ -371,7 +408,8 @@ export const AuthProvider = ({ children }) => {
       loginWithEmail,
       signupWithEmail,
       logout,
-      refreshProfile
+      refreshProfile,
+      forceRefreshProfile
     }}>
       {children}
     </AuthContext.Provider>

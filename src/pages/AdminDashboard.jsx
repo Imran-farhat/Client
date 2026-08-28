@@ -280,58 +280,88 @@ function AdminDashboard() {
 
   // ── Data loaders ─────────────────────────────────────────────
   const loadMembers = async () => {
-    let allMembers = [];
-    let page = 0;
+    // First fetch page 0 to get total count and first batch immediately
     const pageSize = 1000;
-    let hasMore = true;
+    const { data: firstPage, error: firstError } = await supabase
+      .from('members')
+      .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, org_address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer, photo_url, status, rejection_reason, approved_at, approved_by')
+      .order('registered_at', { ascending: false })
+      .range(0, pageSize - 1);
 
-    while (hasMore) {
-      const { data, error } = await supabase
-        .from('members')
-        .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, org_address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer, photo_url, status, rejection_reason, approved_at, approved_by')
-        .order('registered_at', { ascending: false })
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-
-      if (error) {
-        console.error('Error loading members batch:', error);
-        break;
-      }
-      if (data && data.length > 0) {
-        allMembers = [...allMembers, ...data];
-        hasMore = data.length === pageSize;
-        page++;
-      } else {
-        hasMore = false;
-      }
+    if (firstError) {
+      console.error('Error loading members:', firstError);
+      return;
     }
-    setMembers(allMembers);
+
+    const firstBatch = firstPage || [];
+    // Show first page immediately so UI is never blank
+    setMembers(firstBatch);
+
+    if (firstBatch.length < pageSize) return; // All loaded in one shot
+
+    // If there are more pages, fetch them all in parallel
+    const additionalPages = [];
+    for (let page = 1; page <= 9; page++) {
+      additionalPages.push(
+        supabase
+          .from('members')
+          .select('id, member_id, user_id, full_name, posting, dob, blood_group, mobile, aadhar, district, address, org_address, nominee_name, nominee_phone, branch, join_date, registered_at, referrer, photo_url, status, rejection_reason, approved_at, approved_by')
+          .order('registered_at', { ascending: false })
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+      );
+    }
+
+    const results = await Promise.all(additionalPages);
+    let allExtra = [];
+    for (const { data } of results) {
+      if (!data || data.length === 0) break;
+      allExtra = [...allExtra, ...data];
+      if (data.length < pageSize) break;
+    }
+    if (allExtra.length > 0) {
+      setMembers(prev => [...prev, ...allExtra]);
+    }
   };
   const loadUsers = async () => {
-    let allUsers = [];
-    let page = 0;
     const pageSize = 1000;
-    let hasMore = true;
+    const { data: firstPage, error: firstError } = await supabase
+      .from('users')
+      .select('id, email, name, role, has_registered, created_at')
+      .order('created_at', { ascending: false })
+      .range(0, pageSize - 1);
 
-    while (hasMore) {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, email, name, role, has_registered, created_at')
-        .order('created_at', { ascending: false })
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-
-      if (error) {
-        console.error('Error loading users batch:', error);
-        break;
-      }
-      if (data && data.length > 0) {
-        allUsers = [...allUsers, ...data];
-        hasMore = data.length === pageSize;
-        page++;
-      } else {
-        hasMore = false;
-      }
+    if (firstError) {
+      console.error('Error loading users:', firstError);
+      return;
     }
-    setUsers(allUsers);
+
+    const firstBatch = firstPage || [];
+    setUsers(firstBatch);
+
+    if (firstBatch.length < pageSize) return; // All loaded in one batch
+
+    // Fetch remaining batches in parallel
+    const additionalPages = [];
+    for (let page = 1; page <= 15; page++) {
+      additionalPages.push(
+        supabase
+          .from('users')
+          .select('id, email, name, role, has_registered, created_at')
+          .order('created_at', { ascending: false })
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+      );
+    }
+
+    const results = await Promise.all(additionalPages);
+    let allExtra = [];
+    for (const { data } of results) {
+      if (!data || data.length === 0) break;
+      allExtra = [...allExtra, ...data];
+      if (data.length < pageSize) break;
+    }
+    if (allExtra.length > 0) {
+      setUsers(prev => [...prev, ...allExtra]);
+    }
   };
   const loadGallery = async () => {
     const { data } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
@@ -535,6 +565,42 @@ function AdminDashboard() {
     }
   }, [activeTab, members.length]);
 
+  // Lazy-load photos for Rejected applications
+  useEffect(() => {
+    if (activeTab === 'rejected') {
+      const targetList = members.filter(m => m.status === 'rejected').slice(0, 30);
+      const missingPhotos = targetList.filter(m => !m.photo_url && !m.photo_base64);
+      if (missingPhotos.length === 0) return;
+
+      const ids = missingPhotos.map(m => m.member_id);
+      fetchMultipleMemberPhotos(ids).then(results => {
+        if (results.length === 0) return;
+        setMembers(prev => prev.map(m => {
+          const found = results.find(r => r.member_id === m.member_id);
+          return found ? { ...m, photo_url: found.photo_url, photo_base64: found.photo_base64 } : m;
+        }));
+      });
+    }
+  }, [activeTab, rejectedSearchQuery, rejectedDistrictFilter, members.length]);
+
+  // Lazy-load photos for Pending applications
+  useEffect(() => {
+    if (activeTab === 'pending') {
+      const pendingList = members.filter(m => m.status === 'pending');
+      const missingPhotos = pendingList.filter(m => !m.photo_url && !m.photo_base64);
+      if (missingPhotos.length === 0) return;
+
+      const ids = missingPhotos.map(m => m.member_id);
+      fetchMultipleMemberPhotos(ids).then(results => {
+        if (results.length === 0) return;
+        setMembers(prev => prev.map(m => {
+          const found = results.find(r => r.member_id === m.member_id);
+          return found ? { ...m, photo_url: found.photo_url, photo_base64: found.photo_base64 } : m;
+        }));
+      });
+    }
+  }, [activeTab, members.length]);
+
   // ── Derived ─────────────────────────────────────────────────
   const pendingCount = useMemo(() => members.filter(m => m.status === 'pending').length, [members]);
   const rejectedCount = useMemo(() => members.filter(m => m.status === 'rejected').length, [members]);
@@ -636,76 +702,104 @@ function AdminDashboard() {
 
   const deleteMember = async (memberId, userId) => {
     if (!window.confirm('Delete this member?')) return;
-    await supabase.from('members').delete().eq('member_id', memberId);
-    if (userId) await supabase.from('users').update({ has_registered: false, member_id: null }).eq('id', userId);
-    await loadMembers();
+    setMembers(prev => prev.filter(m => m.member_id !== memberId));
     setSelectedMember(null);
+    try {
+      await supabase.from('members').delete().eq('member_id', memberId);
+      if (userId) await supabase.from('users').update({ has_registered: false, member_id: null }).eq('id', userId);
+    } catch (err) {
+      console.error('Delete error:', err);
+      loadMembers();
+    }
   };
 
   const approveMember = async (member) => {
-    const { error } = await supabase
-      .from('members')
-      .update({
-        status: 'approved',
-        rejection_reason: null,
-        approved_at: new Date().toISOString(),
-        approved_by: userProfile?.name || 'Admin'
-      })
-      .eq('member_id', member.member_id);
+    // Optimistic UI update
+    setMembers(prev => prev.map(m => m.member_id === member.member_id ? {
+      ...m,
+      status: 'approved',
+      rejection_reason: null,
+      approved_at: new Date().toISOString(),
+      approved_by: userProfile?.name || 'Admin'
+    } : m));
 
-    if (!error) {
+    try {
+      const { error } = await supabase
+        .from('members')
+        .update({
+          status: 'approved',
+          rejection_reason: null,
+          approved_at: new Date().toISOString(),
+          approved_by: userProfile?.name || 'Admin'
+        })
+        .eq('member_id', member.member_id);
+
+      if (error) throw error;
+
+      // Background email notification
       try {
         const payload = new FormData();
         payload.append('access_key', import.meta.env.VITE_WEB3FORMS_KEY);
-        payload.append('subject', '\u2705 \u0b89\u0bb1\u0bc1\u0baa\u0bcd\u0baa\u0bbf\u0ba9\u0bb0\u0bcd \u0b85\u0ba9\u0bc1\u0bae\u0ba4\u0bbf / Membership Approved: ' + member.full_name);
+        payload.append('subject', '✅ உறுப்பினர் அனுமதி / Membership Approved: ' + member.full_name);
         payload.append('from_name', 'TIWTN Admin');
         payload.append('message',
-          '\u0b85\u0ba9\u0bcd\u0baa\u0bc1\u0bb3\u0bcd\u0bb3 ' + member.full_name + ',\n\n' +
-          '\u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0ba4\u0bc6\u0ba9\u0bcd\u0ba9\u0bbf\u0ba8\u0bcd\u0ba4\u0bbf\u0baf \u0bb5\u0bc6\u0bb2\u0bcd\u0b9f\u0bbf\u0b99\u0bcd \u0ba4\u0bca\u0bb4\u0bbf\u0bb2\u0bbe\u0bb3\u0bb0\u0bcd\u0b95\u0bb3\u0bcd \u0ba8\u0bb2\u0b9a\u0bcd\u0b9a\u0b99\u0bcd\u0b95 \u0b89\u0bb1\u0bc1\u0baa\u0bcd\u0baa\u0bbf\u0ba9\u0bb0\u0bcd \u0bb5\u0bbf\u0ba3\u0bcd\u0ba3\u0baa\u0bcd\u0baa\u0bae\u0bcd \u0b85\u0ba8\u0bc1\u0bae\u0ba4\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1!\n\n' +
-          '\u0b89\u0bb1\u0bc1\u0baa\u0bcd\u0baa\u0bbf\u0ba9\u0bb0\u0bcd \u0b8e\u0ba3\u0bcd / Member ID: ' + member.member_id + '\n' +
-          '\u0bae\u0bbe\u0bb5\u0b9f\u0bcd\u0b9f\u0bae\u0bcd / District: ' + member.district + '\n\n' +
+          'அன்புள்ள ' + member.full_name + ',\n\n' +
+          'உங்கள் தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்க உறுப்பினர் விண்ணப்பம் அனுமதிக்கப்பட்டது!\n\n' +
+          'உறுப்பினர் எண் / Member ID: ' + member.member_id + '\n' +
+          'மாவட்டம் / District: ' + member.district + '\n\n' +
           'Dear ' + member.full_name + ',\n\nYour membership has been APPROVED!\n' +
           'Login to download your ID card:\nhttps://www.thennindiaweldingthozhilaalargalnalasangam.org/profile\n\n- TIWTN Admin Team'
         );
-        await fetch('https://api.web3forms.com/submit', { method: 'POST', body: payload });
-      } catch (err) {
-        console.error('Email error:', err);
-      }
-      await loadMembers();
-      alert('\u2705 ' + member.full_name + ' \u0b85\u0ba8\u0bc1\u0bae\u0ba4\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0bbe\u0bb0\u0bcd!');
+        fetch('https://api.web3forms.com/submit', { method: 'POST', body: payload }).catch(() => {});
+      } catch (err) {}
+    } catch (err) {
+      console.error('Approve error:', err);
+      loadMembers();
+      alert('Error approving member: ' + err.message);
     }
   };
 
   const rejectMember = async (member) => {
     const reason = window.prompt(
-      '\u0ba8\u0bbf\u0bb0\u0bbe\u0b95\u0bb0\u0bbf\u0baa\u0bcd\u0baa\u0bc1 \u0b95\u0bbe\u0bb0\u0ba3\u0bae\u0bcd / Rejection reason for ' + member.full_name + ':\n(This will be shown to the member)'
+      'நிராகரிப்பு காரணம் / Rejection reason for ' + member.full_name + ':\n(This will be shown to the member)'
     );
     if (reason === null) return;
-    if (!reason.trim()) { alert('\u0b95\u0bbe\u0bb0\u0ba3\u0bae\u0bcd \u0b89\u0bb3\u0bcd\u0bb3\u0bbf\u0b9f\u0bb5\u0bc1\u0bae\u0bcd / Please enter a reason'); return; }
+    if (!reason.trim()) { alert('காரணம் உள்ளிடவும் / Please enter a reason'); return; }
 
-    const { error } = await supabase
-      .from('members')
-      .update({ status: 'rejected', rejection_reason: reason.trim() })
-      .eq('member_id', member.member_id);
+    const cleanReason = reason.trim();
+    // Optimistic UI update
+    setMembers(prev => prev.map(m => m.member_id === member.member_id ? {
+      ...m,
+      status: 'rejected',
+      rejection_reason: cleanReason
+    } : m));
 
-    if (!error) {
+    try {
+      const { error } = await supabase
+        .from('members')
+        .update({ status: 'rejected', rejection_reason: cleanReason })
+        .eq('member_id', member.member_id);
+
+      if (error) throw error;
+
+      // Background email notification
       try {
         const payload = new FormData();
         payload.append('access_key', import.meta.env.VITE_WEB3FORMS_KEY);
-        payload.append('subject', '\u274c \u0bb5\u0bbf\u0ba3\u0bcd\u0ba3\u0baa\u0bcd\u0baa\u0bae\u0bcd \u0ba8\u0bbf\u0bb0\u0bbe\u0b95\u0bb0\u0bbf\u0baa\u0bcd\u0baa\u0bc1 / Application Rejected: ' + member.full_name);
+        payload.append('subject', '❌ விண்ணப்பம் நிராகரிப்பு / Application Rejected: ' + member.full_name);
         payload.append('from_name', 'TIWTN Admin');
         payload.append('message',
-          '\u0b85\u0ba9\u0bcd\u0baa\u0bc1\u0bb3\u0bcd\u0bb3 ' + member.full_name + ',\n\n' +
-          '\u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0bb5\u0bbf\u0ba3\u0bcd\u0ba3\u0baa\u0bcd\u0baa\u0bae\u0bcd \u0ba4\u0bb1\u0bcd\u0baa\u0bcb\u0ba4\u0bc1 \u0ba8\u0bbf\u0bb0\u0bbe\u0b95\u0bb0\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1.\n\n' +
-          '\u0b95\u0bbe\u0bb0\u0ba3\u0bae\u0bcd / Reason: ' + reason + '\n\n' +
-          'Dear ' + member.full_name + ',\nYour membership application was rejected.\nReason: ' + reason + '\n\nRe-apply at:\nhttps://www.thennindiaweldingthozhilaalargalnalasangam.org/profile\n\n- TIWTN Admin Team'
+          'அன்புள்ள ' + member.full_name + ',\n\n' +
+          'உங்கள் விண்ணப்பம் தற்போது நிராகரிக்கப்பட்டது.\n\n' +
+          'காரணம் / Reason: ' + cleanReason + '\n\n' +
+          'Dear ' + member.full_name + ',\nYour membership application was rejected.\nReason: ' + cleanReason + '\n\nRe-apply at:\nhttps://www.thennindiaweldingthozhilaalargalnalasangam.org/profile\n\n- TIWTN Admin Team'
         );
-        await fetch('https://api.web3forms.com/submit', { method: 'POST', body: payload });
-      } catch (err) {
-        console.error('Email error:', err);
-      }
-      await loadMembers();
-      alert('\u274c ' + member.full_name + ' \u0ba8\u0bbf\u0bb0\u0bbe\u0b95\u0bb0\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0bbe\u0bb0\u0bcd');
+        fetch('https://api.web3forms.com/submit', { method: 'POST', body: payload }).catch(() => {});
+      } catch (err) {}
+    } catch (err) {
+      console.error('Reject error:', err);
+      loadMembers();
+      alert('Error rejecting member: ' + err.message);
     }
   };
 
@@ -823,8 +917,8 @@ function AdminDashboard() {
         blood_group: editMember.blood_group,
         nominee_name: editMember.nominee_name,
         nominee_phone: editMember.nominee_phone,
-        photo_url: newPhotoUrl || null,
-        photo_base64: newPhotoBase64 || null
+        photo_url: newPhotoUrl || editMember.photo_url || editMember._original_photo_url || null,
+        photo_base64: (newPhotoUrl || editMember.photo_url || editMember._original_photo_url) ? null : (newPhotoBase64 || editMember.photo_base64 || editMember._original_photo_base64 || null)
       };
 
       if (andApprove) {
@@ -865,12 +959,26 @@ function AdminDashboard() {
         }
       }
 
+      // Optimistic UI: immediately update the member in local state without waiting for full reload
+      const updatedMemberData = {
+        ...editMember,
+        ...updatePayload,
+        photo_url: newPhotoUrl || null,
+        photo_base64: newPhotoBase64 || null,
+        status: andApprove ? 'approved' : editMember.status,
+        rejection_reason: andApprove ? null : editMember.rejection_reason,
+      };
+      setMembers(prev => prev.map(m =>
+        m.id === editMember.id || m.member_id === oldMemberId ? updatedMemberData : m
+      ));
+
       setEditMember(null);
       setEditPhotoPreview(null);
       setEditPhotoFile(null);
-      await loadMembers();
-      await loadUsers(); // Refresh users list too
-      alert(andApprove ? '✅ திருத்தப்பட்டு அனுமதிக்கப்பட்டது! / Saved & Approved!' : '✅ திருத்தப்பட்டது / Updated!');
+
+      // Background reload to sync latest DB state
+      loadMembers();
+      if (andApprove) loadUsers();
     } catch (err) {
       console.error('Save error:', err);
       alert('Error: ' + err.message);
@@ -2256,7 +2364,7 @@ NEW MEMBER REGISTRATION DETAILS
                           ✂️ படம் பயிர் செய்
                         </button>
                         <button
-                          onClick={() => setEditMember(member)}
+                          onClick={() => handleEditMemberClick(member)}
                           style={{
                             padding: '8px 12px', background: '#003366', color: '#fff',
                             border: 'none', borderRadius: '8px', cursor: 'pointer',
@@ -3023,7 +3131,7 @@ NEW MEMBER REGISTRATION DETAILS
                 >
                   ✂️ Crop Photo
                 </button>
-                <button onClick={() => { setEditMember({ ...selectedMember }); setSelectedMember(null); }}
+                <button onClick={() => { handleEditMemberClick(selectedMember); setSelectedMember(null); }}
                   className="flex-1 rounded-lg bg-[#FFB347] text-black py-2 font-semibold text-sm hover:opacity-90 transition">✏️ Edit</button>
                 <button onClick={() => deleteMember(selectedMember.member_id, selectedMember.user_id)}
                   className="flex-1 rounded-lg border border-red-300 py-2 text-sm text-red-500 hover:bg-red-50 transition">🗑️ Delete</button>

@@ -27,7 +27,7 @@ const getCachedName = (user) => {
 };
 
 function Profile() {
-  const { currentUser, userProfile, memberData: authMemberData, refreshProfile, logout, loading: authLoading } = useAuth();
+  const { currentUser, userProfile, memberData: authMemberData, refreshProfile, forceRefreshProfile, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [memberData, setMemberData] = useState(authMemberData || null);
   // Pre-populate name instantly from Google metadata — updates when userProfile loads from DB
@@ -46,12 +46,12 @@ function Profile() {
     }
   }, [currentUser, authLoading, navigate]);
 
-  // Sync edit name from profile
+  // Sync editName from DB profile (authoritative source)
   useEffect(() => {
-    if (userProfile) {
-      setEditName(userProfile.name || '');
+    if (userProfile?.name) {
+      setEditName(userProfile.name);
     }
-  }, [userProfile]);
+  }, [userProfile?.name]);
 
   // Keep memberData in sync with AuthContext
   useEffect(() => {
@@ -105,7 +105,7 @@ function Profile() {
           .eq('member_id', memberData.member_id);
       }
 
-      await refreshProfile();
+      await forceRefreshProfile(); // force-bust stale caches after save
       setSaveMsg({ type: 'success', text: '✅ பெயர் சேமிக்கப்பட்டது / Name saved!' });
       setTimeout(() => setSaveMsg(null), 3000);
     } catch (err) {
@@ -119,8 +119,8 @@ function Profile() {
 
   // Derive provider from Supabase app_metadata
   const provider = currentUser?.app_metadata?.provider;
-  const displayName = userProfile?.name || currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || '';
-  const photoUrl = userProfile?.photo || currentUser?.user_metadata?.avatar_url;
+  const displayName = memberData?.full_name || userProfile?.name || currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || '';
+  const photoUrl = memberData?.photo_url || memberData?.photo_base64 || userProfile?.photo || currentUser?.user_metadata?.avatar_url;
   const isRegistered = userProfile?.has_registered || !!memberData;
 
   // Map Supabase member columns to IDCard expected shape
