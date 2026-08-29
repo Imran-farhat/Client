@@ -65,18 +65,6 @@ export default function ImageCropperModal({
         if (imageSrc instanceof Blob || imageSrc instanceof File) {
           srcToLoad = URL.createObjectURL(imageSrc);
           objectUrlToRevoke = srcToLoad;
-        } else if (typeof imageSrc === 'string' && imageSrc.startsWith('http')) {
-          try {
-            const resp = await fetch(imageSrc, { mode: 'cors' });
-            if (resp.ok) {
-              const blob = await resp.blob();
-              srcToLoad = URL.createObjectURL(blob);
-              objectUrlToRevoke = srcToLoad;
-            }
-          } catch (e) {
-            console.warn('Direct fetch failed, falling back to direct URL:', e);
-            srcToLoad = imageSrc;
-          }
         }
 
         const img = new Image();
@@ -89,9 +77,22 @@ export default function ImageCropperModal({
         };
         img.onerror = (e) => {
           if (!isCancelled) {
-            console.error('Failed to load image into cropper:', e);
-            setLoadError('புகைப்படத்தை ஏற்றுவதில் தோல்வி / Failed to load image');
-            setLoading(false);
+            // Fallback retry without crossOrigin if CORS header blocked
+            const retryImg = new Image();
+            retryImg.onload = () => {
+              if (!isCancelled) {
+                setLoadedImage(retryImg);
+                setLoading(false);
+              }
+            };
+            retryImg.onerror = () => {
+              if (!isCancelled) {
+                console.error('Failed to load image into cropper:', e);
+                setLoadError('புகைப்படத்தை ஏற்றுவதில் தோல்வி / Failed to load image');
+                setLoading(false);
+              }
+            };
+            retryImg.src = srcToLoad;
           }
         };
         img.src = srcToLoad;
@@ -206,6 +207,9 @@ export default function ImageCropperModal({
     });
   };
 
+  const rafRef = useRef(null);
+  const pendingCropRef = useRef(null);
+
   // Pointer Down (handles both mouse and touch on any corner, edge, or move area)
   const handlePointerDown = (handle, e) => {
     e.preventDefault();
@@ -222,7 +226,7 @@ export default function ImageCropperModal({
     };
   };
 
-  // Pointer Move
+  // Pointer Move with 60FPS requestAnimationFrame batching
   const handlePointerMove = useCallback((e) => {
     if (!activeHandle) return;
 
@@ -242,12 +246,21 @@ export default function ImageCropperModal({
     if (activeHandle === 'move') {
       const newX = Math.max(0, Math.min(dispW - startCrop.w, startCrop.x + dx));
       const newY = Math.max(0, Math.min(dispH - startCrop.h, startCrop.y + dy));
-      setCrop({
+      const nextCrop = {
         x: Math.round(newX),
         y: Math.round(newY),
         w: startCrop.w,
         h: startCrop.h
-      });
+      };
+      pendingCropRef.current = nextCrop;
+      if (!rafRef.current) {
+        rafRef.current = requestAnimationFrame(() => {
+          if (pendingCropRef.current) {
+            setCrop(pendingCropRef.current);
+          }
+          rafRef.current = null;
+        });
+      }
       return;
     }
 
@@ -371,30 +384,54 @@ export default function ImageCropperModal({
     newX = Math.max(0, Math.min(dispW - newW, newX));
     newY = Math.max(0, Math.min(dispH - newH, newY));
 
-    setCrop({
+    const nextCrop = {
       x: Math.round(newX),
       y: Math.round(newY),
       w: Math.round(newW),
       h: Math.round(newH)
-    });
+    };
+
+    pendingCropRef.current = nextCrop;
+    if (!rafRef.current) {
+      rafRef.current = requestAnimationFrame(() => {
+        if (pendingCropRef.current) {
+          setCrop(pendingCropRef.current);
+        }
+        rafRef.current = null;
+      });
+    }
   }, [activeHandle, cropMode, dispSize]);
 
   const handlePointerUp = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (pendingCropRef.current) {
+      setCrop(pendingCropRef.current);
+      pendingCropRef.current = null;
+    }
     setActiveHandle(null);
   }, []);
 
   useEffect(() => {
     if (activeHandle) {
-      window.addEventListener('mousemove', handlePointerMove);
+      window.addEventListener('mousemove', handlePointerMove, { passive: true });
       window.addEventListener('mouseup', handlePointerUp);
-      window.addEventListener('touchmove', handlePointerMove, { passive: false });
+      window.addEventListener('touchmove', handlePointerMove, { passive: true });
       window.addEventListener('touchend', handlePointerUp);
+      window.addEventListener('touchcancel', handlePointerUp);
     }
     return () => {
       window.removeEventListener('mousemove', handlePointerMove);
       window.removeEventListener('mouseup', handlePointerUp);
       window.removeEventListener('touchmove', handlePointerMove);
       window.removeEventListener('touchend', handlePointerUp);
+      window.removeEventListener('touchcancel', handlePointerUp);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
   }, [activeHandle, handlePointerMove, handlePointerUp]);
 
@@ -612,6 +649,8 @@ export default function ImageCropperModal({
                       height: `${crop.h}px`,
                       border: '2px solid #8B5CF6',
                       boxShadow: '0 0 0 1px rgba(0,0,0,0.3)',
+                      touchAction: 'none',
+                      willChange: 'left, top, width, height'
                     }}
                   >
                     {/* Tooltip Badge at Top-Left of Crop Box */}
@@ -633,6 +672,7 @@ export default function ImageCropperModal({
                     <div
                       onMouseDown={(e) => handlePointerDown('move', e)}
                       onTouchStart={(e) => handlePointerDown('move', e)}
+                      style={{ touchAction: 'none' }}
                       className="absolute inset-2 cursor-move flex items-center justify-center group"
                       title="Drag to move crop box"
                     >
@@ -646,24 +686,28 @@ export default function ImageCropperModal({
                     <div
                       onMouseDown={(e) => handlePointerDown('nw', e)}
                       onTouchStart={(e) => handlePointerDown('nw', e)}
+                      style={{ touchAction: 'none' }}
                       className="absolute -top-2 -left-2 w-4 h-4 rounded-full bg-white border-2 border-[#8B5CF6] shadow-md cursor-nwse-resize z-20"
                     />
                     {/* Top-Right */}
                     <div
                       onMouseDown={(e) => handlePointerDown('ne', e)}
                       onTouchStart={(e) => handlePointerDown('ne', e)}
+                      style={{ touchAction: 'none' }}
                       className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-white border-2 border-[#8B5CF6] shadow-md cursor-nesw-resize z-20"
                     />
                     {/* Bottom-Left */}
                     <div
                       onMouseDown={(e) => handlePointerDown('sw', e)}
                       onTouchStart={(e) => handlePointerDown('sw', e)}
+                      style={{ touchAction: 'none' }}
                       className="absolute -bottom-2 -left-2 w-4 h-4 rounded-full bg-white border-2 border-[#8B5CF6] shadow-md cursor-nesw-resize z-20"
                     />
                     {/* Bottom-Right */}
                     <div
                       onMouseDown={(e) => handlePointerDown('se', e)}
                       onTouchStart={(e) => handlePointerDown('se', e)}
+                      style={{ touchAction: 'none' }}
                       className="absolute -bottom-2 -right-2 w-4 h-4 rounded-full bg-white border-2 border-[#8B5CF6] shadow-md cursor-nwse-resize z-20"
                     />
 
@@ -672,24 +716,28 @@ export default function ImageCropperModal({
                     <div
                       onMouseDown={(e) => handlePointerDown('n', e)}
                       onTouchStart={(e) => handlePointerDown('n', e)}
+                      style={{ touchAction: 'none' }}
                       className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-8 h-3 rounded-full bg-white border-2 border-[#8B5CF6] shadow-md cursor-ns-resize z-20"
                     />
                     {/* Bottom Edge */}
                     <div
                       onMouseDown={(e) => handlePointerDown('s', e)}
                       onTouchStart={(e) => handlePointerDown('s', e)}
+                      style={{ touchAction: 'none' }}
                       className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-8 h-3 rounded-full bg-white border-2 border-[#8B5CF6] shadow-md cursor-ns-resize z-20"
                     />
                     {/* Left Edge */}
                     <div
                       onMouseDown={(e) => handlePointerDown('w', e)}
                       onTouchStart={(e) => handlePointerDown('w', e)}
+                      style={{ touchAction: 'none' }}
                       className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-8 rounded-full bg-white border-2 border-[#8B5CF6] shadow-md cursor-ew-resize z-20"
                     />
                     {/* Right Edge */}
                     <div
                       onMouseDown={(e) => handlePointerDown('e', e)}
                       onTouchStart={(e) => handlePointerDown('e', e)}
+                      style={{ touchAction: 'none' }}
                       className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-3 h-8 rounded-full bg-white border-2 border-[#8B5CF6] shadow-md cursor-ew-resize z-20"
                     />
                   </div>
