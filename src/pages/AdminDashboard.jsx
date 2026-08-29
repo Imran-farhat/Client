@@ -1399,31 +1399,28 @@ NEW MEMBER REGISTRATION DETAILS
         .eq('mobile', newMember.mobile)
         .maybeSingle();
 
-      // Also try matching by checking members.user_id via email fallback
-      const { data: memberWithUser } = await supabase
-        .from('members')
-        .select('user_id')
-        .eq('member_id', memberId)
-        .maybeSingle();
-
-      const userIdToUpdate = matchedUser?.id || memberWithUser?.user_id;
+      const userIdToUpdate = matchedUser?.id;
+      // Link user_id in members table too!
       if (userIdToUpdate) {
         await supabase
           .from('users')
-          .update({ has_registered: true, member_id: memberId })
+          .update({ has_registered: true, member_id: currentMemberId })
           .eq('id', userIdToUpdate);
-        // Link user_id in members table too!
         await supabase
           .from('members')
           .update({ user_id: userIdToUpdate })
-          .eq('member_id', memberId);
-        await loadUsers();
+          .eq('member_id', currentMemberId);
+        loadUsers();
       }
     }
 
-      await sendAdminNotification(newMember, memberId);
-      setRegSuccess(data);
-      await loadMembers();
+      // Send admin notification safely in background (non-blocking)
+      sendAdminNotification(newMember, currentMemberId).catch(err => console.warn('Email notification error:', err));
+
+      // Set success state with the created member record and optimistically update members list
+      setRegSuccess(record);
+      setMembers(prev => [record, ...prev]);
+      loadMembers();
     } catch (err) {
       console.error('Admin reg error:', err);
       alert('Error: ' + err.message);
