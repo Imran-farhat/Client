@@ -1290,7 +1290,7 @@ NEW MEMBER REGISTRATION DETAILS
     setRegSubmitting(true);
 
     try {
-      // Check duplicate Aadhaar in members (Aadhaar must be strictly 100% unique per person)
+      // Check duplicate Aadhaar in members (Aadhaar must be strictly unique per person)
       const { data: dupAadhaars } = await supabase
         .from('members')
         .select('member_id, full_name')
@@ -1303,25 +1303,6 @@ NEW MEMBER REGISTRATION DETAILS
         alert(`இந்த ஆதார் எண் ஏற்கனவே பதிவாகியுள்ளது / This Aadhaar is already registered.\nMember: ${dupAadhaar.full_name} (${dupAadhaar.member_id})`);
         setRegSubmitting(false);
         return;
-      }
-
-      // Check duplicate mobile in members (allow family members sharing phone via confirmation)
-      const { data: dupMobiles } = await supabase
-        .from('members')
-        .select('member_id, full_name')
-        .eq('mobile', newMember.mobile)
-        .limit(1);
-
-      const dupMobile = dupMobiles && dupMobiles.length > 0 ? dupMobiles[0] : null;
-
-      if (dupMobile) {
-        const proceed = window.confirm(
-          `கவனிக்க: இந்த கைபேசி எண் (${newMember.mobile}) ஏற்கனவே "${dupMobile.full_name}" (${dupMobile.member_id}) என்ற உறுப்பினருக்கு பதிவாகியுள்ளது.\n\nஇது ஒரே குடும்பத்தைச் சேர்ந்த வேறு உறுப்பினரா? தொடர்ந்து பதிவு செய்ய விரும்புகிறீர்களா?\n\nNotice: This mobile number is already registered to ${dupMobile.full_name} (${dupMobile.member_id}).\nAre you sure you want to proceed registering this different member with the same mobile number?`
-        );
-        if (!proceed) {
-          setRegSubmitting(false);
-          return;
-        }
       }
 
       const memberId = await generateMemberId(newMember.pledgeDistrict);

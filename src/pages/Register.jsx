@@ -571,46 +571,21 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
       .select('member_id, user_id, full_name')
       .eq('aadhar', aadhar);
 
-    let mobileQuery = supabase
-      .from('members')
-      .select('member_id, user_id, full_name')
-      .eq('mobile', mobile);
-
     if (currentMemberId) {
-      mobileQuery = mobileQuery.neq('member_id', currentMemberId);
       aadharQuery = aadharQuery.neq('member_id', currentMemberId);
     }
     if (currentUser?.id) {
-      mobileQuery = mobileQuery.neq('user_id', currentUser.id);
       aadharQuery = aadharQuery.neq('user_id', currentUser.id);
     }
 
-    const [aadharRes, mobileRes] = await Promise.all([
-      aadharQuery.limit(1),
-      mobileQuery.limit(1)
-    ]);
-
+    const aadharRes = await aadharQuery.limit(1);
     const dupAadhaar = aadharRes.data && aadharRes.data.length > 0 ? aadharRes.data[0] : null;
-    const dupMobile = mobileRes.data && mobileRes.data.length > 0 ? mobileRes.data[0] : null;
 
     if (dupAadhaar) {
       throw new Error(
         'இந்த ஆதார் எண் ஏற்கனவே வேறொரு பதிவில் உள்ளது / ' +
         'This Aadhaar is already registered with another member.'
       );
-    }
-
-    if (dupMobile) {
-      const proceed = window.confirm(
-        `கவனிக்க: இந்த கைபேசி எண் (${mobile}) ஏற்கனவே "${dupMobile.full_name || 'மற்றொரு'}" என்ற உறுப்பினருக்கு பதிவாகியுள்ளது (Member ID: ${dupMobile.member_id}).\n\nஇது ஒரே குடும்பத்தைச் சேர்ந்த வேறு உறுப்பினரா? தொடர்ந்து பதிவு செய்ய விரும்புகிறீர்களா?\n\nNotice: This mobile number is already registered with another member (${dupMobile.member_id}). Are you registering as a family member sharing this phone?`
-      );
-      if (!proceed) {
-        throw new Error(
-          'இந்த கைபேசி எண் ஏற்கனவே வேறொரு பதிவில் உள்ளது / ' +
-          'This mobile number is already registered with another member. ' +
-          'Member ID: ' + dupMobile.member_id
-        );
-      }
     }
   };
 
