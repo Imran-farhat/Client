@@ -445,8 +445,8 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
       alert('படக் கோப்பு மட்டுமே / Images only');
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      alert('2MB க்கு கீழ் / Max 2MB');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('புகைப்படம் 15MB-க்குள் இருக்க வேண்டும் / Max 15MB');
       return;
     }
 

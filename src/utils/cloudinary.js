@@ -1,4 +1,5 @@
 import { CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from '../config/constants';
+import { supabase } from '../supabase/client';
 
 /**
  * Upload an image (File, Blob, or base64 data URL) directly to Cloudinary using unsigned upload preset.
@@ -17,8 +18,12 @@ export const uploadToCloudinary = async (file, memberId = null) => {
 
     if (memberId) {
       // Clean memberId to be safe for Cloudinary public_id
-      const safeId = memberId.replace(/[^a-zA-Z0-9_-]/g, '_');
-      formData.append('public_id', safeId);
+      const safeId = String(memberId).replace(/[^a-zA-Z0-9_-]/g, '_');
+      // If the ID doesn't already end with a unique timestamp, append one.
+      // This prevents Cloudinary unsigned presets from returning existing: true (which ignores new uploads)
+      const hasTimestamp = /_\d{10,}$/.test(safeId);
+      const uniquePublicId = hasTimestamp ? safeId : `${safeId}_${Date.now()}`;
+      formData.append('public_id', uniquePublicId);
     }
 
     const response = await fetch(
@@ -39,5 +44,30 @@ export const uploadToCloudinary = async (file, memberId = null) => {
   } catch (err) {
     console.error('Cloudinary upload failed:', err);
     return null;
+  }
+};
+
+/**
+ * Automatically deletes an old photo from Supabase Storage if the URL points to Supabase.
+ * @param {string} oldUrl - The previous photo_url
+ */
+export const deleteOldStoragePhoto = async (oldUrl) => {
+  if (!oldUrl || typeof oldUrl !== 'string') return;
+  try {
+    // Only attempt deletion for Supabase Storage member photos
+    if (oldUrl.includes('supabase.co') && oldUrl.includes('/member-photos/')) {
+      const match = oldUrl.match(/\/member-photos\/([^?#]+)/);
+      if (match && match[1]) {
+        const filePath = decodeURIComponent(match[1]);
+        const { error } = await supabase.storage.from('member-photos').remove([filePath]);
+        if (error) {
+          console.warn('Failed to delete old Supabase storage photo:', error);
+        } else {
+          console.log('Old Supabase storage photo deleted successfully:', filePath);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to delete old storage photo:', err);
   }
 };

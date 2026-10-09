@@ -7,7 +7,7 @@ import { generateMemberId, DISTRICT_LIST, TAMIL_NADU_DISTRICTS } from '../utils/
 import { printMemberForm } from '../utils/printMemberForm';
 import { bulkDownloadMembers } from '../utils/bulkDownload.jsx';
 import PageLoader from '../components/PageLoader';
-import { uploadToCloudinary } from '../utils/cloudinary';
+import { uploadToCloudinary, deleteOldStoragePhoto } from '../utils/cloudinary';
 
 const getPhotoSrc = (member) =>
   member?.photoPreview ||
@@ -248,8 +248,8 @@ function AdminDashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert('Max 2MB');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('புகைப்படம் 15MB-க்குள் இருக்க வேண்டும் / Photo size must be less than 15MB');
       return;
     }
 
@@ -702,9 +702,13 @@ function AdminDashboard() {
 
   const deleteMember = async (memberId, userId) => {
     if (!window.confirm('Delete this member?')) return;
+    const memberToDelete = members.find(m => m.member_id === memberId);
     setMembers(prev => prev.filter(m => m.member_id !== memberId));
     setSelectedMember(null);
     try {
+      if (memberToDelete?.photo_url) {
+        deleteOldStoragePhoto(memberToDelete.photo_url);
+      }
       await supabase.from('members').delete().eq('member_id', memberId);
       if (userId) await supabase.from('users').update({ has_registered: false, member_id: null }).eq('id', userId);
     } catch (err) {
@@ -824,6 +828,7 @@ function AdminDashboard() {
       let newPhotoBase64 = editMember.photo_base64;
       const effectiveMemberId = editMember.member_id;
       const oldMemberId = editMember._original_member_id || editMember.member_id;
+      const oldPhotoUrl = editMember._original_photo_url || editMember.photo_url;
 
       // If admin selected a new photo file
       if (editPhotoFile) {
@@ -834,11 +839,15 @@ function AdminDashboard() {
           // 1. Upload to Cloudinary (Primary)
           const cloudinaryUrl = await uploadToCloudinary(compressed, effectiveMemberId);
           if (cloudinaryUrl) {
-            newPhotoUrl = cloudinaryUrl;
+            newPhotoUrl = cloudinaryUrl.includes('?') ? cloudinaryUrl : `${cloudinaryUrl}?t=${Date.now()}`;
             newPhotoBase64 = null;
+            // Clean up old storage photo
+            if (oldPhotoUrl && oldPhotoUrl !== newPhotoUrl) {
+              deleteOldStoragePhoto(oldPhotoUrl);
+            }
           } else {
             // 2. Fallback to Supabase Storage
-            const path = `members/${effectiveMemberId}`;
+            const path = `members/${effectiveMemberId}_${Date.now()}.jpg`;
             const { data, error } = await supabase.storage
               .from('member-photos')
               .upload(path, compressed, {
@@ -854,6 +863,9 @@ function AdminDashboard() {
 
             newPhotoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
             newPhotoBase64 = null;
+            if (oldPhotoUrl && oldPhotoUrl !== newPhotoUrl) {
+              deleteOldStoragePhoto(oldPhotoUrl);
+            }
           }
         } catch (err) {
           console.error('Photo upload failed:', err);
@@ -972,6 +984,10 @@ function AdminDashboard() {
         m.id === editMember.id || m.member_id === oldMemberId ? updatedMemberData : m
       ));
 
+      if (selectedMember && (selectedMember.member_id === oldMemberId || selectedMember.member_id === effectiveMemberId || (editMember.id && selectedMember.id === editMember.id))) {
+        setSelectedMember(updatedMemberData);
+      }
+
       setEditMember(null);
       setEditPhotoPreview(null);
       setEditPhotoFile(null);
@@ -1047,6 +1063,7 @@ function AdminDashboard() {
     setSavingDirectCrop(true);
     try {
       const effectiveMemberId = targetMember.member_id;
+      const oldPhotoUrl = targetMember.photo_url;
       let newPhotoUrl = null;
 
       // Compress and upload
@@ -1055,10 +1072,13 @@ function AdminDashboard() {
       // 1. Cloudinary
       const cloudinaryUrl = await uploadToCloudinary(compressed, effectiveMemberId);
       if (cloudinaryUrl) {
-        newPhotoUrl = cloudinaryUrl;
+        newPhotoUrl = cloudinaryUrl.includes('?') ? cloudinaryUrl : `${cloudinaryUrl}?t=${Date.now()}`;
+        if (oldPhotoUrl && oldPhotoUrl !== newPhotoUrl) {
+          deleteOldStoragePhoto(oldPhotoUrl);
+        }
       } else {
         // 2. Supabase Storage fallback
-        const path = `members/${effectiveMemberId}`;
+        const path = `members/${effectiveMemberId}_${Date.now()}.jpg`;
         const { data, error } = await supabase.storage
           .from('member-photos')
           .upload(path, compressed, {
@@ -1070,6 +1090,9 @@ function AdminDashboard() {
           .from('member-photos')
           .getPublicUrl(data.path);
         newPhotoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+        if (oldPhotoUrl && oldPhotoUrl !== newPhotoUrl) {
+          deleteOldStoragePhoto(oldPhotoUrl);
+        }
       }
 
       const updatePayload = {
@@ -1205,8 +1228,8 @@ function AdminDashboard() {
       alert('படக் கோப்பு மட்டுமே / Images only');
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      alert('2MB க்கு கீழ் / Max 2MB');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('புகைப்படம் 15MB-க்குள் இருக்க வேண்டும் / Max 15MB');
       return;
     }
 
