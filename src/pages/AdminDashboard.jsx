@@ -1290,30 +1290,38 @@ NEW MEMBER REGISTRATION DETAILS
     setRegSubmitting(true);
 
     try {
-      // Check duplicate mobile in members
-      const { data: dupMobile } = await supabase
-        .from('members')
-        .select('member_id, full_name')
-        .eq('mobile', newMember.mobile)
-        .maybeSingle();
-
-      if (dupMobile) {
-        alert(`இந்த கைபேசி எண் ஏற்கனவே பதிவாகியுள்ளது / This mobile number is already registered.\nMember: ${dupMobile.full_name} (${dupMobile.member_id})`);
-        setRegSubmitting(false);
-        return;
-      }
-
-      // Check duplicate Aadhaar in members
-      const { data: dupAadhaar } = await supabase
+      // Check duplicate Aadhaar in members (Aadhaar must be strictly 100% unique per person)
+      const { data: dupAadhaars } = await supabase
         .from('members')
         .select('member_id, full_name')
         .eq('aadhar', newMember.aadhaar)
-        .maybeSingle();
+        .limit(1);
+
+      const dupAadhaar = dupAadhaars && dupAadhaars.length > 0 ? dupAadhaars[0] : null;
 
       if (dupAadhaar) {
         alert(`இந்த ஆதார் எண் ஏற்கனவே பதிவாகியுள்ளது / This Aadhaar is already registered.\nMember: ${dupAadhaar.full_name} (${dupAadhaar.member_id})`);
         setRegSubmitting(false);
         return;
+      }
+
+      // Check duplicate mobile in members (allow family members sharing phone via confirmation)
+      const { data: dupMobiles } = await supabase
+        .from('members')
+        .select('member_id, full_name')
+        .eq('mobile', newMember.mobile)
+        .limit(1);
+
+      const dupMobile = dupMobiles && dupMobiles.length > 0 ? dupMobiles[0] : null;
+
+      if (dupMobile) {
+        const proceed = window.confirm(
+          `கவனிக்க: இந்த கைபேசி எண் (${newMember.mobile}) ஏற்கனவே "${dupMobile.full_name}" (${dupMobile.member_id}) என்ற உறுப்பினருக்கு பதிவாகியுள்ளது.\n\nஇது ஒரே குடும்பத்தைச் சேர்ந்த வேறு உறுப்பினரா? தொடர்ந்து பதிவு செய்ய விரும்புகிறீர்களா?\n\nNotice: This mobile number is already registered to ${dupMobile.full_name} (${dupMobile.member_id}).\nAre you sure you want to proceed registering this different member with the same mobile number?`
+        );
+        if (!proceed) {
+          setRegSubmitting(false);
+          return;
+        }
       }
 
       const memberId = await generateMemberId(newMember.pledgeDistrict);
@@ -1393,13 +1401,14 @@ NEW MEMBER REGISTRATION DETAILS
 
     // Fix: mark matching user as registered (find by mobile number)
     if (newMember.mobile) {
-      const { data: matchedUser } = await supabase
+      const { data: matchedUsers } = await supabase
         .from('users')
-        .select('id')
-        .eq('mobile', newMember.mobile)
-        .maybeSingle();
+        .select('id, member_id')
+        .eq('mobile', newMember.mobile);
 
-      const userIdToUpdate = matchedUser?.id;
+      // Only link to an unlinked user with this mobile number
+      const unlinkedUser = matchedUsers?.find(u => !u.member_id);
+      const userIdToUpdate = unlinkedUser?.id || (matchedUsers?.length === 1 ? matchedUsers[0].id : null);
       // Link user_id in members table too!
       if (userIdToUpdate) {
         await supabase
