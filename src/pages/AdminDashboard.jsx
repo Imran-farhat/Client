@@ -294,10 +294,13 @@ function AdminDashboard() {
     }
 
     const firstBatch = firstPage || [];
-    // Show first page immediately so UI is never blank
-    setMembers(firstBatch);
+    // Only set first batch immediately if we don't have members loaded yet (prevents list shrinking/flashing during refreshes)
+    setMembers(prev => prev.length === 0 ? firstBatch : prev);
 
-    if (firstBatch.length < pageSize) return; // All loaded in one shot
+    if (firstBatch.length < pageSize) {
+      setMembers(firstBatch);
+      return; // All loaded in one shot
+    }
 
     // If there are more pages, fetch them all in parallel
     const additionalPages = [];
@@ -312,15 +315,13 @@ function AdminDashboard() {
     }
 
     const results = await Promise.all(additionalPages);
-    let allExtra = [];
+    let allData = [...firstBatch];
     for (const { data } of results) {
       if (!data || data.length === 0) break;
-      allExtra = [...allExtra, ...data];
+      allData.push(...data);
       if (data.length < pageSize) break;
     }
-    if (allExtra.length > 0) {
-      setMembers(prev => [...prev, ...allExtra]);
-    }
+    setMembers(allData);
   };
   const loadUsers = async () => {
     const pageSize = 1000;
@@ -476,10 +477,13 @@ function AdminDashboard() {
 
   const handleEditMemberClick = async (member) => {
     setEditMember({ ...member });
+    setEditPhotoPreview(member.photo_url || member.photo_base64 || null);
+    setEditPhotoFile(null);
     if (!member.photo_url && !member.photo_base64) {
       const photos = await fetchSingleMemberPhoto(member.member_id);
       if (photos.photo_url || photos.photo_base64) {
-        setEditMember(prev => prev && prev.member_id === member.member_id ? { ...prev, ...photos } : prev);
+        setEditPhotoPreview(photos.photo_url || photos.photo_base64 || null);
+        setEditMember(prev => prev && prev.member_id === member.member_id ? { ...prev, ...photos, _original_photo_url: photos.photo_url, _original_photo_base64: photos.photo_base64 } : prev);
         setMembers(prev => prev.map(m => m.member_id === member.member_id ? { ...m, ...photos } : m));
       }
     }
@@ -637,7 +641,11 @@ function AdminDashboard() {
   const filteredMembers = useMemo(() => {
     return members.filter(m => {
       const q = searchQuery.toLowerCase();
-      const matchSearch = !q || m.full_name?.toLowerCase().includes(q) || m.mobile?.includes(q) || m.member_id?.toLowerCase().includes(q);
+      const matchSearch = !q ||
+        m.full_name?.toLowerCase().includes(q) ||
+        m.mobile?.includes(q) ||
+        m.member_id?.toLowerCase().includes(q) ||
+        m.aadhar?.includes(q);
       const matchDistrict = !districtFilter || m.district === districtFilter;
       return matchSearch && matchDistrict;
     });
@@ -727,6 +735,16 @@ function AdminDashboard() {
       approved_by: userProfile?.name || 'Admin'
     } : m));
 
+    if (selectedMember && (selectedMember.member_id === member.member_id || (member.id && selectedMember.id === member.id))) {
+      setSelectedMember(prev => ({
+        ...prev,
+        status: 'approved',
+        rejection_reason: null,
+        approved_at: new Date().toISOString(),
+        approved_by: userProfile?.name || 'Admin'
+      }));
+    }
+
     try {
       const { error } = await supabase
         .from('members')
@@ -777,6 +795,14 @@ function AdminDashboard() {
       status: 'rejected',
       rejection_reason: cleanReason
     } : m));
+
+    if (selectedMember && (selectedMember.member_id === member.member_id || (member.id && selectedMember.id === member.id))) {
+      setSelectedMember(prev => ({
+        ...prev,
+        status: 'rejected',
+        rejection_reason: cleanReason
+      }));
+    }
 
     try {
       const { error } = await supabase
@@ -987,8 +1013,8 @@ function AdminDashboard() {
       const updatedMemberData = {
         ...editMember,
         ...updatePayload,
-        photo_url: newPhotoUrl || null,
-        photo_base64: newPhotoBase64 || null,
+        photo_url: updatePayload.photo_url,
+        photo_base64: updatePayload.photo_base64,
         status: andApprove ? 'approved' : editMember.status,
         rejection_reason: andApprove ? null : editMember.rejection_reason,
       };
@@ -2279,12 +2305,12 @@ NEW MEMBER REGISTRATION DETAILS
                     >
                       {/* Photo with crop overlay */}
                       <div className="flex-shrink-0">
-                        {(member.photo_url || member.photo_base64) ? (
+                        {getPhotoSrc(member) ? (
                           <div className="relative group cursor-pointer"
                             onClick={() => openCropper({ member, imageSrc: getPhotoSrc(member), target: 'direct', title: 'புகைப்படம் பயிர் செய் / Crop ID Photo' })}
                           >
                             <img
-                              src={member.photo_url || member.photo_base64}
+                              src={getPhotoSrc(member)}
                               crossOrigin="anonymous"
                               className="w-20 h-24 object-cover rounded-xl ring-2 ring-amber-400/80 shadow-sm"
                             />
@@ -2481,14 +2507,14 @@ NEW MEMBER REGISTRATION DETAILS
                     >
                       {/* Photo with Crop Overlay */}
                       <div className="flex-shrink-0">
-                        {(member.photo_url || member.photo_base64) ? (
+                        {getPhotoSrc(member) ? (
                           <div
                             className="relative group cursor-pointer"
                             title="படம் பயிர் செய்ய கிளிக் செய்யவும் / Click to Crop Photo"
                             onClick={() => openCropper({ member, imageSrc: getPhotoSrc(member), target: 'direct', title: 'நிராகரிக்கப்பட்ட புகைப்படம் பயிர் செய் / Crop Rejected Photo' })}
                           >
                             <img
-                              src={member.photo_url || member.photo_base64}
+                              src={getPhotoSrc(member)}
                               crossOrigin="anonymous"
                               className="w-20 h-24 object-cover rounded-xl ring-2 ring-rose-400/80 shadow-sm"
                             />
@@ -2721,7 +2747,7 @@ NEW MEMBER REGISTRATION DETAILS
                             <td className="p-3.5 text-center">
                               <div className="flex gap-1.5 justify-center">
                                 <button onClick={() => handleViewMember(m)} title="View ID Card" className="px-2.5 py-1 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition font-bold text-xs shadow-xs">Card</button>
-                                <button onClick={() => handleEditMemberClick(m)} title="Edit Member" className="px-2.5 py-1 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 transition font-bold text-xs shadow-xs">Edit</button>
+                                <button onClick={() => handleEditMemberClick(m)} title="Edit Member" className="px-2.5 py-1 rounded-lg border border-amber-300 font-bold text-xs shadow-xs transition hover:brightness-95" style={{ backgroundColor: '#FEF3C7', borderColor: '#FCD34D', color: '#92400E' }}>Edit</button>
                                 <button onClick={() => handlePrintMember(m)} title="Print Form" className="px-2 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition font-bold text-xs shadow-xs">🖨️</button>
                                 <button onClick={() => deleteMember(m.member_id, m.user_id)} title="Delete Member" className="px-2 py-1 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition font-bold text-xs shadow-xs">Del</button>
                               </div>

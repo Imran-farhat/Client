@@ -1,4 +1,5 @@
 import defaultTheme from 'tailwindcss/defaultTheme';
+import colors from 'tailwindcss/colors';
 
 export default {
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
@@ -15,7 +16,12 @@ export default {
         'metal-noise': "radial-gradient(circle at top, rgba(255,255,255,0.04), transparent 25%), radial-gradient(circle at bottom, rgba(255,255,255,0.03), transparent 20%)",
       },
       colors: {
-        amber: '#FF6B00',
+        amber: {
+          ...colors.amber,
+          DEFAULT: '#FF6B00',
+          light: '#FFB347',
+          hover: '#E55A00',
+        },
         'amber-light': '#FFB347',
         'amber-hover': '#E55A00',
         fire: '#FF6B00',
