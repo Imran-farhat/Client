@@ -1250,17 +1250,13 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-[12px] p-4 text-center text-sm" style={{ border: '1.5px solid #E5DDD0' }}>
                   <div className="mb-3 font-semibold" style={{ color: '#1A1A2E' }}>மாநில தலைவர்</div>
                   <div style={{ height: '1px', background: '#E5DDD0' }} />
                 </div>
                 <div className="rounded-[12px] p-4 text-center text-sm" style={{ border: '1.5px solid #E5DDD0' }}>
                   <div className="mb-3 font-semibold" style={{ color: '#1A1A2E' }}>பொதுச்செயலாளர்</div>
-                  <div style={{ height: '1px', background: '#E5DDD0' }} />
-                </div>
-                <div className="rounded-[12px] p-4 text-center text-sm" style={{ border: '1.5px solid #E5DDD0' }}>
-                  <div className="mb-3 font-semibold" style={{ color: '#1A1A2E' }}>மாநில பொருளாளர்</div>
                   <div style={{ height: '1px', background: '#E5DDD0' }} />
                 </div>
               </div>
@@ -1342,7 +1338,7 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                 <p style={{ color: '#333', fontSize: '13px', textAlign: 'right', marginTop: '16px' }}>இங்ஙனம்,<br />தங்கள் உண்மையுள்ள,</p>
               </div>
 
-              <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid #CCCCCC' }}>
+              <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-around', paddingTop: '16px', borderTop: '1px solid #CCCCCC' }}>
                 <div style={{ textAlign: 'center', flex: 1 }}>
                   <div style={{ width: '160px', height: '1px', background: '#003366', margin: '0 auto 8px' }} />
                   <p style={{ color: '#666', fontSize: '11px' }}>மாநில தலைவர்</p>
@@ -1350,10 +1346,6 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
                 <div style={{ textAlign: 'center', flex: 1 }}>
                   <div style={{ width: '160px', height: '1px', background: '#003366', margin: '0 auto 8px' }} />
                   <p style={{ color: '#666', fontSize: '11px' }}>பொதுச்செயலாளர்</p>
-                </div>
-                <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{ width: '160px', height: '1px', background: '#003366', margin: '0 auto 8px' }} />
-                  <p style={{ color: '#666', fontSize: '11px' }}>மாநில பொருளாளர்</p>
                 </div>
               </div>
 

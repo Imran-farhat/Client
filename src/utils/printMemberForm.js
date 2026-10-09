@@ -227,7 +227,7 @@ export const printMemberForm = (member) => {
     }
     .auth-col {
       text-align: center;
-      width: 30%;
+      width: 45%;
       border-top: 1px solid #333;
       padding-top: 4px;
       font-size: 11px;
@@ -451,7 +451,6 @@ export const printMemberForm = (member) => {
 <div class="authority-section">
   <div class="auth-col">மாநில தலைவர்</div>
   <div class="auth-col">பொதுச்செயலாளர்</div>
-  <div class="auth-col">மாநில பொருளாளர்</div>
 </div>
 
 </body>

@@ -179,7 +179,7 @@ const buildFormPage = (member) => {
     '<div class="sign-right"><div class="sign-line">உறுப்பினர் கையொப்பம்</div></div>',
     '</div>',
     '<div class="authority-section">',
-    '<div class="auth-col">மாநில தலைவர்</div><div class="auth-col">பொதுச்செயலாளர்</div><div class="auth-col">மாநில பொருளாளர்</div>',
+    '<div class="auth-col">மாநில தலைவர்</div><div class="auth-col">பொதுச்செயலாளர்</div>',
     '</div>',
     '</div>'
   ].join('\n');
@@ -223,7 +223,7 @@ const FORM_CSS = [
   '.sign-right { font-size: 11px; text-align: right; }',
   '.sign-line { border-top: 1px solid #000; width: 180px; padding-top: 4px; margin-top: 36px; margin-left: auto; }',
   '.authority-section { margin-top: 24px; border-top: 1.5px solid #000; padding-top: 10px; display: flex; justify-content: space-between; }',
-  '.auth-col { text-align: center; width: 30%; border-top: 1px solid #333; padding-top: 4px; font-size: 11px; font-weight: 600; }',
+  '.auth-col { text-align: center; width: 45%; border-top: 1px solid #333; padding-top: 4px; font-size: 11px; font-weight: 600; }',
 ].join('\n');
 
 const toIdCardShape = (m) => m ? ({

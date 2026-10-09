@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import balajiSign from '../assets/balaji_clean.png';
 import idhreesSign from '../assets/idhrees_clean.png';
-import muraliSign from '../assets/murali_clean.png';
 
 const getPhotoSrc = (data) =>
   data?.photo_url ||
@@ -22,12 +21,6 @@ const AUTHORITIES = [
     nameTamil: 'ம. முகமது இத்ரீஸ்',
     role: 'பொதுச்செயலாளர்',
     roleEn: 'General Secretary'
-  },
-  {
-    sign: muraliSign,
-    nameTamil: 'அ. முரளிதரன்',
-    role: 'மாநில பொருளாளர்',
-    roleEn: 'State Treasurer'
   }
 ];
 
@@ -117,7 +110,7 @@ function CardFront({ member }) {
 
   const fields = [
     { label: 'Name',     value: member.fullName || '-' },
-    { label: 'Posting',  value: member.posting  || '-' },
+    { label: 'Posting',  value: (member.posting?.trim() === 'மாநில பொருளாளர்' ? 'உறுப்பினர்' : member.posting) || '-' },
     { label: 'D.O.B',   value: member.dob       || '-' },
     { label: 'District', value: member.pledgeDistrict || member.district || '-' },
     { label: 'Address',  value: member.address   || '-' },
@@ -309,7 +302,7 @@ function CardFront({ member }) {
 
       {/* ── Signature section ── */}
       <div style={{
-        padding: '5px 8px 6px 8px',
+        padding: '5px 14px 6px 14px',
         background: '#FAFAFA',
         borderTop: '0.5px solid #E0E0E0',
         display: 'flex',
@@ -318,12 +311,12 @@ function CardFront({ member }) {
         flexShrink: 0
       }}>
         {AUTHORITIES.map((auth, i) => (
-          <div key={i} style={{ width: '32%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+          <div key={i} style={{ width: '46%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
             <DarkSignature
               src={auth.sign}
               alt={auth.nameTamil}
               style={{
-                width: '78px',
+                width: '90px',
                 height: '32px',
                 objectFit: 'contain',
                 objectPosition: 'center bottom',
