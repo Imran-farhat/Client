@@ -809,13 +809,25 @@ function AdminDashboard() {
 
   const statusBadge = (status) => {
     const cfg = {
-      approved: { bg: '#F0FDF4', color: '#15803D', text: '\u2705 Approved' },
-      pending:  { bg: '#FEF3C7', color: '#92400E', text: '\u23f3 Pending' },
-      rejected: { bg: '#FEE2E2', color: '#DC2626', text: '\u274c Rejected' },
+      approved: { bg: '#ECFDF5', border: '#A7F3D0', color: '#065F46', text: '✅ Approved' },
+      pending:  { bg: '#FFFBEB', border: '#FDE68A', color: '#92400E', text: '⏳ Pending' },
+      rejected: { bg: '#FEF2F2', border: '#FECACA', color: '#991B1B', text: '❌ Rejected' },
     };
     const c = cfg[status] || cfg.pending;
     return (
-      <span style={{ background: c.bg, color: c.color, padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>
+      <span style={{
+        background: c.bg,
+        border: `1px solid ${c.border}`,
+        color: c.color,
+        padding: '3px 10px',
+        borderRadius: '9999px',
+        fontSize: '11px',
+        fontWeight: '800',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+      }}>
         {c.text}
       </span>
     );
@@ -1680,15 +1692,21 @@ NEW MEMBER REGISTRATION DETAILS
 
 
   return (
-    <div className="min-h-screen admin-dashboard" style={{ background: '#F0F4F9' }}>
+    <div className="min-h-screen admin-dashboard" style={{
+      background: '#F8FAFC',
+      backgroundImage: 'radial-gradient(at 0% 0%, rgba(0, 51, 102, 0.04) 0px, transparent 50%), radial-gradient(at 100% 0%, rgba(255, 107, 0, 0.04) 0px, transparent 50%)'
+    }}>
 
       {/* ── MOBILE TOP BAR ── */}
-      <div className="sticky top-0 z-30 flex items-center justify-between bg-[#003366] px-4 py-3 md:hidden shadow-lg">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded bg-[#FFB347] flex items-center justify-center font-bold text-black text-sm">A</div>
-          <span className="font-bold text-white text-sm">Admin Panel</span>
+      <div className="sticky top-0 z-30 flex items-center justify-between bg-[#070F1E] border-b border-white/10 px-4 py-3 md:hidden shadow-xl">
+        <div className="flex items-center gap-2.5">
+          <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain bg-white/10 p-0.5 ring-1 ring-amber-500/30" />
+          <div>
+            <span className="font-extrabold text-white text-sm tracking-wide">TIWTN Admin</span>
+            <span className="block text-[10px] text-emerald-400 font-semibold leading-tight">● Online</span>
+          </div>
         </div>
-        <button onClick={() => setSidebarOpen(o => !o)} className="text-white text-2xl leading-none p-1">
+        <button onClick={() => setSidebarOpen(o => !o)} className="text-white text-xl p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition">
           {sidebarOpen ? '✕' : '☰'}
         </button>
       </div>
@@ -1696,7 +1714,7 @@ NEW MEMBER REGISTRATION DETAILS
       {/* ── MOBILE DRAWER OVERLAY ── */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-20 md:hidden" onClick={() => setSidebarOpen(false)}>
-          <div className="absolute inset-0 bg-black/50" />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
         </div>
       )}
 
@@ -1706,76 +1724,97 @@ NEW MEMBER REGISTRATION DETAILS
           fixed top-0 left-0 h-full w-64 z-20 flex flex-col
           transform transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-0 md:static md:w-[240px] md:h-screen md:sticky md:top-0
-        `} style={{ background: 'linear-gradient(180deg, #0A1628 0%, #003366 60%, #004080 100%)' }}>
+          md:translate-x-0 md:static md:w-[260px] md:h-screen md:sticky md:top-0
+        `} style={{
+          background: 'linear-gradient(180deg, #070F1E 0%, #0A192F 45%, #071322 100%)',
+          borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '4px 0 24px rgba(0, 0, 0, 0.25)'
+        }}>
 
           {/* Sidebar header */}
-          <div className="px-5 py-6 border-b border-white/10 flex items-center gap-3 flex-shrink-0">
-            <div style={{
-              width: '40px', height: '40px', borderRadius: '10px',
-              background: 'linear-gradient(135deg, #FF6B00, #FFB347)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: '900', color: '#fff', fontSize: '18px',
-              boxShadow: '0 4px 12px rgba(255,107,0,0.4)'
-            }}>A</div>
-            <div>
-              <div className="font-bold text-white text-sm tracking-wide">Admin Panel</div>
-              <div className="text-[10px] text-white/50 mt-0.5">TIWTN Management</div>
+          <div className="px-5 py-5 border-b border-white/10 flex items-center gap-3.5 flex-shrink-0">
+            <img src="/logo.png" alt="TIWTN Logo" className="w-11 h-11 rounded-xl object-contain ring-2 ring-amber-500/40 shadow-lg bg-white/10 p-1 flex-shrink-0" />
+            <div className="min-w-0">
+              <div className="font-black text-white text-sm tracking-wide truncate">TIWTN Admin</div>
+              <div className="text-[11px] text-amber-300/80 font-medium truncate">தென்னிந்திய வெல்டிங் சங்கம்</div>
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold tracking-wider uppercase mt-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 admin-pulse-dot" />
+                Live Console
+              </div>
             </div>
           </div>
 
-          {/* Admin info chip */}
-          <div className="mx-4 mt-4 mb-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(255,179,71,0.12)', border: '1px solid rgba(255,179,71,0.2)' }}>
-            <div className="text-[10px] text-white/40 uppercase tracking-wider">Logged in as</div>
-            <div className="text-xs text-[#FFB347] font-semibold truncate mt-0.5">{userProfile?.email || userProfile?.name || 'Admin'}</div>
+          {/* Admin Profile Card */}
+          <div className="mx-3.5 mt-3.5 mb-2 p-3 rounded-xl" style={{
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF6B00] to-[#FFB347] flex items-center justify-center font-black text-white text-xs shadow-md flex-shrink-0">
+                {(userProfile?.name || userProfile?.email || 'A').charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] uppercase font-black tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Super Admin</span>
+                </div>
+                <div className="text-xs text-white/90 font-semibold truncate mt-0.5" title={userProfile?.email}>
+                  {userProfile?.email || userProfile?.name || 'Administrator'}
+                </div>
+              </div>
+            </div>
           </div>
 
-          <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-            {NAV.map(tab => (
-              <button key={tab.id} onClick={() => goTab(tab.id)}
-                className="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all duration-200 flex items-center gap-2.5"
-                style={activeTab === tab.id ? {
-                  background: 'rgba(255,179,71,0.18)',
-                  color: '#FFB347',
-                  borderLeft: '3px solid #FFB347',
-                  fontWeight: '700',
-                  paddingLeft: '9px'
-                } : {
-                  color: 'rgba(255,255,255,0.65)',
-                  fontWeight: '500'
-                }}>
-                <span style={{ fontSize: '16px' }}>{tab.icon}</span>
-                <span>{tab.label}</span>
-                {tab.id === 'pending' && pendingCount > 0 && (
-                  <span style={{
-                    background: '#EF4444', color: '#fff', borderRadius: '20px',
-                    padding: '1px 7px', fontSize: '10px', fontWeight: '700', marginLeft: 'auto'
-                  }}>{pendingCount}</span>
-                )}
-                {tab.id === 'rejected' && rejectedCount > 0 && (
-                  <span style={{
-                    background: '#DC2626', color: '#fff', borderRadius: '20px',
-                    padding: '1px 7px', fontSize: '10px', fontWeight: '700', marginLeft: 'auto'
-                  }}>{rejectedCount}</span>
-                )}
-              </button>
-            ))}
-            <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '8px 0' }} />
+          {/* Navigation links */}
+          <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto admin-sidebar-scroll">
+            {NAV.map(tab => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button key={tab.id} onClick={() => goTab(tab.id)}
+                  className="w-full text-left px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200 flex items-center gap-3 relative group"
+                  style={isActive ? {
+                    background: 'linear-gradient(135deg, rgba(255, 107, 0, 0.22) 0%, rgba(255, 179, 71, 0.1) 100%)',
+                    color: '#FFFFFF',
+                    borderLeft: '4px solid #FF6B00',
+                    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 14px rgba(255, 107, 0, 0.15)',
+                    fontWeight: '700',
+                    paddingLeft: '11px'
+                  } : {
+                    color: 'rgba(255, 255, 255, 0.65)',
+                    fontWeight: '500'
+                  }}>
+                  <span className="text-lg transition-transform group-hover:scale-110">{tab.icon}</span>
+                  <span className="truncate">{tab.label}</span>
+                  {tab.id === 'pending' && pendingCount > 0 && (
+                    <span className="ml-auto bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-full px-2 py-0.5 text-[11px] font-black shadow-md shadow-red-500/40 animate-pulse">
+                      {pendingCount}
+                    </span>
+                  )}
+                  {tab.id === 'rejected' && rejectedCount > 0 && (
+                    <span className="ml-auto bg-gradient-to-r from-red-600 to-rose-700 text-white rounded-full px-2 py-0.5 text-[11px] font-black shadow-md shadow-red-600/40 animate-pulse">
+                      {rejectedCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+            <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
             <button onClick={() => { exportCSV(); setSidebarOpen(false); }}
-              className="w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-2.5"
-              style={{ color: 'rgba(255,255,255,0.55)' }}>
-              <span style={{ fontSize: '16px' }}>📥</span>
-              <span>Export CSV</span>
+              className="w-full text-left px-3.5 py-2.5 rounded-xl text-sm flex items-center gap-3 transition-colors hover:bg-white/5 hover:text-white"
+              style={{ color: 'rgba(255,255,255,0.6)' }}>
+              <span className="text-lg">📥</span>
+              <span>Export CSV Data</span>
             </button>
           </nav>
 
-          <div className="p-4 border-t border-white/10 flex-shrink-0">
+          {/* Footer */}
+          <div className="p-3.5 border-t border-white/10 flex-shrink-0 space-y-2">
             <button onClick={logout}
-              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all"
-              style={{ color: '#FC8181', background: 'rgba(252,129,129,0.08)' }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(252,129,129,0.16)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'rgba(252,129,129,0.08)'}>
-              <span>🚪</span> <span className="font-semibold">Logout</span>
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-all"
+              style={{ color: '#F87171', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}>
+              <span>🚪</span> <span className="font-bold">Logout</span>
             </button>
           </div>
         </aside>
@@ -1785,108 +1824,198 @@ NEW MEMBER REGISTRATION DETAILS
 
           {/* ── OVERVIEW ── */}
           {activeTab === 'overview' && (
-            <div className="space-y-6 max-w-5xl">
-              {/* Header row */}
-              <div className="flex flex-wrap gap-3 items-start justify-between">
+            <div className="space-y-6 max-w-6xl">
+              {/* Executive Header Banner */}
+              <div className="bg-white rounded-2xl p-5 md:p-6 border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-2xl font-bold" style={{ color: '#0A1628' }}>Dashboard Overview</h2>
-                  <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>
-                    {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Kolkata' })}
-                  </p>
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200/60 text-amber-800 text-[11px] font-bold uppercase tracking-wider mb-2">
+                    <span>🏛️</span> தென்னிந்திய வெல்டிங் நலச்சங்கம் · Administrative Portal
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+                    Dashboard Overview
+                  </h2>
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-slate-500 font-medium">
+                    <span className="flex items-center gap-1 font-semibold text-slate-700">
+                      📅 {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Kolkata' })}
+                    </span>
+                    <span className="text-slate-300">•</span>
+                    <span className="inline-flex items-center gap-1 text-emerald-600 font-bold">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 admin-pulse-dot" />
+                      Realtime Live Sync
+                    </span>
+                  </div>
                 </div>
-                <button onClick={() => { loadMembers(); loadUsers(); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
-                  style={{ background: '#F0F4F9', color: '#003366', border: '1px solid #D1D9E6' }}>
-                  ↻ Refresh
-                </button>
+
+                <div className="flex flex-wrap items-center gap-2.5 flex-shrink-0">
+                  <button onClick={() => goTab('register')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-md hover:shadow-lg transition-all"
+                    style={{ background: 'linear-gradient(135deg, #FF6B00, #E55A00)', boxShadow: '0 4px 12px rgba(255, 107, 0, 0.3)' }}>
+                    <span>➕</span> புது உறுப்பினர் / Register
+                  </button>
+                  <button onClick={() => exportCSV()}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition">
+                    <span>📥</span> CSV
+                  </button>
+                  <button onClick={() => { loadMembers(); loadUsers(); }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-[#003366] bg-blue-50 hover:bg-blue-100 border border-blue-200 transition">
+                    <span className={loadingData ? 'animate-spin' : ''}>↻</span> Refresh
+                  </button>
+                </div>
               </div>
 
-              {/* Stat cards */}
+              {/* Bento-Grid Stat Cards */}
               {(() => {
                 const notRegistered = users.filter(u => !u.has_registered).length;
                 const legacyPhotos  = members.filter(m => m.photo_base64 && !m.photo_url).length;
                 const cards = [
                   {
-                    label: 'Total Members', value: members.length,
+                    label: 'Total Members',
+                    tamil: 'மொத்த உறுப்பினர்கள்',
+                    value: members.length,
                     sub: 'All time registrations',
-                    iconBg: 'linear-gradient(135deg,#FF6B00,#FFB347)', icon: '👥',
-                    valueCls: '#FF6B00'
+                    tag: '📈 Total Roster',
+                    accent: '#FF6B00',
+                    shadow: 'rgba(255, 107, 0, 0.35)',
+                    iconBg: 'linear-gradient(135deg, #FF6B00, #FF8C00)',
+                    icon: '👥'
                   },
                   {
-                    label: 'Registered Today', value: todayCount,
+                    label: 'Registered Today',
+                    tamil: 'இன்று இணைந்தவர்கள்',
+                    value: todayCount,
                     sub: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', timeZone: 'Asia/Kolkata' }),
-                    iconBg: 'linear-gradient(135deg,#16A34A,#4ADE80)', icon: '✅',
-                    valueCls: '#16A34A'
+                    tag: '⚡ New Inflow',
+                    accent: '#10B981',
+                    shadow: 'rgba(16, 185, 129, 0.35)',
+                    iconBg: 'linear-gradient(135deg, #10B981, #059669)',
+                    icon: '✅'
                   },
                   {
-                    label: 'Districts Covered', value: activeDistricts,
+                    label: 'Districts Covered',
+                    tamil: 'மாவட்டங்கள்',
+                    value: activeDistricts,
                     sub: `of ${TAMIL_NADU_DISTRICTS.length} total districts`,
-                    iconBg: 'linear-gradient(135deg,#2563EB,#60A5FA)', icon: '🗺️',
-                    valueCls: '#2563EB'
+                    tag: '📍 40/40 Covered',
+                    accent: '#2563EB',
+                    shadow: 'rgba(37, 99, 235, 0.35)',
+                    iconBg: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                    icon: '🗺️'
                   },
                   {
-                    label: 'Signed-Up Users', value: users.length,
+                    label: 'Signed-Up Users',
+                    tamil: 'இணைய கணக்குகள்',
+                    value: users.length,
                     sub: 'Accounts created',
-                    iconBg: 'linear-gradient(135deg,#7C3AED,#A78BFA)', icon: '👤',
-                    valueCls: '#7C3AED'
+                    tag: '👤 Portal Accounts',
+                    accent: '#7C3AED',
+                    shadow: 'rgba(124, 58, 237, 0.35)',
+                    iconBg: 'linear-gradient(135deg, #7C3AED, #6D28D9)',
+                    icon: '👤'
                   },
                   {
-                    label: 'Pending Approval', value: pendingCount,
+                    label: 'Pending Approval',
+                    tamil: 'அனுமதி நிலுவை',
+                    value: pendingCount,
                     sub: pendingCount > 0 ? 'Awaiting admin review' : 'All applications reviewed',
-                    iconBg: pendingCount > 0 ? 'linear-gradient(135deg,#F59E0B,#FCD34D)' : 'linear-gradient(135deg,#16A34A,#4ADE80)',
+                    tag: pendingCount > 0 ? '⏳ Action Required' : '✓ All Clear',
+                    accent: '#F59E0B',
+                    shadow: 'rgba(245, 158, 11, 0.35)',
+                    iconBg: pendingCount > 0 ? 'linear-gradient(135deg, #F59E0B, #D97706)' : 'linear-gradient(135deg, #10B981, #059669)',
                     icon: pendingCount > 0 ? '⏳' : '✅',
-                    valueCls: pendingCount > 0 ? '#B45309' : '#16A34A',
+                    isAlert: pendingCount > 0,
                     onClick: pendingCount > 0 ? () => goTab('pending') : undefined
                   },
                   {
-                    label: 'Rejected Applications', value: rejectedCount,
-                    sub: rejectedCount > 0 ? 'Fix info / photo & approve' : 'No rejected applications',
-                    iconBg: rejectedCount > 0 ? 'linear-gradient(135deg,#DC2626,#EF4444)' : 'linear-gradient(135deg,#16A34A,#4ADE80)',
+                    label: 'Rejected Applications',
+                    tamil: 'நிராகரிக்கப்பட்டவை',
+                    value: rejectedCount,
+                    sub: rejectedCount > 0 ? 'Fix info / photo & approve' : 'Zero rejected',
+                    tag: rejectedCount > 0 ? '❌ Requires Action' : '✓ All Good',
+                    accent: '#DC2626',
+                    shadow: 'rgba(220, 38, 38, 0.35)',
+                    iconBg: rejectedCount > 0 ? 'linear-gradient(135deg, #DC2626, #B91C1C)' : 'linear-gradient(135deg, #10B981, #059669)',
                     icon: rejectedCount > 0 ? '❌' : '✅',
-                    valueCls: rejectedCount > 0 ? '#DC2626' : '#16A34A',
+                    isAlert: rejectedCount > 0,
                     onClick: rejectedCount > 0 ? () => goTab('rejected') : undefined
                   },
                   {
-                    label: 'Pending Registration', value: notRegistered,
-                    sub: notRegistered > 0 ? 'Users yet to register' : 'All users registered!',
-                    iconBg: notRegistered > 0 ? 'linear-gradient(135deg,#DC2626,#F87171)' : 'linear-gradient(135deg,#16A34A,#4ADE80)',
-                    icon: notRegistered > 0 ? '⏳' : '🎉',
-                    valueCls: notRegistered > 0 ? '#DC2626' : '#16A34A'
+                    label: 'Pending Registration',
+                    tamil: 'விண்ணப்பிக்காதோர்',
+                    value: notRegistered,
+                    sub: notRegistered > 0 ? 'Signed-up but no form' : 'All accounts submitted',
+                    tag: '📋 Unregistered',
+                    accent: '#EA580C',
+                    shadow: 'rgba(234, 88, 12, 0.35)',
+                    iconBg: notRegistered > 0 ? 'linear-gradient(135deg, #EA580C, #C2410C)' : 'linear-gradient(135deg, #10B981, #059669)',
+                    icon: notRegistered > 0 ? '⏳' : '🎉'
                   },
                   {
-                    label: 'Legacy Photos', value: legacyPhotos,
-                    sub: legacyPhotos > 0 ? 'Pending migration' : 'All synced to cloud',
-                    iconBg: legacyPhotos > 0 ? 'linear-gradient(135deg,#D97706,#FCD34D)' : 'linear-gradient(135deg,#16A34A,#4ADE80)',
-                    icon: legacyPhotos > 0 ? '🖼️' : '☁️',
-                    valueCls: legacyPhotos > 0 ? '#D97706' : '#16A34A'
+                    label: 'Legacy Storage Photos',
+                    tamil: 'பழைய படங்கள்',
+                    value: legacyPhotos,
+                    sub: legacyPhotos > 0 ? 'Pending cloud sync' : '100% Cloud Synced',
+                    tag: legacyPhotos > 0 ? '🖼️ Syncing' : '☁️ 100% Cloud',
+                    accent: '#0D9488',
+                    shadow: 'rgba(13, 148, 136, 0.35)',
+                    iconBg: legacyPhotos > 0 ? 'linear-gradient(135deg, #0D9488, #0F766E)' : 'linear-gradient(135deg, #10B981, #059669)',
+                    icon: legacyPhotos > 0 ? '🖼️' : '☁️'
                   },
                 ];
+
                 return (
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
                     {cards.map(card => (
-                      <div key={card.label} style={{
-                        background: '#fff', borderRadius: '16px', padding: '18px 20px',
-                        boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #E8EDF5',
-                        display: 'flex', flexDirection: 'column', gap: '10px',
-                        cursor: card.onClick ? 'pointer' : 'default'
-                      }}
-                      onClick={card.onClick}
+                      <div key={card.label}
+                        className="admin-card-hover relative overflow-hidden bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm transition-all flex flex-col justify-between group cursor-pointer"
+                        style={{
+                          borderTop: `4px solid ${card.accent}`
+                        }}
+                        onClick={card.onClick}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        {/* Subtle ambient watermark glow */}
+                        <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full blur-2xl opacity-15 pointer-events-none" style={{ background: card.accent }} />
+
+                        {/* Top row: Icon + Tag */}
+                        <div className="flex items-center justify-between gap-2 relative z-10">
                           <div style={{
-                            width: '38px', height: '38px', borderRadius: '10px',
+                            width: '44px', height: '44px', borderRadius: '12px',
                             background: card.iconBg,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '18px'
-                          }}>{card.icon}</div>
+                            fontSize: '20px',
+                            boxShadow: `0 8px 16px -4px ${card.shadow}`
+                          }}>
+                            {card.icon}
+                          </div>
+                          <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full border ${
+                            card.isAlert
+                              ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
+                              : 'bg-slate-50 text-slate-600 border-slate-200'
+                          }`}>
+                            {card.tag}
+                          </span>
                         </div>
-                        <div>
-                          <div style={{
-                            fontSize: '28px', fontWeight: '800',
-                            color: card.valueCls, lineHeight: 1.1
-                          }}>{loadingData ? '—' : card.value}</div>
-                          <div style={{ fontSize: '12px', fontWeight: '600', color: '#374151', marginTop: '4px' }}>{card.label}</div>
-                          <div style={{ fontSize: '10px', color: '#9CA3AF', marginTop: '2px' }}>{card.sub}</div>
+
+                        {/* Middle Metric: Number + Label */}
+                        <div className="mt-4 relative z-10">
+                          <div className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-none" style={{ color: card.accent }}>
+                            {loadingData ? '—' : (card.value || 0).toLocaleString('en-IN')}
+                          </div>
+                          <div className="text-sm font-bold text-slate-800 mt-2">
+                            {card.label}
+                          </div>
+                          <div className="text-[11px] font-medium text-slate-500">
+                            {card.tamil}
+                          </div>
+                        </div>
+
+                        {/* Bottom row: Subtitle + Action link */}
+                        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 relative z-10">
+                          <span className="truncate">{card.sub}</span>
+                          {card.onClick && (
+                            <span className="text-xs font-bold text-[#FF6B00] flex items-center gap-0.5 group-hover:translate-x-1 transition-transform flex-shrink-0 ml-1">
+                              View →
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -1894,7 +2023,7 @@ NEW MEMBER REGISTRATION DETAILS
                 );
               })()}
 
-              {/* ── LIVE CLOUD STORAGE MONITOR ── */}
+              {/* ── LIVE CLOUD STORAGE & DATABASE MONITOR ── */}
               {(() => {
                 // Cloudinary Photo Storage (25 GB capacity = 25,600 MB)
                 const memberPhotosCount = members.filter(m => m.photo_url || m.photo_base64).length;
@@ -1912,80 +2041,80 @@ NEW MEMBER REGISTRATION DETAILS
                 const dbStoragePct = Math.max(0.1, Number(((estimatedDbMB / dbCapacityMB) * 100).toFixed(2)));
 
                 return (
-                  <div style={{
-                    background: '#FFFFFF',
-                    borderRadius: '16px',
-                    padding: '20px 22px',
-                    boxShadow: '0 2px 14px rgba(0,0,0,0.06)',
-                    border: '1.5px solid #E2E8F0',
-                    marginTop: '6px',
-                    marginBottom: '16px'
-                  }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '22px' }}>☁️</span>
+                  <div className="bg-white rounded-2xl p-5 md:p-6 border border-slate-200/80 shadow-sm mt-2">
+                    {/* Widget Header */}
+                    <div className="flex flex-wrap gap-3 justify-between items-center pb-4 mb-4 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-sky-600 flex items-center justify-center text-xl text-white shadow-md">
+                          ☁️
+                        </div>
                         <div>
-                          <div style={{ fontWeight: '800', color: '#0F172A', fontSize: '15px' }}>Live Cloud Storage & Database Monitor</div>
-                          <div style={{ fontSize: '12px', color: '#64748B', marginTop: '1px' }}>
+                          <h3 className="font-extrabold text-slate-900 text-base">
+                            Live Cloud Storage & Database Telemetry
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-0.5">
                             Real-time tracking of Cloudinary CDN image assets and Supabase SQL database quotas
-                          </div>
+                          </p>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.2)' }} />
-                        <span style={{ fontSize: '12px', fontWeight: '700', color: '#059669' }}>Live & Healthy</span>
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold shadow-sm">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 admin-pulse-dot" />
+                        Live & Healthy
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-                      {/* Metric 1: Cloudinary Image Storage */}
-                      <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '14px 16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: '700', color: '#1E293B' }}>🖼️ Photo Assets (Cloudinary CDN)</span>
-                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#059669', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '2px 8px', borderRadius: '12px' }}>
-                            25 GB Plan ($0)
-                          </span>
+                    {/* Dual Metric Gauges */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Metric 1: Cloudinary CDN */}
+                      <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                              🖼️ Photo Assets (Cloudinary CDN)
+                            </span>
+                            <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-100/80 border border-emerald-200 px-2 py-0.5 rounded-full">
+                              25 GB Free Plan
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-600 mb-2.5">
+                            Used: <strong className="text-slate-900">{estimatedPhotoStorageMB} MB</strong> / 25,600 MB ({totalPhotos} photos hosted)
+                          </div>
+                          <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
+                              style={{ width: `${Math.min(100, Math.max(1, cloudStoragePct))}%` }}
+                            />
+                          </div>
                         </div>
-                        <div style={{ fontSize: '12px', color: '#475569', marginBottom: '8px' }}>
-                          Used: <strong>{estimatedPhotoStorageMB} MB</strong> / 25,600 MB ({totalPhotos} photos hosted)
-                        </div>
-                        <div style={{ width: '100%', height: '8px', background: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
-                          <div style={{
-                            width: `${Math.min(100, Math.max(1, cloudStoragePct))}%`,
-                            height: '100%',
-                            background: 'linear-gradient(90deg, #10B981, #059669)',
-                            borderRadius: '4px',
-                            transition: 'width 0.5s ease-out'
-                          }} />
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748B', marginTop: '6px' }}>
-                          <span>{cloudStoragePct}% used</span>
+                        <div className="flex justify-between text-[11px] text-slate-500 font-medium mt-3 pt-2 border-t border-slate-200/60">
+                          <span className="font-bold text-emerald-600">{cloudStoragePct}% used</span>
                           <span>~{remainingPhotoSlots.toLocaleString()} photo slots remaining</span>
                         </div>
                       </div>
 
-                      {/* Metric 2: Supabase Database Quota */}
-                      <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '14px 16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: '700', color: '#1E293B' }}>🗄️ SQL Database (Supabase)</span>
-                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#0284C7', background: '#F0F9FF', border: '1px solid #BAE6FD', padding: '2px 8px', borderRadius: '12px' }}>
-                            500 MB Free Tier
-                          </span>
+                      {/* Metric 2: Supabase Database */}
+                      <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                              🗄️ SQL Database (Supabase)
+                            </span>
+                            <span className="text-[11px] font-extrabold text-sky-700 bg-sky-100/80 border border-sky-200 px-2 py-0.5 rounded-full">
+                              500 MB Free Tier
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-600 mb-2.5">
+                            Used: <strong className="text-slate-900">{estimatedDbMB} MB</strong> / 500 MB ({dbTotalRecords} total database rows)
+                          </div>
+                          <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-sky-500 to-blue-600 rounded-full transition-all duration-500"
+                              style={{ width: `${Math.min(100, Math.max(1, dbStoragePct))}%` }}
+                            />
+                          </div>
                         </div>
-                        <div style={{ fontSize: '12px', color: '#475569', marginBottom: '8px' }}>
-                          Used: <strong>{estimatedDbMB} MB</strong> / 500 MB ({dbTotalRecords} total database rows)
-                        </div>
-                        <div style={{ width: '100%', height: '8px', background: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
-                          <div style={{
-                            width: `${Math.min(100, Math.max(1, dbStoragePct))}%`,
-                            height: '100%',
-                            background: 'linear-gradient(90deg, #38BDF8, #0284C7)',
-                            borderRadius: '4px',
-                            transition: 'width 0.5s ease-out'
-                          }} />
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748B', marginTop: '6px' }}>
-                          <span>{dbStoragePct}% used</span>
+                        <div className="flex justify-between text-[11px] text-slate-500 font-medium mt-3 pt-2 border-t border-slate-200/60">
+                          <span className="font-bold text-sky-600">{dbStoragePct}% used</span>
                           <span>{Math.round(500 - estimatedDbMB)} MB remaining</span>
                         </div>
                       </div>
@@ -2005,44 +2134,73 @@ NEW MEMBER REGISTRATION DETAILS
               )}
 
               {/* Recent registrations */}
-              <div style={{ background: '#fff', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #E8EDF5', overflow: 'hidden' }}>
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid #F3F4F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div className="p-4 md:p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-slate-50/60 to-white">
                   <div>
-                    <div style={{ fontWeight: '700', color: '#0A1628', fontSize: '15px' }}>Recent Registrations</div>
-                    <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>Latest {Math.min(members.length, 8)} of {members.length} members</div>
+                    <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                      <span>📋</span> Recent Registrations / சமீபத்திய பதிவுகள்
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Latest {Math.min(members.length, 8)} of {members.length} registered members
+                    </p>
                   </div>
                   <button onClick={() => goTab('members')}
-                    style={{ fontSize: '12px', color: '#FF6B00', fontWeight: '600', background: '#FFF3E0', border: 'none', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}>
-                    View All →
+                    className="text-xs font-bold text-[#FF6B00] bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl px-3.5 py-1.5 transition flex items-center gap-1">
+                    View Complete Directory →
                   </button>
                 </div>
+
                 {loadingData ? (
-                  <div style={{ padding: '32px', textAlign: 'center', color: '#9CA3AF', fontSize: '14px' }}>Loading…</div>
-                ) : members.slice(0, 8).map((m, idx) => (
-                  <div key={idx}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid #F9FAFB', cursor: 'pointer', transition: 'background 0.15s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                    onClick={() => handleViewMember(m)}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                      {(() => {
-                        const photoSrc = getPhotoSrc(m);
-                        return photoSrc
-                          ? <img src={photoSrc} alt="" crossOrigin="anonymous" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #FFB347', flexShrink: 0 }} />
-                          : <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg,#FF6B00,#FFB347)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '16px', flexShrink: 0 }}>{m.full_name?.charAt(0)}</div>;
-                      })()}
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: '600', color: '#111827', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.full_name}</div>
-                        <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>{m.district} · {m.blood_group || '—'}</div>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
-                      <div style={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: '700', color: '#003366', background: '#EEF3FF', borderRadius: '6px', padding: '2px 8px', display: 'inline-block' }}>{m.member_id}</div>
-                      <div style={{ fontSize: '10px', color: '#9CA3AF', marginTop: '4px' }}>{m.join_date}</div>
-                    </div>
+                  <div className="py-12 text-center text-slate-400 text-sm">
+                    <span className="inline-block animate-spin mr-2">↻</span> Loading members…
                   </div>
-                ))}
-                {!loadingData && members.length === 0 && <div style={{ padding: '32px', textAlign: 'center', color: '#9CA3AF', fontSize: '14px' }}>No registrations yet.</div>}
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {members.slice(0, 8).map((m, idx) => {
+                      const photoSrc = getPhotoSrc(m);
+                      return (
+                        <div key={idx}
+                          className="p-3.5 md:p-4 flex items-center justify-between gap-3 hover:bg-slate-50/80 transition cursor-pointer group"
+                          onClick={() => handleViewMember(m)}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            {photoSrc ? (
+                              <img src={photoSrc} alt="" crossOrigin="anonymous"
+                                className="w-11 h-11 rounded-full object-cover ring-2 ring-amber-400/60 shadow-sm flex-shrink-0" />
+                            ) : (
+                              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#FF6B00] to-[#FFB347] text-white flex items-center justify-center font-black text-base flex-shrink-0 shadow-sm">
+                                {m.full_name?.charAt(0) || 'U'}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <div className="font-bold text-slate-900 text-sm truncate group-hover:text-[#FF6B00] transition-colors">
+                                {m.full_name}
+                              </div>
+                              <div className="text-xs text-slate-500 mt-0.5 flex flex-wrap items-center gap-1.5">
+                                <span className="font-semibold text-slate-700">{m.district}</span>
+                                <span>•</span>
+                                <span>{m.posting || 'Member'}</span>
+                                <span>•</span>
+                                <span className="px-1.5 py-0.2 rounded bg-slate-100 text-[10px] font-bold text-slate-600">{m.blood_group || '—'}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right flex-shrink-0 ml-3">
+                            <span className="font-mono text-xs font-bold text-[#003366] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md inline-block">
+                              {m.member_id}
+                            </span>
+                            <div className="text-[10px] text-slate-400 mt-1 font-medium">{m.join_date}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {!loadingData && members.length === 0 && (
+                      <div className="p-8 text-center text-slate-400 text-xs font-semibold">
+                        No registrations yet.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* ── Pending Registration Users ── */}
@@ -2050,133 +2208,146 @@ NEW MEMBER REGISTRATION DETAILS
                 const pendingUsers = users.filter(u => !u.has_registered);
                 if (pendingUsers.length === 0) return null;
                 return (
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-4 border-b border-gray-100 bg-red-50/60 flex justify-between items-center">
+                  <div className="bg-white rounded-2xl shadow-sm border border-rose-200/80 overflow-hidden">
+                    <div className="p-4 md:p-5 border-b border-rose-100 bg-rose-50/50 flex flex-wrap justify-between items-center gap-3">
                       <div>
-                        <h3 className="font-semibold text-red-700 text-sm">⏳ Pending Member Registration</h3>
-                        <p className="text-xs text-red-400 mt-0.5">{pendingUsers.length} user{pendingUsers.length !== 1 ? 's' : ''} signed up but haven't registered yet</p>
+                        <h3 className="font-extrabold text-rose-800 text-sm flex items-center gap-2">
+                          <span>⏳</span> Users Pending Registration / உறுப்பினர் படிவம் முடிக்காதவர்கள்
+                        </h3>
+                        <p className="text-xs text-rose-600/80 mt-0.5">
+                          {pendingUsers.length} user{pendingUsers.length !== 1 ? 's' : ''} signed up but haven't submitted member profile yet
+                        </p>
                       </div>
-                      <button onClick={() => goTab('register')} className="text-xs bg-[#003366] text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition font-semibold">
-                        + Register
+                      <button onClick={() => goTab('register')} className="text-xs bg-[#003366] hover:bg-[#002244] text-white px-3.5 py-2 rounded-xl transition font-bold shadow-xs">
+                        + Register On Behalf
                       </button>
                     </div>
-                    <div className="divide-y divide-gray-50">
-                      {pendingUsers.map((u, i) => (
-                        <div key={u.id || i} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-8 h-8 rounded-full bg-red-100 text-red-500 flex items-center justify-center font-bold text-sm flex-shrink-0">
-                              {u.name?.charAt(0)?.toUpperCase() || u.email?.charAt(0)?.toUpperCase() || '?'}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-semibold text-gray-800 text-sm truncate">{u.name || '—'}</p>
-                              <p className="text-xs text-gray-400 truncate">{u.email}</p>
-                            </div>
+                    <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto">
+                      {pendingUsers.slice(0, 10).map((u, idx) => (
+                        <div key={idx} className="p-3 px-5 flex items-center justify-between text-xs hover:bg-slate-50 transition">
+                          <div>
+                            <div className="font-bold text-slate-800">{u.name || 'Unnamed User'}</div>
+                            <div className="text-slate-500 font-mono text-[11px]">{u.email}</div>
                           </div>
-                          <div className="text-right flex-shrink-0 ml-2">
-                            <span className="inline-block text-[10px] font-semibold text-red-500 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">Not Registered</span>
-                            {u.created_at && (
-                              <p className="text-[10px] text-gray-400 mt-0.5">
-                                Joined {new Date(u.created_at).toLocaleDateString('en-IN')}
-                              </p>
-                            )}
-                          </div>
+                          <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-bold text-[10px]">
+                            Not Registered
+                          </span>
                         </div>
                       ))}
                     </div>
                   </div>
                 );
               })()}
-
             </div>
           )}
 
           {/* ── PENDING APPROVAL ── */}
           {activeTab === 'pending' && (
-            <div className="space-y-4 md:space-y-6 max-w-5xl">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <h2 className="text-xl md:text-2xl font-bold text-[#003366]">
-                  அனுமதி நிலுவை / Pending Approval ({pendingCount})
-                </h2>
+            <div className="space-y-5 max-w-5xl">
+              {/* Header Banner */}
+              <div className="bg-white rounded-2xl p-5 md:p-6 border border-amber-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold uppercase tracking-wider mb-2">
+                    <span>⏳</span> Action Required
+                  </div>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                    அனுமதி நிலுவை / Pending Approval
+                    <span className="text-sm font-bold bg-amber-100 text-amber-800 px-3 py-1 rounded-full border border-amber-300">
+                      {pendingCount}
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    புதிய விண்ணப்பங்களை சரிபார்த்து அடையாள அட்டை அனுமதியளிக்கவும்
+                  </p>
+                </div>
               </div>
 
               {pendingCount === 0 ? (
-                <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-                  <div style={{ fontSize: '3rem' }}>✅</div>
-                  <div style={{ marginTop: '1rem' }}>நிலுவையில் விண்ணப்பங்கள் இல்லை<br/>No pending applications</div>
+                <div className="bg-white rounded-2xl p-16 text-center border border-slate-200/80 shadow-sm">
+                  <div className="text-5xl animate-bounce">🎉</div>
+                  <div className="text-base font-extrabold text-slate-800 mt-3">நிலுவையில் விண்ணப்பங்கள் இல்லை</div>
+                  <div className="text-xs text-slate-400 mt-1">All membership applications have been reviewed!</div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="space-y-4">
                   {members
                     .filter(m => m.status === 'pending')
                     .map(member => (
-                    <div key={member.member_id} style={{
-                      background: '#fff', border: '1px solid #F59E0B',
-                      borderRadius: '12px', padding: '1.2rem',
-                      display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap'
-                    }}>
-                      {/* Photo */}
-                      <div style={{ flexShrink: 0 }}>
+                    <div key={member.member_id}
+                      className="bg-white rounded-2xl border border-amber-200/90 p-5 md:p-6 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row gap-5 items-start relative overflow-hidden"
+                      style={{ borderLeft: '5px solid #F59E0B' }}
+                    >
+                      {/* Photo with crop overlay */}
+                      <div className="flex-shrink-0">
                         {(member.photo_url || member.photo_base64) ? (
-                          <img
-                            src={member.photo_url || member.photo_base64}
-                            crossOrigin="anonymous"
-                            style={{ width: '70px', height: '85px', objectFit: 'cover', borderRadius: '6px', border: '2px solid #003366' }}
-                          />
+                          <div className="relative group cursor-pointer"
+                            onClick={() => openCropper({ member, imageSrc: getPhotoSrc(member), target: 'direct', title: 'புகைப்படம் பயிர் செய் / Crop ID Photo' })}
+                          >
+                            <img
+                              src={member.photo_url || member.photo_base64}
+                              crossOrigin="anonymous"
+                              className="w-20 h-24 object-cover rounded-xl ring-2 ring-amber-400/80 shadow-sm"
+                            />
+                            <div className="absolute inset-0 bg-black/60 rounded-xl opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[11px] font-bold transition">
+                              <span>✂️</span>
+                              <span>பயிர் செய்</span>
+                            </div>
+                          </div>
                         ) : (
-                          <div style={{
-                            width: '70px', height: '85px', borderRadius: '6px',
-                            background: '#FF6B00', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', fontSize: '1.8rem', color: '#fff', fontWeight: '800'
-                          }}>
+                          <div className="w-20 h-24 rounded-xl bg-gradient-to-br from-[#FF6B00] to-[#FFB347] flex items-center justify-center text-2xl text-white font-black shadow-sm">
                             {member.full_name?.charAt(0)?.toUpperCase()}
                           </div>
                         )}
                       </div>
 
                       {/* Details */}
-                      <div style={{ flex: 1, minWidth: '200px' }}>
-                        <div style={{ fontSize: '16px', fontWeight: '800', color: '#0A1628', marginBottom: '6px' }}>
-                          {member.full_name}
+                      <div className="flex-1 min-w-[200px]">
+                        <div className="flex items-center gap-2 flex-wrap mb-3">
+                          <h3 className="text-lg font-black text-slate-900">
+                            {member.full_name}
+                          </h3>
+                          <span className="font-mono text-xs font-bold text-[#003366] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                            {member.member_id}
+                          </span>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px', fontSize: '12px' }}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
                           {[
-                            ['Member ID', member.member_id],
-                            ['\u0baa\u0ba4\u0bb5\u0bbf', member.posting],
-                            ['\u0bae\u0bbe\u0bb5\u0b9f\u0bcd\u0b9f\u0bae\u0bcd', member.district],
-                            ['\u0b95\u0bc8\u0baa\u0bc7\u0b9a\u0bbf', member.mobile],
-                            ['\u0b87\u0bb0\u0ba4\u0bcd\u0ba4 \u0baa\u0bbf\u0bb0\u0bbf\u0bb5\u0bc1', member.blood_group],
-                            ['DOB', member.dob],
-                            ['\u0b95\u0bbf\u0bb3\u0bc8', member.branch || '-'],
-                            ['\u0bb5\u0bbf\u0ba3\u0bcd\u0ba3\u0baa\u0bcd\u0baa\u0bbf\u0ba4\u0bcd\u0ba4 \u0ba4\u0bc7\u0ba4\u0bbf', member.registered_at ? new Date(member.registered_at).toLocaleDateString('en-IN') : '-']
+                            ['பதவி / Posting', member.posting],
+                            ['மாவட்டம் / District', member.district],
+                            ['கைபேசி / Mobile', member.mobile],
+                            ['இரத்த பிரிவு / Blood', member.blood_group],
+                            ['பிறந்த தேதி / DOB', member.dob],
+                            ['கிளை / Branch', member.branch || '-'],
+                            ['விண்ணப்பித்த தேதி', member.registered_at ? new Date(member.registered_at).toLocaleDateString('en-IN') : '-']
                           ].map(([label, value]) => (
-                            <div key={label}>
-                              <span style={{ color: '#6B7280' }}>{label}: </span>
-                              <span style={{ fontWeight: '700', color: '#0A1628' }}>{value || '-'}</span>
+                            <div key={label} className="flex items-center justify-between sm:justify-start gap-2">
+                              <span className="text-slate-500 font-medium">{label}:</span>
+                              <span className="font-bold text-slate-900">{value || '-'}</span>
                             </div>
                           ))}
                         </div>
                       </div>
 
                       {/* Action buttons */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
+                      <div className="flex flex-col gap-2 w-full md:w-44 flex-shrink-0">
                         <button
                           onClick={() => openCropper({ member, imageSrc: getPhotoSrc(member), target: 'direct', title: 'புகைப்படம் பயிர் செய் / Crop ID Photo' })}
-                          style={{ padding: '8px 16px', background: '#FF6B00', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] text-white font-bold text-xs shadow-sm hover:opacity-95 transition flex items-center justify-center gap-1.5">
                           ✂️ படம் பயிர் செய்
                         </button>
                         <button
                           onClick={() => handlePrintMember(member)}
-                          style={{ padding: '8px 16px', background: '#003366', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
+                          className="w-full py-2 px-3 rounded-xl bg-[#003366] text-white font-bold text-xs shadow-sm hover:opacity-95 transition flex items-center justify-center gap-1.5">
                           🖨️ படிவம் காண்க
                         </button>
                         <button
                           onClick={() => approveMember(member)}
-                          style={{ padding: '10px 16px', background: '#22C55E', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '800' }}>
+                          className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs shadow-md hover:opacity-95 transition flex items-center justify-center gap-1.5">
                           ✅ அனுமதி / Approve
                         </button>
                         <button
                           onClick={() => rejectMember(member)}
-                          style={{ padding: '10px 16px', background: 'transparent', color: '#EF4444', border: '2px solid #EF4444', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '800' }}>
+                          className="w-full py-1.5 px-3 rounded-xl border border-rose-300 text-rose-600 hover:bg-rose-50 font-bold text-xs transition flex items-center justify-center gap-1.5">
                           ❌ நிராகரி / Reject
                         </button>
                       </div>
@@ -2189,39 +2360,57 @@ NEW MEMBER REGISTRATION DETAILS
 
           {/* ── REJECTED APPLICATIONS ── */}
           {activeTab === 'rejected' && (
-            <div className="space-y-4 md:space-y-6 max-w-5xl">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div className="space-y-6 max-w-6xl">
+              {/* Header Banner */}
+              <div className="bg-white rounded-2xl p-5 md:p-6 border border-rose-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-[#DC2626] flex items-center gap-2">
-                    <span>❌</span> நிராகரிக்கப்பட்டவை / Rejected ({rejectedCount})
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-bold uppercase tracking-wider mb-2">
+                    <span>⚠️</span> Action Required · மறுஆய்வு தேவை
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                    Rejected Applications
+                    <span className="text-sm font-bold bg-rose-100 text-rose-700 px-3 py-1 rounded-full border border-rose-200">
+                      {rejectedCount}
+                    </span>
                   </h2>
-                  <p className="text-xs text-gray-500 mt-1">
-                    தவறான விவரம் அல்லது புகைப்படம் காரணத்தால் நிராகரிக்கப்பட்டவர்கள். இங்கு நேரடியாக விவரங்களை திருத்தி, புதிய படம் பதிவேற்றி அனுமதிக்கலாம்.
+                  <p className="text-xs text-slate-500 mt-1">
+                    தவறான விவரம் அல்லது தெளிவற்ற புகைப்படம் காரணத்தால் நிராகரிக்கப்பட்டவர்கள். இங்கு நேரடியாக விவரங்களை திருத்தி அல்லது பயிர் செய்து உடனடியாக அனுமதிக்கலாம்.
                   </p>
                 </div>
+
                 {rejectedCount > 0 && (
-                  <button
-                    onClick={() => { setRejectedDistrictFilter(''); setRejectedSearchQuery(''); }}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-white transition text-gray-700">
-                    🔄 Reset Filter
-                  </button>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => { setRejectedDistrictFilter(''); setRejectedSearchQuery(''); }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition">
+                      🔄 Reset Filters
+                    </button>
+                  </div>
                 )}
               </div>
 
-              {/* District & Search Filters */}
-              <div className="bg-white p-4 rounded-xl border border-red-100 shadow-sm space-y-3">
+              {/* District & Search Filters Card */}
+              <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3.5">
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="text"
-                    placeholder="Search by name, mobile, member ID, reason..."
-                    value={rejectedSearchQuery}
-                    onChange={e => setRejectedSearchQuery(e.target.value)}
-                    className="flex-1 p-2.5 rounded-lg border border-gray-200 text-black focus:outline-none focus:border-[#DC2626] text-sm"
-                  />
+                  <div className="relative flex-1">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+                    <input
+                      type="text"
+                      placeholder="Search rejected by name, mobile, member ID, reason..."
+                      value={rejectedSearchQuery}
+                      onChange={e => setRejectedSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/15 text-sm"
+                    />
+                    {rejectedSearchQuery && (
+                      <button onClick={() => setRejectedSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+                        ✕
+                      </button>
+                    )}
+                  </div>
                   <select
                     value={rejectedDistrictFilter}
                     onChange={e => setRejectedDistrictFilter(e.target.value)}
-                    className="w-full sm:w-56 p-2.5 rounded-lg border border-gray-200 text-black focus:outline-none focus:border-[#DC2626] text-sm font-medium">
+                    className="w-full sm:w-64 py-2.5 px-3 rounded-xl border border-slate-200 text-slate-900 font-semibold focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/15 text-sm">
                     <option value="">All Districts ({rejectedCount})</option>
                     {TAMIL_NADU_DISTRICTS.map(d => {
                       const c = rejectedMembers.filter(m => m.district === d).length;
@@ -2236,15 +2425,15 @@ NEW MEMBER REGISTRATION DETAILS
 
                 {/* District Quick-filter Pills */}
                 {rejectedDistrictsSummary.length > 0 && (
-                  <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-gray-100">
-                    <span className="text-xs font-bold text-gray-500 mr-1">Districts with Rejected:</span>
+                  <div className="flex items-center gap-1.5 flex-wrap pt-2.5 border-t border-slate-100">
+                    <span className="text-xs font-bold text-slate-500 mr-1">Districts:</span>
                     <button
                       type="button"
                       onClick={() => setRejectedDistrictFilter('')}
-                      className={`text-xs px-2.5 py-1 rounded-full font-semibold transition ${
+                      className={`text-xs px-3 py-1 rounded-xl font-bold transition ${
                         rejectedDistrictFilter === ''
-                          ? 'bg-[#DC2626] text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-rose-600 text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                       }`}>
                       All ({rejectedCount})
                     </button>
@@ -2253,13 +2442,13 @@ NEW MEMBER REGISTRATION DETAILS
                         key={d.name}
                         type="button"
                         onClick={() => setRejectedDistrictFilter(d.name)}
-                        className={`text-xs px-2.5 py-1 rounded-full font-semibold transition flex items-center gap-1 ${
+                        className={`text-xs px-2.5 py-1 rounded-xl font-bold transition flex items-center gap-1.5 ${
                           rejectedDistrictFilter === d.name
-                            ? 'bg-[#DC2626] text-white shadow-sm'
-                            : 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
+                            ? 'bg-rose-600 text-white shadow-sm'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200/70 hover:bg-rose-100'
                         }`}>
                         <span>{d.name}</span>
-                        <span className="text-[10px] bg-white/60 px-1.5 py-0.2 rounded-full font-bold text-red-900">
+                        <span className="text-[10px] bg-white/80 px-1.5 py-0.5 rounded-full font-black text-rose-900">
                           {d.count}
                         </span>
                       </button>
@@ -2270,27 +2459,28 @@ NEW MEMBER REGISTRATION DETAILS
 
               {/* Members List */}
               {rejectedCount === 0 ? (
-                <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-                  <div style={{ fontSize: '3rem' }}>🎉</div>
-                  <div style={{ marginTop: '1rem', fontWeight: '600' }}>நிராகரிக்கப்பட்ட விண்ணப்பங்கள் இல்லை<br/>No rejected applications</div>
+                <div className="bg-white rounded-2xl p-16 text-center border border-slate-200/80 shadow-sm">
+                  <div className="text-5xl animate-bounce">🎉</div>
+                  <div className="text-base font-extrabold text-slate-800 mt-3">நிராகரிக்கப்பட்ட விண்ணப்பங்கள் இல்லை</div>
+                  <div className="text-xs text-slate-400 mt-1">No rejected applications at this time!</div>
                 </div>
               ) : filteredRejectedMembers.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                  <div style={{ fontSize: '2rem' }}>🔍</div>
-                  <div style={{ marginTop: '0.5rem' }}>பொருந்தும் விண்ணப்பங்கள் இல்லை / No matching applications found for this filter</div>
+                <div className="bg-white rounded-2xl p-12 text-center border border-slate-200/80 shadow-sm">
+                  <div className="text-3xl text-slate-400">🔍</div>
+                  <div className="text-sm font-bold text-slate-700 mt-2">பொருந்தும் விண்ணப்பங்கள் இல்லை / No matching applications found</div>
+                  <button onClick={() => { setRejectedDistrictFilter(''); setRejectedSearchQuery(''); }} className="mt-3 text-xs font-bold text-rose-600 underline">
+                    Clear all search filters
+                  </button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="space-y-4">
                   {filteredRejectedMembers.map(member => (
-                    <div key={member.member_id} style={{
-                      background: '#fff', border: '1px solid #FECACA',
-                      borderLeft: '5px solid #DC2626',
-                      borderRadius: '12px', padding: '1.2rem',
-                      display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap',
-                      boxShadow: '0 1px 4px rgba(220,38,38,0.08)'
-                    }}>
-                      {/* Photo */}
-                      <div style={{ flexShrink: 0 }}>
+                    <div key={member.member_id}
+                      className="bg-white rounded-2xl border border-rose-200/90 p-5 md:p-6 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row gap-5 items-start relative overflow-hidden"
+                      style={{ borderLeft: '5px solid #EF4444' }}
+                    >
+                      {/* Photo with Crop Overlay */}
+                      <div className="flex-shrink-0">
                         {(member.photo_url || member.photo_base64) ? (
                           <div
                             className="relative group cursor-pointer"
@@ -2300,118 +2490,90 @@ NEW MEMBER REGISTRATION DETAILS
                             <img
                               src={member.photo_url || member.photo_base64}
                               crossOrigin="anonymous"
-                              style={{ width: '75px', height: '90px', objectFit: 'cover', borderRadius: '6px', border: '2px solid #DC2626' }}
+                              className="w-20 h-24 object-cover rounded-xl ring-2 ring-rose-400/80 shadow-sm"
                             />
-                            <div className="absolute inset-0 bg-black/60 rounded-[6px] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold transition">
+                            <div className="absolute inset-0 bg-black/60 rounded-xl opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[11px] font-bold transition">
                               <span>✂️</span>
                               <span>பயிர் செய்</span>
                             </div>
                           </div>
                         ) : (
-                          <div style={{
-                            width: '75px', height: '90px', borderRadius: '6px',
-                            background: '#EF4444', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', fontSize: '1.8rem', color: '#fff', fontWeight: '800'
-                          }}>
+                          <div className="w-20 h-24 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center text-2xl text-white font-black shadow-sm">
                             {member.full_name?.charAt(0)?.toUpperCase() || '?'}
                           </div>
                         )}
                       </div>
 
                       {/* Details */}
-                      <div style={{ flex: 1, minWidth: '220px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                          <span style={{ fontSize: '16px', fontWeight: '800', color: '#0A1628' }}>
+                      <div className="flex-1 min-w-[200px]">
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          <h3 className="text-lg font-black text-slate-900">
                             {member.full_name}
+                          </h3>
+                          <span className="font-mono text-xs font-bold text-[#003366] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                            {member.member_id}
                           </span>
-                          <span style={{
-                            background: '#FEE2E2', color: '#DC2626', fontSize: '11px',
-                            fontWeight: '700', padding: '2px 8px', borderRadius: '12px', border: '1px solid #FCA5A5'
-                          }}>
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
                             ❌ Rejected
                           </span>
                         </div>
 
-                        {/* Rejection reason box */}
-                        <div style={{
-                          background: '#FEF2F2', border: '1px solid #FCA5A5',
-                          borderRadius: '8px', padding: '8px 12px', marginBottom: '10px',
-                          fontSize: '12px'
-                        }}>
-                          <span style={{ color: '#DC2626', fontWeight: '800' }}>⚠️ நிராகரிப்பு காரணம் / Reason: </span>
-                          <span style={{ color: '#991B1B', fontWeight: '600' }}>{member.rejection_reason || 'Information or Photo mismatch'}</span>
+                        {/* Prominent Rejection Reason Box */}
+                        <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 mb-3 text-xs">
+                          <div className="font-extrabold text-rose-800 flex items-center gap-1.5 mb-0.5">
+                            <span>⚠️</span> நிராகரிப்பு காரணம் / Reason:
+                          </div>
+                          <div className="font-semibold text-rose-950">
+                            {member.rejection_reason || 'Information or Photo mismatch'}
+                          </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px', fontSize: '12px' }}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
                           {[
-                            ['Member ID', member.member_id],
-                            ['மாவட்டம்', member.district],
-                            ['பதவி', member.posting],
-                            ['கைபேசி', member.mobile],
-                            ['ஆதார்', displayAadhar(member.aadhar)],
-                            ['இரத்த பிரிவு', member.blood_group],
-                            ['DOB', member.dob],
-                            ['கிளை', member.branch || '-'],
+                            ['மாவட்டம் / District', member.district],
+                            ['பதவி / Posting', member.posting],
+                            ['கைபேசி / Mobile', member.mobile],
+                            ['ஆதார் / Aadhar', displayAadhar(member.aadhar)],
+                            ['இரத்த பிரிவு / Blood', member.blood_group],
+                            ['பிறந்த தேதி / DOB', member.dob],
+                            ['கிளை / Branch', member.branch || '-'],
                           ].map(([label, value]) => (
-                            <div key={label}>
-                              <span style={{ color: '#6B7280' }}>{label}: </span>
-                              <span style={{ fontWeight: '700', color: '#0A1628' }}>{value || '-'}</span>
+                            <div key={label} className="flex items-center justify-between sm:justify-start gap-2">
+                              <span className="text-slate-500 font-medium">{label}:</span>
+                              <span className="font-bold text-slate-900">{value || '-'}</span>
                             </div>
                           ))}
                         </div>
                       </div>
 
                       {/* Action buttons */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flexShrink: 0, width: '165px' }}>
+                      <div className="flex flex-col gap-2 w-full md:w-44 flex-shrink-0">
                         <button
                           onClick={() => openCropper({ member, imageSrc: getPhotoSrc(member), target: 'direct', title: 'நிராகரிக்கப்பட்ட புகைப்படம் பயிர் செய் / Crop Rejected Photo' })}
-                          style={{
-                            padding: '8px 12px', background: '#DC2626', color: '#fff',
-                            border: 'none', borderRadius: '8px', cursor: 'pointer',
-                            fontSize: '12px', fontWeight: '700', display: 'flex',
-                            alignItems: 'center', justifyContent: 'center', gap: '6px'
-                          }}>
+                          className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] text-white font-bold text-xs shadow-sm hover:opacity-95 transition flex items-center justify-center gap-1.5">
                           ✂️ படம் பயிர் செய்
                         </button>
                         <button
                           onClick={() => handleEditMemberClick(member)}
-                          style={{
-                            padding: '8px 12px', background: '#003366', color: '#fff',
-                            border: 'none', borderRadius: '8px', cursor: 'pointer',
-                            fontSize: '12px', fontWeight: '700', display: 'flex',
-                            alignItems: 'center', justifyContent: 'center', gap: '6px'
-                          }}>
+                          className="w-full py-2 px-3 rounded-xl bg-[#003366] text-white font-bold text-xs shadow-sm hover:opacity-95 transition flex items-center justify-center gap-1.5">
                           ✏️ திருத்து & படம் ஏற்று
                         </button>
                         <button
                           onClick={() => approveMember(member)}
-                          style={{
-                            padding: '8px 12px', background: '#16A34A', color: '#fff',
-                            border: 'none', borderRadius: '8px', cursor: 'pointer',
-                            fontSize: '12px', fontWeight: '700', display: 'flex',
-                            alignItems: 'center', justifyContent: 'center', gap: '6px'
-                          }}>
+                          className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs shadow-md hover:opacity-95 transition flex items-center justify-center gap-1.5">
                           ✅ அனுமதி / Approve
                         </button>
-                        <div style={{ display: 'flex', gap: '6px' }}>
+                        <div className="flex gap-2">
                           <button
                             onClick={() => handlePrintMember(member)}
                             title="படிவம் காண்க"
-                            style={{
-                              flex: 1, padding: '7px', background: '#F0F4F9', color: '#003366',
-                              border: '1px solid #D1D9E6', borderRadius: '6px', cursor: 'pointer',
-                              fontSize: '11px', fontWeight: '600'
-                            }}>
+                            className="flex-1 py-1.5 px-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs transition flex items-center justify-center gap-1">
                             🖨️ படிவம்
                           </button>
                           <button
                             onClick={() => deleteMember(member.member_id, member.user_id)}
                             title="விண்ணப்பத்தை நீக்கு"
-                            style={{
-                              padding: '7px 10px', background: '#FEE2E2', color: '#DC2626',
-                              border: '1px solid #FCA5A5', borderRadius: '6px', cursor: 'pointer',
-                              fontSize: '11px', fontWeight: '600'
-                            }}>
+                            className="py-1.5 px-3 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 font-bold text-xs transition">
                             🗑️
                           </button>
                         </div>
@@ -2425,10 +2587,25 @@ NEW MEMBER REGISTRATION DETAILS
 
           {/* ── ALL MEMBERS ── */}
           {activeTab === 'members' && (
-            <div className="space-y-4 md:space-y-6 max-w-6xl">
-              <div className="flex flex-wrap gap-3 items-center justify-between">
-                <h2 className="text-xl md:text-2xl font-bold text-[#003366]">All Members</h2>
-                <div className="flex gap-2">
+            <div className="space-y-5 max-w-6xl">
+              {/* Directory Header Banner */}
+              <div className="bg-white rounded-2xl p-5 md:p-6 border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-[11px] font-bold uppercase tracking-wider mb-2">
+                    <span>👥</span> Member Directory
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                    All Members
+                    <span className="text-sm font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-full border border-slate-200">
+                      {members.length.toLocaleString('en-IN')}
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    தென்னிந்திய வெல்டிங் நலச்சங்க உறுப்பினர் பட்டியல் மற்றும் அடையாள அட்டை விவரங்கள்
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5 flex-shrink-0">
                   <button onClick={async () => {
                     setDownloadingZip(true);
                     setDownloadProgress({ current: 0, total: members.length });
@@ -2436,124 +2613,142 @@ NEW MEMBER REGISTRATION DETAILS
                       setDownloadProgress({ current, total });
                     });
                     setDownloadingZip(false);
-                  }} className="bg-[#008000] text-white px-3 py-2 rounded font-semibold text-xs md:text-sm shadow-sm hover:opacity-90">
-                    🗂️ Download All (ZIP)
+                  }} className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md shadow-emerald-600/20 transition">
+                    <span>🗂️</span> Download All (ZIP)
                   </button>
-                  <button onClick={() => goTab('register')} className="bg-[#003366] text-white px-3 py-2 rounded font-semibold text-xs md:text-sm shadow-sm hover:opacity-90">
-                    ➕ Register
+                  <button onClick={() => goTab('register')}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-[#FF6B00] to-[#E55A00] shadow-md shadow-amber-500/20 transition">
+                    <span>➕</span> Register Member
                   </button>
-                  <button onClick={exportCSV} className="bg-[#FFB347] text-black px-3 py-2 rounded font-semibold text-xs md:text-sm shadow-sm hover:opacity-90">
-                    📥 CSV
+                  <button onClick={exportCSV}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-bold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition">
+                    <span>📥</span> CSV
                   </button>
                 </div>
               </div>
 
-              {/* Search + filter */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <input type="text" placeholder="Search name, mobile, member ID…"
-                  value={searchQuery}
-                  onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                  className="flex-1 p-3 rounded-lg border border-gray-200 text-black focus:outline-none focus:border-[#FFB347] shadow-sm text-sm"
-                />
+              {/* Search + filter bar */}
+              <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+                  <input type="text" placeholder="Search name, mobile, member ID, aadhaar…"
+                    value={searchQuery}
+                    onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                    className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 text-sm"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => { setSearchQuery(''); setCurrentPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+                      ✕
+                    </button>
+                  )}
+                </div>
                 <select value={districtFilter}
                   onChange={e => { setDistrictFilter(e.target.value); setCurrentPage(1); }}
-                  className="w-full sm:w-48 p-3 rounded-lg border border-gray-200 text-black focus:outline-none focus:border-[#FFB347] shadow-sm text-sm">
-                  <option value="">All Districts</option>
-                  {TAMIL_NADU_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                  className="w-full sm:w-56 py-2.5 px-3 rounded-xl border border-slate-200 text-slate-900 font-semibold focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 text-sm">
+                  <option value="">All Districts ({members.length})</option>
+                  {TAMIL_NADU_DISTRICTS.map(d => {
+                    const count = members.filter(m => m.district === d).length;
+                    return <option key={d} value={d}>{d} {count > 0 ? `(${count})` : ''}</option>;
+                  })}
                 </select>
               </div>
 
               {/* Progress Modal */}
               {downloadingZip && (
-                <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4">
-                  <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full text-center space-y-4">
+                <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
+                  <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center space-y-4 border border-slate-200">
                     <div className="text-4xl animate-bounce">🗂️</div>
-                    <h3 className="text-xl font-bold text-[#003366]">Generating ZIP...</h3>
-                    <p className="text-sm text-gray-500">
+                    <h3 className="text-xl font-extrabold text-[#003366]">Generating ZIP...</h3>
+                    <p className="text-xs text-slate-500">
                       {downloadProgress.current === 'zipping' 
-                        ? 'Compressing files into a ZIP archive...' 
-                        : ('Processing card ' + downloadProgress.current + ' of ' + downloadProgress.total + '...')}
+                        ? 'Compressing ID cards into a ZIP archive...' 
+                        : (`Processing card ${downloadProgress.current} of ${downloadProgress.total}...`)}
                     </p>
                     {downloadProgress.current !== 'zipping' && downloadProgress.total > 0 && (
-                      <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
-                      <div className="bg-[#FFB347] h-2.5 rounded-full transition-all duration-300" 
-                          style={{ width: ((downloadProgress.current / downloadProgress.total) * 100) + '%' }}></div>
+                      <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden mt-4 border border-slate-200">
+                        <div className="bg-gradient-to-r from-[#FF6B00] to-[#FFB347] h-full rounded-full transition-all duration-300" 
+                          style={{ width: `${(downloadProgress.current / downloadProgress.total) * 100}%` }}></div>
                       </div>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* Scrollable table wrapper */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              {/* Table wrapper */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse min-w-[600px]">
+                  <table className="w-full text-left border-collapse min-w-[700px]">
                     <thead>
-                      <tr className="bg-[#003366] text-white text-xs uppercase tracking-wider">
-                        <th className="p-3 font-semibold">#</th>
-                        <th className="p-3 font-semibold">Photo</th>
-                        <th className="p-3 font-semibold">Name</th>
-                        <th className="p-3 font-semibold">Member ID</th>
-                        <th className="p-3 font-semibold">Aadhaar</th>
-                        <th className="p-3 font-semibold">District</th>
-                        <th className="p-3 font-semibold">Mobile</th>
-                        <th className="p-3 font-semibold">Status</th>
-                        <th className="p-3 font-semibold text-center">Actions</th>
+                      <tr className="bg-gradient-to-r from-[#002244] to-[#003366] text-white text-[11px] uppercase tracking-wider">
+                        <th className="p-3.5 font-bold">#</th>
+                        <th className="p-3.5 font-bold">Photo</th>
+                        <th className="p-3.5 font-bold">Name / பெயர்</th>
+                        <th className="p-3.5 font-bold">Member ID</th>
+                        <th className="p-3.5 font-bold">District</th>
+                        <th className="p-3.5 font-bold">Mobile</th>
+                        <th className="p-3.5 font-bold">Status</th>
+                        <th className="p-3.5 font-bold text-center">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="text-sm">
+                    <tbody className="text-sm divide-y divide-slate-100">
                       {loadingData
-                        ? <tr><td colSpan="9" className="p-8 text-center text-gray-400">Loading...</td></tr>
+                        ? <tr><td colSpan="8" className="p-12 text-center text-slate-400">Loading members…</td></tr>
                         : paginatedMembers.map((m, idx) => (
-                          <tr key={m.member_id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                            <td className="p-3 text-gray-500">{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
-                            <td className="p-3">
+                          <tr key={m.member_id} className="hover:bg-slate-50/80 transition group">
+                            <td className="p-3.5 text-xs text-slate-400 font-mono">{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
+                            <td className="p-3.5">
                               {(() => {
                                 const photoSrc = getPhotoSrc(m);
                                 return photoSrc ? (
-                                  <img src={photoSrc} alt="" crossOrigin="anonymous" style={{
-                                    width: '40px', height: '48px',
-                                    objectFit: 'cover',
-                                    borderRadius: '4px',
-                                    border: '1.5px solid #003366'
-                                  }} />
+                                  <img src={photoSrc} alt="" crossOrigin="anonymous" className="w-10 h-12 rounded-lg object-cover ring-1 ring-slate-300 shadow-xs" />
                                 ) : (
-                                  <div className="w-8 h-8 rounded-full bg-[#FFB347]/20 text-[#FF6B00] flex items-center justify-center font-bold text-xs">
+                                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF6B00] to-[#FFB347] text-white flex items-center justify-center font-black text-xs shadow-xs">
                                     {m.full_name?.charAt(0)?.toUpperCase()}
                                   </div>
                                 );
                               })()}
                             </td>
-                            <td className="p-3 font-semibold text-gray-800 max-w-[120px] truncate">{m.full_name}</td>
-                            <td className="p-3 font-mono text-[#003366] text-xs">{m.member_id}</td>
-                            <td className="p-3 font-mono text-xs">{m.aadhar || m.aadhaar || '-'}</td>
-                            <td className="p-3 text-gray-600 text-xs">{m.district}</td>
-                            <td className="p-3 text-gray-600 text-xs">{m.mobile}</td>
-                            <td className="p-3">{statusBadge(m.status || 'approved')}</td>
-                            <td className="p-3 text-center">
-                              <div className="flex gap-1 justify-center">
-                                <button onClick={() => handleViewMember(m)} title="View" style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #DBEAFE', background: '#EFF6FF', color: '#2563EB', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>View</button>
-                                <button onClick={() => handleEditMemberClick(m)} title="Edit" style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #FDE68A', background: '#FFFBEB', color: '#D97706', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Edit</button>
-                                <button onClick={() => handlePrintMember(m)} title="Print" style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #C7D2FE', background: '#EEF2FF', color: '#4338CA', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>🖨️</button>
-                                <button onClick={() => deleteMember(m.member_id, m.user_id)} title="Delete" style={{ padding: '5px 8px', borderRadius: '6px', border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Del</button>
+                            <td className="p-3.5">
+                              <div className="font-bold text-slate-900 group-hover:text-[#FF6B00] transition-colors max-w-[160px] truncate">{m.full_name}</div>
+                              <div className="text-[11px] text-slate-400">{m.posting || 'Member'}</div>
+                            </td>
+                            <td className="p-3.5 font-mono text-xs font-bold text-[#003366]">
+                              <span className="bg-blue-50 border border-blue-200/80 rounded-md px-2 py-0.5">{m.member_id}</span>
+                            </td>
+                            <td className="p-3.5 text-xs font-medium text-slate-700">{m.district}</td>
+                            <td className="p-3.5 text-xs font-mono text-slate-600">{m.mobile}</td>
+                            <td className="p-3.5">{statusBadge(m.status || 'approved')}</td>
+                            <td className="p-3.5 text-center">
+                              <div className="flex gap-1.5 justify-center">
+                                <button onClick={() => handleViewMember(m)} title="View ID Card" className="px-2.5 py-1 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition font-bold text-xs shadow-xs">Card</button>
+                                <button onClick={() => handleEditMemberClick(m)} title="Edit Member" className="px-2.5 py-1 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 transition font-bold text-xs shadow-xs">Edit</button>
+                                <button onClick={() => handlePrintMember(m)} title="Print Form" className="px-2 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition font-bold text-xs shadow-xs">🖨️</button>
+                                <button onClick={() => deleteMember(m.member_id, m.user_id)} title="Delete Member" className="px-2 py-1 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition font-bold text-xs shadow-xs">Del</button>
                               </div>
                             </td>
                           </tr>
                         ))
                       }
-                      {!loadingData && paginatedMembers.length === 0 && <tr><td colSpan="9" className="p-8 text-center text-gray-500">No members found.</td></tr>}
+                      {!loadingData && paginatedMembers.length === 0 && <tr><td colSpan="8" className="p-12 text-center text-slate-400">No members matching search query.</td></tr>}
                     </tbody>
                   </table>
                 </div>
 
                 {/* Pagination */}
-                <div className="p-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 bg-gray-50">
-                  <span className="text-xs text-gray-600">
-                    {filteredMembers.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredMembers.length)} of {filteredMembers.length}
+                <div className="p-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/70">
+                  <span className="text-xs font-medium text-slate-600">
+                    Showing <strong className="text-slate-900">{filteredMembers.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredMembers.length)}</strong> of <strong className="text-slate-900">{filteredMembers.length}</strong> members
                   </span>
-                  <div className="flex gap-2">
-                    <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="px-3 py-1 border border-gray-300 rounded text-sm text-black disabled:opacity-40 hover:bg-white transition">Prev</button>
-                    <button disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)} className="px-3 py-1 border border-gray-300 rounded text-sm text-black disabled:opacity-40 hover:bg-white transition">Next</button>
+                  <div className="flex items-center gap-2">
+                    <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 disabled:opacity-40 hover:bg-white transition bg-white shadow-xs">
+                      ← Prev
+                    </button>
+                    <span className="text-xs font-bold text-slate-700 px-2">
+                      Page {currentPage} of {Math.max(1, totalPages)}
+                    </span>
+                    <button disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)} className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 disabled:opacity-40 hover:bg-white transition bg-white shadow-xs">
+                      Next →
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2562,322 +2757,394 @@ NEW MEMBER REGISTRATION DETAILS
 
           {/* ── REGISTER ON BEHALF ── */}
           {activeTab === 'register' && (
-            <div className="max-w-4xl space-y-4 md:space-y-6">
-              <div className="flex flex-wrap gap-3 items-center justify-between">
-                <h2 className="text-xl md:text-2xl font-bold text-[#003366]">📝 Register Member</h2>
-                {regSuccess && (
-                  <button onClick={resetRegForm} className="text-sm border border-gray-300 px-4 py-2 rounded hover:bg-gray-50 transition text-gray-600">
-                    + Register Another
+            <div className="max-w-5xl space-y-6">
+              {/* Header Banner */}
+              <div className="bg-white rounded-2xl p-5 md:p-6 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold uppercase tracking-wider mb-2">
+                    <span>📝</span> Administrative Enrolment · நேரடி உறுப்பினர் பதிவு
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+                    Register Member
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    நிர்வாகி மூலம் புதிய உறுப்பினரை நேரடியாக பதிவு செய்து அடையாள அட்டை உருவாக்கவும்.
+                  </p>
+                </div>
+                {regSuccess ? (
+                  <button onClick={resetRegForm} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#FF6B00] to-[#E55A00] shadow-md shadow-amber-500/20 transition">
+                    <span>➕</span> Register Another
+                  </button>
+                ) : (
+                  <button onClick={resetRegForm} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">
+                    <span>🔄</span> Reset Form
                   </button>
                 )}
               </div>
 
               {regSuccess ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 md:p-8 space-y-6">
-                  <div className="flex items-center gap-3 text-green-600">
-                    <span className="text-2xl">✅</span>
-                    <div>
-                      <p className="font-bold text-lg">Successfully Registered!</p>
-                      <p className="text-sm text-gray-500">Member ID: <span className="font-mono font-bold text-[#003366]">{regSuccess.member_id}</span></p>
+                <div className="bg-white rounded-2xl shadow-sm border border-emerald-200/80 p-6 md:p-8 space-y-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-emerald-100">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl shadow-sm">
+                        ✅
+                      </div>
+                      <div>
+                        <h3 className="font-black text-xl text-slate-900">Successfully Registered!</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Member ID: <span className="font-mono font-bold text-[#003366] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md ml-1">{regSuccess.member_id}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handlePrintMember(regSuccess)} className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition">
+                        🖨️ Print Form
+                      </button>
+                      <button onClick={resetRegForm} className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#FF6B00] to-[#E55A00] shadow-md shadow-amber-500/20 transition">
+                        + Register Another
+                      </button>
                     </div>
                   </div>
-                  <div className="flex justify-center overflow-x-auto">
+                  <div className="flex justify-center overflow-x-auto py-2">
                     <div className="transform scale-75 md:scale-90 origin-top">
                       <IDCard member={toIdCardShape(regSuccess)} showReset={false} />
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 md:p-8 space-y-6">
-                  
-                  {/* Grid for form inputs */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    
-                    {/* 1. Full Name */}
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-[#003366] mb-1">
-                        முழு பெயர் / Full Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={newMember.fullName}
-                        onChange={handleRegChange('fullName')}
-                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
-                          regErrors.fullName ? 'border-red-400' : 'border-gray-200'
-                        }`}
-                      />
-                      {regErrors.fullName && <p className="mt-0.5 text-xs text-red-500">{regErrors.fullName}</p>}
-                    </div>
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 md:p-8 space-y-6">
+                  {/* Section 1: Personal Details */}
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-3.5 flex items-center gap-2">
+                      <span>👤</span> 1. தனிநபர் விவரங்கள் / Personal Details
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Full Name */}
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          முழு பெயர் / Full Name <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={newMember.fullName}
+                          onChange={handleRegChange('fullName')}
+                          placeholder="e.g. A. முருகன்"
+                          className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition ${
+                            regErrors.fullName ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'
+                          }`}
+                        />
+                        {regErrors.fullName && <p className="mt-1 text-xs text-rose-500 font-semibold">{regErrors.fullName}</p>}
+                      </div>
 
-                    {/* 1b. Posting */}
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-[#003366] mb-1">
-                        பதவி / Posting <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={newMember.posting}
-                        onChange={handleRegChange('posting')}
-                        placeholder="பதவி / Posting (வெல்டர் / Welder)"
-                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
-                          regErrors.posting ? 'border-red-400' : 'border-gray-200'
-                        }`}
-                      />
-                      {regErrors.posting && <p className="mt-0.5 text-xs text-red-500">{regErrors.posting}</p>}
-                    </div>
+                      {/* Posting */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          பதவி / Posting <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={newMember.posting}
+                          onChange={handleRegChange('posting')}
+                          placeholder="வெல்டர் / Welder"
+                          className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition ${
+                            regErrors.posting ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'
+                          }`}
+                        />
+                        {regErrors.posting && <p className="mt-1 text-xs text-rose-500 font-semibold">{regErrors.posting}</p>}
+                      </div>
 
-                    {/* 2. Address */}
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-[#003366] mb-1">
-                        சரியான முகவரி / Address <span className="text-red-500">*</span>
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={newMember.address}
-                        onChange={handleRegChange('address')}
-                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] resize-none ${
-                          regErrors.address ? 'border-red-400' : 'border-gray-200'
-                        }`}
-                      />
-                      {regErrors.address && <p className="mt-0.5 text-xs text-red-500">{regErrors.address}</p>}
-                    </div>
+                      {/* DOB */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          பிறந்த தேதி / DOB <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          value={newMember.dob}
+                          onChange={handleRegChange('dob')}
+                          className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition ${
+                            regErrors.dob ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'
+                          }`}
+                        />
+                        {regErrors.dob && <p className="mt-1 text-xs text-rose-500 font-semibold">{regErrors.dob}</p>}
+                      </div>
 
-                    {/* 3. Company Address */}
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-[#003366] mb-1">
-                        நிறுவனத்தின் முகவரி / Org Address
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={newMember.companyAddress}
-                        onChange={handleRegChange('companyAddress')}
-                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] resize-none"
-                      />
+                      {/* Blood Group */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          இரத்த பிரிவு / Blood Group <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. O+ve / B+ve"
+                          value={newMember.bloodGroup}
+                          onChange={handleRegChange('bloodGroup')}
+                          className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition ${
+                            regErrors.bloodGroup ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'
+                          }`}
+                        />
+                        {regErrors.bloodGroup && <p className="mt-1 text-xs text-rose-500 font-semibold">{regErrors.bloodGroup}</p>}
+                      </div>
                     </div>
-
-                    {/* 4. Blood Group */}
-                    <div>
-                      <label className="block text-sm font-semibold text-[#003366] mb-1">
-                        இரத்த பிரிவு / Blood Group <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="இரத்த பிரிவு / Blood Group"
-                        value={newMember.bloodGroup}
-                        onChange={handleRegChange('bloodGroup')}
-                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
-                          regErrors.bloodGroup ? 'border-red-400' : 'border-gray-200'
-                        }`}
-                      />
-                      {regErrors.bloodGroup && <p className="mt-0.5 text-xs text-red-500">{regErrors.bloodGroup}</p>}
-                    </div>
-
-                    {/* 5. DOB */}
-                    <div>
-                      <label className="block text-sm font-semibold text-[#003366] mb-1">
-                        வயது / பிறந்த தேதி / DOB <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        value={newMember.dob}
-                        onChange={handleRegChange('dob')}
-                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
-                          regErrors.dob ? 'border-red-400' : 'border-gray-200'
-                        }`}
-                      />
-                      {regErrors.dob && <p className="mt-0.5 text-xs text-red-500">{regErrors.dob}</p>}
-                    </div>
-
-                    {/* 6. Aadhaar */}
-                    <div>
-                      <label className="block text-sm font-semibold text-[#003366] mb-1">
-                        ஆதார் எண் / Aadhaar <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        maxLength={12}
-                        placeholder="12 digits"
-                        inputMode="numeric"
-                        value={newMember.aadhaar}
-                        onChange={handleRegChange('aadhaar')}
-                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
-                          regErrors.aadhaar ? 'border-red-400' : 'border-gray-200'
-                        }`}
-                      />
-                      {regErrors.aadhaar && <p className="mt-0.5 text-xs text-red-500">{regErrors.aadhaar}</p>}
-                    </div>
-
-                    {/* 7. Mobile */}
-                    <div>
-                      <label className="block text-sm font-semibold text-[#003366] mb-1">
-                        செல் நம்பர் / Mobile <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        maxLength={10}
-                        placeholder="10 digits"
-                        inputMode="numeric"
-                        value={newMember.mobile}
-                        onChange={handleRegChange('mobile')}
-                        className={`w-full rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
-                          regErrors.mobile ? 'border-red-400' : 'border-gray-200'
-                        }`}
-                      />
-                      {regErrors.mobile && <p className="mt-0.5 text-xs text-red-500">{regErrors.mobile}</p>}
-                    </div>
-
-                    {/* 8. Nominee Name */}
-                    <div>
-                      <label className="block text-sm font-semibold text-[#003366] mb-1">
-                        வாரிசுதாரர் பெயர் / Nominee Name
-                      </label>
-                      <input
-                        type="text"
-                        value={newMember.nomineeName}
-                        onChange={handleRegChange('nomineeName')}
-                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347]"
-                      />
-                    </div>
-
-                    {/* 9. Nominee Mobile */}
-                    <div>
-                      <label className="block text-sm font-semibold text-[#003366] mb-1">
-                        வாரிசுதாரர் செல்நம்பர் / Nominee Mobile
-                      </label>
-                      <input
-                        type="text"
-                        maxLength={10}
-                        placeholder="10 digits"
-                        inputMode="numeric"
-                        value={newMember.nomineeMobile}
-                        onChange={handleRegChange('nomineeMobile')}
-                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347]"
-                      />
-                    </div>
-
-                    {/* 10. District */}
-                    <div>
-                      <label className="block text-sm font-semibold text-[#003366] mb-1">
-                        மாவட்டம் / District <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={newMember.pledgeDistrict}
-                        onChange={handleRegChange('pledgeDistrict')}
-                        translate="no"
-                        className={`w-full notranslate rounded-lg border px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347] ${
-                          regErrors.pledgeDistrict ? 'border-red-400' : 'border-gray-200'
-                        }`}
-                      >
-                        <option value="" translate="no" className="notranslate">-- Select District --</option>
-                        {DISTRICT_LIST.map(d => (
-                          <option key={d.ta} value={d.ta} translate="no" className="notranslate">
-                            {d.ta} / {d.en}
-                          </option>
-                        ))}
-                      </select>
-                      {regErrors.pledgeDistrict && <p className="mt-0.5 text-xs text-red-500">{regErrors.pledgeDistrict}</p>}
-                    </div>
-
-                    {/* 11. Branch */}
-                    <div>
-                      <label className="block text-sm font-semibold text-[#003366] mb-1">
-                        கிளை சங்கம் / Branch
-                      </label>
-                      <input
-                        type="text"
-                        value={newMember.pledgeBranch}
-                        onChange={handleRegChange('pledgeBranch')}
-                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347]"
-                      />
-                    </div>
-
-                    {/* 12. Joined Date */}
-                    <div>
-                      <label className="block text-sm font-semibold text-[#003366] mb-1">
-                        இணைந்த தேதி / Joined Date (auto today, editable)
-                      </label>
-                      <input
-                        type="text"
-                        value={newMember.joinDate}
-                        onChange={handleRegChange('joinDate')}
-                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347]"
-                      />
-                    </div>
-
-                    {/* 13. Referral */}
-                    <div>
-                      <label className="block text-sm font-semibold text-[#003366] mb-1">
-                        பரிந்துரை / Referral
-                      </label>
-                      <input
-                        type="text"
-                        value={newMember.referral}
-                        onChange={handleRegChange('referral')}
-                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-black focus:outline-none focus:border-[#FFB347]"
-                      />
-                    </div>
-
                   </div>
 
-                  {/* 14. Photo upload & Member ID Box */}
-                  <div className="flex flex-col sm:flex-row items-center gap-6 pt-4">
-                    
-                    {/* Photo Upload Box */}
-                    <div className="w-full sm:w-1/2 rounded-[12px] p-5 text-center" style={{ border: '1.5px solid #E5DDD0' }}>
-                      <p className="mb-3 text-sm font-semibold text-[#003366]">படம் / Photo upload</p>
-                      <div className="flex flex-col items-center gap-2">
-                        <label className="group relative mx-auto block cursor-pointer" style={{ width: '120px', height: '140px' }}>
-                          {adminPhotoPreview ? (
-                            <img
-                              src={adminPhotoPreview}
-                              alt="Member"
-                              className="w-full h-full object-cover rounded-lg border-2 border-[#003366]"
-                            />
-                          ) : (
-                            <div style={{ width: '100%', height: '100%', border: '2px dashed #CCCCCC', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#888888', fontSize: '12px' }}>
-                              <span style={{ fontSize: '24px' }}>📷</span>
-                              <span>படம் பதிவேற்று</span>
-                            </div>
-                          )}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-[2]"
-                            onChange={handleAdminPhoto}
-                          />
+                  {/* Section 2: Contact & Identity */}
+                  <div className="pt-4 border-t border-slate-100">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-3.5 flex items-center gap-2">
+                      <span>📞</span> 2. தொடர்பு & அடையாளம் / Contact & Identity
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Mobile */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          கைபேசி / Mobile <span className="text-rose-500">*</span>
                         </label>
+                        <input
+                          type="text"
+                          maxLength={10}
+                          placeholder="10 digit number"
+                          inputMode="numeric"
+                          value={newMember.mobile}
+                          onChange={handleRegChange('mobile')}
+                          className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition font-mono ${
+                            regErrors.mobile ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'
+                          }`}
+                        />
+                        {regErrors.mobile && <p className="mt-1 text-xs text-rose-500 font-semibold">{regErrors.mobile}</p>}
+                      </div>
 
-                        {adminPhotoPreview && (
-                          <button
-                            type="button"
-                            onClick={() => openCropper({ imageSrc: adminPhotoPreview, target: 'register', title: 'பதிவு புகைப்படம் பயிர் செய் / Crop Member Photo' })}
-                            className="mt-1 px-3 py-1.5 bg-[#FF6B00] text-white rounded-lg text-xs font-bold hover:bg-[#e66000] transition flex items-center gap-1.5 shadow-sm"
-                          >
-                            ✂️ படம் பயிர் செய் / Crop Photo
-                          </button>
-                        )}
+                      {/* Aadhaar */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          ஆதார் எண் / Aadhaar <span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={12}
+                          placeholder="12 digit number"
+                          inputMode="numeric"
+                          value={newMember.aadhaar}
+                          onChange={handleRegChange('aadhaar')}
+                          className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition font-mono ${
+                            regErrors.aadhaar ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'
+                          }`}
+                        />
+                        {regErrors.aadhaar && <p className="mt-1 text-xs text-rose-500 font-semibold">{regErrors.aadhaar}</p>}
+                      </div>
+
+                      {/* Address */}
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          சரியான முகவரி / Address <span className="text-rose-500">*</span>
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={newMember.address}
+                          onChange={handleRegChange('address')}
+                          placeholder="முழு முகவரி..."
+                          className={`w-full rounded-xl border px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition resize-none ${
+                            regErrors.address ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'
+                          }`}
+                        />
+                        {regErrors.address && <p className="mt-1 text-xs text-rose-500 font-semibold">{regErrors.address}</p>}
+                      </div>
+
+                      {/* Company Address */}
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          நிறுவனத்தின் முகவரி / Org Address (Optional)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={newMember.companyAddress}
+                          onChange={handleRegChange('companyAddress')}
+                          placeholder="வேலை செய்யும் இடம் / பட்டறை முகவரி..."
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition resize-none"
+                        />
                       </div>
                     </div>
+                  </div>
 
-                    {/* ID Preview Box */}
-                    <div className="w-full sm:w-1/2 rounded-[12px] p-6 text-center bg-[#F0F7FF] border border-[#003366]">
-                      <p className="mb-2 text-xs text-gray-400 uppercase tracking-wider">உறுப்பினர் பதிவு எண் Preview</p>
-                      <div className="font-mono text-sm font-bold text-[#003366] py-2 border-t border-[#003366] tracking-widest">
-                        TIWTN-2026-XXXXX
+                  {/* Section 3: Union & Nominee Details */}
+                  <div className="pt-4 border-t border-slate-100">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-3.5 flex items-center gap-2">
+                      <span>🏛️</span> 3. சங்கம் & வாரிசு விவரங்கள் / Union & Nominee
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* District */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          மாவட்டம் / District <span className="text-rose-500">*</span>
+                        </label>
+                        <select
+                          value={newMember.pledgeDistrict}
+                          onChange={handleRegChange('pledgeDistrict')}
+                          translate="no"
+                          className={`w-full notranslate rounded-xl border px-3.5 py-2.5 text-sm text-slate-900 font-semibold focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition ${
+                            regErrors.pledgeDistrict ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'
+                          }`}
+                        >
+                          <option value="" translate="no" className="notranslate">-- Select District --</option>
+                          {DISTRICT_LIST.map(d => (
+                            <option key={d.ta} value={d.ta} translate="no" className="notranslate">
+                              {d.ta} / {d.en}
+                            </option>
+                          ))}
+                        </select>
+                        {regErrors.pledgeDistrict && <p className="mt-1 text-xs text-rose-500 font-semibold">{regErrors.pledgeDistrict}</p>}
+                      </div>
+
+                      {/* Branch */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          கிளை சங்கம் / Branch
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. தாம்பரம்"
+                          value={newMember.pledgeBranch}
+                          onChange={handleRegChange('pledgeBranch')}
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition"
+                        />
+                      </div>
+
+                      {/* Joined Date */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          இணைந்த தேதி / Joined Date
+                        </label>
+                        <input
+                          type="text"
+                          value={newMember.joinDate}
+                          onChange={handleRegChange('joinDate')}
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition"
+                        />
+                      </div>
+
+                      {/* Referral */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          பரிந்துரை / Referral
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="பரிந்துரைத்தவர் பெயர்..."
+                          value={newMember.referral}
+                          onChange={handleRegChange('referral')}
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition"
+                        />
+                      </div>
+
+                      {/* Nominee Name */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          வாரிசுதாரர் பெயர் / Nominee Name
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="வாரிசு பெயர்..."
+                          value={newMember.nomineeName}
+                          onChange={handleRegChange('nomineeName')}
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition"
+                        />
+                      </div>
+
+                      {/* Nominee Mobile */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          வாரிசுதாரர் கைபேசி / Nominee Mobile
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={10}
+                          placeholder="10 digit number"
+                          inputMode="numeric"
+                          value={newMember.nomineeMobile}
+                          onChange={handleRegChange('nomineeMobile')}
+                          className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition font-mono"
+                        />
                       </div>
                     </div>
+                  </div>
 
+                  {/* Section 4: Photo upload & Member ID Box */}
+                  <div className="pt-4 border-t border-slate-100">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+                      {/* Photo Upload Box */}
+                      <div className="rounded-2xl p-5 border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center text-center">
+                        <p className="text-xs font-bold text-slate-700 mb-3">
+                          உறுப்பினர் புகைப்படம் / Photo Upload
+                        </p>
+                        <div className="flex flex-col items-center gap-2.5">
+                          <label className="group relative block cursor-pointer w-24 h-28 rounded-xl overflow-hidden ring-2 ring-slate-200 hover:ring-[#FF6B00] transition shadow-sm">
+                            {adminPhotoPreview ? (
+                              <img
+                                src={adminPhotoPreview}
+                                alt="Member"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-white flex flex-col items-center justify-center gap-1.5 text-slate-400">
+                                <span className="text-2xl">📷</span>
+                                <span className="text-[11px] font-bold">Upload</span>
+                              </div>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-[2]"
+                              onChange={handleAdminPhoto}
+                            />
+                          </label>
+
+                          {adminPhotoPreview && (
+                            <button
+                              type="button"
+                              onClick={() => openCropper({ imageSrc: adminPhotoPreview, target: 'register', title: 'பதிவு புகைப்படம் பயிர் செய் / Crop Member Photo' })}
+                              className="px-3 py-1.5 bg-[#FF6B00] hover:bg-[#e66000] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                            >
+                              ✂️ படம் பயிர் செய் / Crop
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* ID Preview Box */}
+                      <div className="rounded-2xl p-6 bg-gradient-to-br from-blue-50/70 to-indigo-50/50 border border-blue-200/80 flex flex-col items-center justify-center text-center">
+                        <span className="text-2xl mb-1">🪪</span>
+                        <p className="text-[11px] text-blue-900/70 uppercase tracking-wider font-bold">
+                          உறுப்பினர் பதிவு எண் முன்னோட்டம் / Member ID Preview
+                        </p>
+                        <div className="font-mono text-base font-black text-[#003366] bg-white border border-blue-200 px-4 py-2 rounded-xl mt-2.5 tracking-wider shadow-xs">
+                          TIWTN-2026-XXXXX
+                        </div>
+                        <p className="text-[10px] text-blue-600/70 mt-2 font-medium">
+                          Auto-generated upon registration
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Submit button */}
-                  <button
-                    onClick={handleRegSubmit}
-                    disabled={regSubmitting}
-                    className="w-full rounded-lg bg-[#FF6B00] text-white py-3 font-bold text-sm hover:opacity-90 transition disabled:opacity-60"
-                  >
-                    {regSubmitting ? 'Registering…' : '✅ உறுப்பினரை பதிவு செய்க / Register Member'}
-                  </button>
-
+                  <div className="pt-2">
+                    <button
+                      onClick={handleRegSubmit}
+                      disabled={regSubmitting}
+                      className="w-full rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#E55A00] text-white py-3.5 font-black text-sm hover:opacity-95 shadow-lg shadow-amber-500/25 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {regSubmitting ? (
+                        <>
+                          <span className="animate-spin">↻</span>
+                          <span>பதிவு செய்யப்படுகிறது / Registering...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>✅</span>
+                          <span>உறுப்பினரை பதிவு செய்க / Register Member</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -2885,38 +3152,82 @@ NEW MEMBER REGISTRATION DETAILS
 
           {/* ── ALL USERS ── */}
           {activeTab === 'users' && (
-            <div className="space-y-4 md:space-y-6 max-w-5xl">
-              <h2 className="text-xl md:text-2xl font-bold text-[#003366]">All Users</h2>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="space-y-6 max-w-6xl">
+              {/* Header Banner */}
+              <div className="bg-white rounded-2xl p-5 md:p-6 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-50 border border-purple-200 text-purple-800 text-[11px] font-bold uppercase tracking-wider mb-2">
+                    <span>👥</span> User Accounts · பயனர் கணக்குகள்
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                    All Users
+                    <span className="text-sm font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-full border border-slate-200">
+                      {users.length}
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    வலைத்தளத்தில் கணக்கு உருவாக்கிய பயனர்கள் மற்றும் அவர்களின் நிர்வாக அனுமதிகள் (Roles).
+                  </p>
+                </div>
+              </div>
+
+              {/* Table Wrapper */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse min-w-[500px]">
+                  <table className="w-full text-left border-collapse min-w-[650px]">
                     <thead>
-                      <tr className="bg-[#003366] text-white text-xs uppercase tracking-wider">
-                        <th className="p-3 font-semibold">#</th>
-                        <th className="p-3 font-semibold">Name</th>
-                        <th className="p-3 font-semibold">Email</th>
-                        <th className="p-3 font-semibold">Role</th>
-                        <th className="p-3 font-semibold">Registered</th>
-                        <th className="p-3 font-semibold text-center">Change Role</th>
+                      <tr className="bg-gradient-to-r from-[#002244] to-[#003366] text-white text-[11px] uppercase tracking-wider">
+                        <th className="p-3.5 font-bold">#</th>
+                        <th className="p-3.5 font-bold">User</th>
+                        <th className="p-3.5 font-bold">Email</th>
+                        <th className="p-3.5 font-bold">Role / அதிகாரம்</th>
+                        <th className="p-3.5 font-bold">Registration Status</th>
+                        <th className="p-3.5 font-bold text-center">Change Role</th>
                       </tr>
                     </thead>
-                    <tbody className="text-sm">
+                    <tbody className="text-sm divide-y divide-slate-100">
                       {loadingData
-                        ? <tr><td colSpan="6" className="p-8 text-center text-gray-400">Loading...</td></tr>
+                        ? <tr><td colSpan="6" className="p-12 text-center text-slate-400">Loading user accounts…</td></tr>
                         : users.map((u, idx) => (
-                          <tr key={u.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                            <td className="p-3 text-gray-500">{idx + 1}</td>
-                            <td className="p-3 font-semibold text-gray-800 max-w-[100px] truncate">{u.name || '-'}</td>
-                            <td className="p-3 text-gray-600 text-xs max-w-[140px] truncate">{u.email}</td>
-                            <td className="p-3">
-                              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}`}>
-                                {u.role}
+                          <tr key={u.id} className="hover:bg-slate-50/80 transition group">
+                            <td className="p-3.5 text-xs text-slate-400 font-mono">{idx + 1}</td>
+                            <td className="p-3.5">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-sky-600 text-white flex items-center justify-center font-bold text-xs shadow-xs flex-shrink-0">
+                                  {u.name?.charAt(0)?.toUpperCase() || u.email?.charAt(0)?.toUpperCase() || 'U'}
+                                </div>
+                                <div className="font-bold text-slate-900 group-hover:text-[#FF6B00] transition-colors truncate max-w-[150px]">
+                                  {u.name || 'Unnamed User'}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-3.5 text-xs font-mono text-slate-600 max-w-[180px] truncate">{u.email}</td>
+                            <td className="p-3.5">
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                                u.role === 'admin'
+                                  ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                                  : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              }`}>
+                                {u.role === 'admin' ? '👑 Admin' : '👤 Member'}
                               </span>
                             </td>
-                            <td className="p-3 text-gray-600 text-xs">{u.has_registered ? '✅' : '—'}</td>
-                            <td className="p-3 text-center">
-                              <select value={u.role} onChange={e => changeUserRole(u.id, e.target.value)}
-                                className="rounded border border-gray-200 px-2 py-1 text-xs text-black focus:outline-none focus:border-[#FFB347]">
+                            <td className="p-3.5">
+                              {u.has_registered ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  ✅ Registered
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                  ⏳ Unregistered
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3.5 text-center">
+                              <select
+                                value={u.role}
+                                onChange={e => changeUserRole(u.id, e.target.value)}
+                                className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 bg-white shadow-xs"
+                              >
                                 <option value="member">member</option>
                                 <option value="admin">admin</option>
                               </select>
@@ -2924,7 +3235,9 @@ NEW MEMBER REGISTRATION DETAILS
                           </tr>
                         ))
                       }
-                      {!loadingData && users.length === 0 && <tr><td colSpan="6" className="p-8 text-center text-gray-500">No users found.</td></tr>}
+                      {!loadingData && users.length === 0 && (
+                        <tr><td colSpan="6" className="p-12 text-center text-slate-400">No users found.</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -2934,43 +3247,60 @@ NEW MEMBER REGISTRATION DETAILS
 
           {/* ── BY DISTRICT ── */}
           {activeTab === 'district' && (
-            <div className="max-w-6xl">
-              <div className="flex flex-wrap gap-3 items-center justify-between mb-4 md:mb-6">
+            <div className="space-y-6 max-w-6xl">
+              {/* Header Banner */}
+              <div className="bg-white rounded-2xl p-5 md:p-6 border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-[#003366]">Members by District</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">மாவட்ட வாரியாக உறுப்பினர்கள் விவரம்</p>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-[11px] font-bold uppercase tracking-wider mb-2">
+                    <span>🗺️</span> Regional Analytics · மாவட்ட வாரியாக
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                    Members by District
+                    <span className="text-sm font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-full border border-slate-200">
+                      {districtsCount.filter(d => d.count > 0).length} / {districtsCount.length} Active
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    தமிழ்நாட்டின் அனைத்து மாவட்டங்களிலும் உள்ள உறுப்பினர்களின் புள்ளிவிவரங்கள்
+                  </p>
                 </div>
-                <button onClick={exportCSV} className="bg-[#FFB347] text-black px-3 py-2 rounded font-semibold text-sm shadow-sm hover:opacity-90">
-                  📥 Export CSV
-                </button>
+
+                <div className="flex items-center gap-2.5 flex-shrink-0">
+                  <button onClick={exportCSV} className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-bold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition">
+                    <span>📥</span> Export CSV
+                  </button>
+                </div>
               </div>
 
               {/* Status filter tabs */}
-              <div className="flex items-center gap-2 mb-5 flex-wrap bg-white p-2 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-2 flex-wrap bg-white p-2 md:p-2.5 rounded-2xl border border-slate-200/80 shadow-sm">
                 {[
-                  { id: 'all', label: 'All Members', count: members.length, bg: 'bg-blue-50 text-blue-800' },
-                  { id: 'approved', label: 'Approved', count: approvedCount, bg: 'bg-green-50 text-green-800' },
-                  { id: 'pending', label: 'Pending', count: pendingCount, bg: 'bg-amber-50 text-amber-800' },
-                  { id: 'rejected', label: 'Rejected', count: rejectedCount, bg: 'bg-red-50 text-red-800' }
+                  { id: 'all', label: 'All Members', count: members.length, color: '#003366' },
+                  { id: 'approved', label: 'Approved', count: approvedCount, color: '#10B981' },
+                  { id: 'pending', label: 'Pending', count: pendingCount, color: '#F59E0B' },
+                  { id: 'rejected', label: 'Rejected', count: rejectedCount, color: '#EF4444' }
                 ].map(tab => (
                   <button
                     key={tab.id}
                     onClick={() => setDistrictTabStatusFilter(tab.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
                       districtTabStatusFilter === tab.id
                         ? 'bg-[#003366] text-white shadow-sm'
-                        : `${tab.bg} hover:opacity-80`
+                        : 'bg-slate-100/80 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
                     <span>{tab.label}</span>
-                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${districtTabStatusFilter === tab.id ? 'bg-white/20 text-white' : 'bg-black/10'}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                      districtTabStatusFilter === tab.id ? 'bg-white/20 text-white' : 'bg-white text-slate-800 shadow-xs'
+                    }`}>
                       {tab.count}
                     </span>
                   </button>
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
+              {/* Districts Bento Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
                 {districtsCount.map(d => {
                   const displayCount = 
                     districtTabStatusFilter === 'approved' ? d.approved :
@@ -2994,39 +3324,59 @@ NEW MEMBER REGISTRATION DETAILS
                         }
                       }}
                       disabled={!hasCount}
-                      className={`p-3 rounded-xl border text-left transition ${
+                      className={`p-4 rounded-2xl border text-left transition relative flex flex-col justify-between group ${
                         hasCount
                           ? districtTabStatusFilter === 'rejected'
-                            ? 'bg-red-50/50 border-red-200 shadow-sm hover:-translate-y-1 hover:shadow-md hover:border-red-400 active:scale-95'
-                            : 'bg-white border-[#FFB347] shadow-sm hover:-translate-y-1 hover:shadow-md active:scale-95'
-                          : 'bg-gray-50 border-gray-200 opacity-50 cursor-not-allowed'
+                            ? 'bg-white border-rose-200/90 shadow-xs hover:shadow-md hover:border-rose-400 admin-card-hover'
+                            : 'bg-white border-slate-200/90 shadow-xs hover:shadow-md hover:border-amber-400 admin-card-hover'
+                          : 'bg-slate-50/60 border-slate-200/50 opacity-40 cursor-not-allowed'
                       }`}>
-                      <p className={`font-semibold text-xs md:text-sm leading-tight ${hasCount ? (districtTabStatusFilter === 'rejected' ? 'text-red-900' : 'text-[#003366]') : 'text-gray-500'}`}>{d.name}</p>
-                      
-                      <div className="mt-2 flex justify-between items-center">
-                        <span className="text-[10px] text-gray-500">
+                      <div>
+                        <div className="flex items-start justify-between gap-1 mb-1.5">
+                          <span className={`font-bold text-xs md:text-sm leading-tight truncate ${
+                            hasCount ? 'text-slate-900 group-hover:text-[#FF6B00]' : 'text-slate-400'
+                          }`}>
+                            {d.name}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-medium">
                           {districtTabStatusFilter === 'rejected' ? 'Rejected' :
                            districtTabStatusFilter === 'pending' ? 'Pending' :
-                           districtTabStatusFilter === 'approved' ? 'Approved' : 'Members'}
-                        </span>
-                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
-                          hasCount
-                            ? districtTabStatusFilter === 'rejected'
-                              ? 'bg-red-200 text-red-900'
-                              : 'bg-[#FFB347]/20 text-[#FF6B00]'
-                            : 'bg-gray-200 text-gray-500'
-                        }`}>
-                          {displayCount}
-                        </span>
+                           districtTabStatusFilter === 'approved' ? 'Approved' : 'Enrolled'}
+                        </div>
                       </div>
 
-                      {/* Sub-counts in All View */}
-                      {districtTabStatusFilter === 'all' && (d.pending > 0 || d.rejected > 0) && (
-                        <div className="mt-1.5 pt-1.5 border-t border-gray-100 flex items-center gap-1 text-[9px] font-bold">
-                          {d.pending > 0 && <span className="text-amber-600">⏳ {d.pending}</span>}
-                          {d.rejected > 0 && <span className="text-red-600">❌ {d.rejected}</span>}
-                        </div>
-                      )}
+                      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                        <span className={`text-base md:text-lg font-black ${
+                          hasCount
+                            ? districtTabStatusFilter === 'rejected'
+                              ? 'text-rose-600'
+                              : 'text-[#003366]'
+                            : 'text-slate-400'
+                        }`}>
+                          {displayCount.toLocaleString('en-IN')}
+                        </span>
+
+                        {/* Badges for pending/rejected in All view */}
+                        {districtTabStatusFilter === 'all' && (d.pending > 0 || d.rejected > 0) ? (
+                          <div className="flex items-center gap-1 text-[9px] font-bold">
+                            {d.pending > 0 && (
+                              <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                                ⏳ {d.pending}
+                              </span>
+                            )}
+                            {d.rejected > 0 && (
+                              <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800">
+                                ❌ {d.rejected}
+                              </span>
+                            )}
+                          </div>
+                        ) : hasCount ? (
+                          <span className="text-[11px] font-bold text-slate-400 group-hover:text-[#FF6B00] transition-colors">
+                            View →
+                          </span>
+                        ) : null}
+                      </div>
                     </button>
                   );
                 })}
@@ -3058,19 +3408,37 @@ NEW MEMBER REGISTRATION DETAILS
             ).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
             return (
-              <div className="space-y-4 md:space-y-6 max-w-6xl">
-                <div className="flex flex-wrap gap-3 items-center justify-between">
+              <div className="space-y-6 max-w-6xl">
+                {/* Header Banner */}
+                <div className="bg-white rounded-2xl p-5 md:p-6 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-xl md:text-2xl font-bold text-[#003366]">Gallery Management</h2>
-                    <p className="text-xs text-gray-400 mt-0.5">{adminAlbums.length} album{adminAlbums.length !== 1 ? 's' : ''} · {galleryItems.length} photo{galleryItems.length !== 1 ? 's' : ''}</p>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold uppercase tracking-wider mb-2">
+                      <span>🖼️</span> Media Assets · புகைப்படத் தொகுப்பு
+                    </div>
+                    <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                      Gallery Management
+                      <span className="text-sm font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-full border border-slate-200">
+                        {adminAlbums.length} Albums · {galleryItems.length} Photos
+                      </span>
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                      நிகழ்ச்சிகள் மற்றும் பயிற்சி பட்டறைகளின் புகைப்பட ஆல்பங்களை நிர்வகிக்கவும்.
+                    </p>
                   </div>
-                  <button onClick={() => setShowGalleryForm(true)} className="bg-[#003366] text-white px-3 py-2 rounded font-semibold text-xs md:text-sm shadow-sm hover:opacity-90">
-                    ➕ Add Photos
+                  <button
+                    onClick={() => setShowGalleryForm(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#003366] to-[#002244] shadow-md shadow-blue-900/20 hover:opacity-95 transition"
+                  >
+                    <span>➕</span> Add Photos
                   </button>
                 </div>
 
                 {adminAlbums.length === 0 ? (
-                  <p className="p-8 text-center text-gray-400 text-sm">No images in gallery yet.</p>
+                  <div className="bg-white rounded-2xl p-16 text-center border border-slate-200/80 shadow-sm">
+                    <div className="text-4xl text-slate-300">📷</div>
+                    <div className="text-base font-extrabold text-slate-800 mt-3">புகைப்படங்கள் இல்லை / No albums yet</div>
+                    <p className="text-xs text-slate-400 mt-1">Click &quot;Add Photos&quot; to upload your first event gallery album.</p>
+                  </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {adminAlbums.map((album) => (
@@ -3095,61 +3463,89 @@ NEW MEMBER REGISTRATION DETAILS
             );
           })()}
 
-
-          {/* Verify section removed */}
-
         </main>
       </div>
 
       {/* ── VIEW MODAL ── */}
       {selectedMember && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 p-0 md:p-4">
-          <div className="relative w-full max-w-4xl bg-white rounded-t-3xl md:rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden max-h-[92vh]">
-            <button onClick={() => setSelectedMember(null)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-black hover:bg-gray-200 z-10 text-sm">✕</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/60 backdrop-blur-md">
+          <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-slate-200/80 flex flex-col md:flex-row overflow-hidden max-h-[92vh]">
+            <button
+              onClick={() => setSelectedMember(null)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 z-20 text-xs font-bold transition"
+            >
+              ✕
+            </button>
 
-            <div className="p-5 md:p-8 flex-1 overflow-y-auto">
-              <h3 className="text-lg md:text-2xl font-bold text-[#003366] mb-4 border-b pb-2">Member Details</h3>
-              <div className="grid grid-cols-2 gap-3 md:gap-y-4 md:gap-x-6 text-sm">
+            {/* Left Column: Member Information */}
+            <div className="p-6 md:p-8 flex-1 overflow-y-auto">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <span className="font-mono text-xs font-bold text-[#003366] bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-lg">
+                  {selectedMember.member_id}
+                </span>
+                {statusBadge(selectedMember.status || 'approved')}
+              </div>
+              <h3 className="text-xl md:text-2xl font-black text-slate-900 mb-5">
+                {selectedMember.full_name}
+              </h3>
+
+              <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50/70 p-4 rounded-2xl border border-slate-100 mb-6">
                 {[
-                  ['Full Name', selectedMember.full_name],
-                  ['Member ID', selectedMember.member_id],
-                  ['Mobile', selectedMember.mobile],
-                  ['Date of Birth', selectedMember.dob],
-                  ['Blood Group', selectedMember.blood_group],
-                  ['District', selectedMember.district],
-                  ['Aadhar', displayAadhar(selectedMember.aadhar)],
-                  ['Branch', selectedMember.branch],
-                  ['Nominee Name', selectedMember.nominee_name],
-                  ['Nominee Phone', selectedMember.nominee_phone],
-                  ['Joined Date', selectedMember.join_date],
-                  ['Referrer', selectedMember.referrer],
+                  ['பதவி / Posting', selectedMember.posting],
+                  ['கைபேசி / Mobile', selectedMember.mobile],
+                  ['பிறந்த தேதி / DOB', selectedMember.dob],
+                  ['இரத்த பிரிவு / Blood', selectedMember.blood_group],
+                  ['மாவட்டம் / District', selectedMember.district],
+                  ['ஆதார் / Aadhar', displayAadhar(selectedMember.aadhar)],
+                  ['கிளை / Branch', selectedMember.branch],
+                  ['வாரிசுதாரர் / Nominee', selectedMember.nominee_name],
+                  ['வாரிசு கைபேசி / Nominee Phone', selectedMember.nominee_phone],
+                  ['இணைந்த தேதி / Joined', selectedMember.join_date],
+                  ['பரிந்துரை / Referrer', selectedMember.referrer],
                 ].map(([label, val]) => (
-                  <div key={label}>
-                    <p className="text-gray-400 text-[10px] md:text-xs uppercase mb-0.5">{label}</p>
-                    <p className="font-semibold text-gray-900 text-xs md:text-sm break-all">{val || '-'}</p>
+                  <div key={label} className="min-w-0">
+                    <p className="text-slate-400 text-[10px] uppercase font-bold mb-0.5 truncate">{label}</p>
+                    <p className="font-bold text-slate-900 text-xs truncate">{val || '-'}</p>
                   </div>
                 ))}
-                <div className="col-span-2">
-                  <p className="text-gray-400 text-[10px] uppercase mb-0.5">Address</p>
-                  <p className="font-semibold text-gray-900 text-xs md:text-sm">{selectedMember.address || '-'}</p>
+                <div className="col-span-2 pt-2 border-t border-slate-200/60">
+                  <p className="text-slate-400 text-[10px] uppercase font-bold mb-0.5">முகவரி / Address</p>
+                  <p className="font-semibold text-slate-800 text-xs">{selectedMember.address || '-'}</p>
                 </div>
               </div>
-              <div className="mt-4 flex gap-2">
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-2.5">
                 <button
                   onClick={() => openCropper({ member: selectedMember, imageSrc: getPhotoSrc(selectedMember), target: 'direct', title: 'உறுப்பினர் புகைப்படம் பயிர் செய் / Crop ID Photo' })}
-                  className="flex-1 rounded-lg bg-[#FF6B00] text-white py-2 font-bold text-sm hover:opacity-90 transition flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#E55A00] text-white font-bold text-xs shadow-md shadow-amber-500/20 hover:opacity-95 transition flex items-center justify-center gap-1.5"
                 >
                   ✂️ Crop Photo
                 </button>
-                <button onClick={() => { handleEditMemberClick(selectedMember); setSelectedMember(null); }}
-                  className="flex-1 rounded-lg bg-[#FFB347] text-black py-2 font-semibold text-sm hover:opacity-90 transition">✏️ Edit</button>
-                <button onClick={() => deleteMember(selectedMember.member_id, selectedMember.user_id)}
-                  className="flex-1 rounded-lg border border-red-300 py-2 text-sm text-red-500 hover:bg-red-50 transition">🗑️ Delete</button>
+                <button
+                  onClick={() => { handleEditMemberClick(selectedMember); setSelectedMember(null); }}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-[#003366] text-white font-bold text-xs shadow-md shadow-blue-900/20 hover:opacity-95 transition flex items-center justify-center gap-1.5"
+                >
+                  ✏️ Edit
+                </button>
+                <button
+                  onClick={() => handlePrintMember(selectedMember)}
+                  className="py-2.5 px-3.5 rounded-xl border border-slate-200 text-slate-700 bg-slate-100 hover:bg-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5"
+                >
+                  🖨️ Print
+                </button>
+                <button
+                  onClick={() => deleteMember(selectedMember.member_id, selectedMember.user_id)}
+                  className="py-2.5 px-3.5 rounded-xl border border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 font-bold text-xs transition flex items-center justify-center gap-1.5"
+                >
+                  🗑️
+                </button>
               </div>
             </div>
 
-            <div className="p-4 md:p-8 bg-gray-50 flex items-center justify-center overflow-x-auto md:min-w-[320px]">
-              <div className="transform scale-75 md:scale-90 origin-center">
+            {/* Right Column: ID Card Preview */}
+            <div className="p-6 md:p-8 bg-slate-50 flex items-center justify-center overflow-x-auto md:min-w-[340px] border-t md:border-t-0 md:border-l border-slate-100">
+              <div className="transform scale-80 md:scale-95 origin-center shadow-lg rounded-2xl">
                 <IDCard member={toIdCardShape(selectedMember)} showReset={false} />
               </div>
             </div>
@@ -3159,21 +3555,26 @@ NEW MEMBER REGISTRATION DETAILS
 
       {/* ── EDIT MODAL ── */}
       {editMember && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 p-0 md:p-4">
-          <div className="relative w-full max-w-lg bg-white rounded-t-3xl md:rounded-2xl shadow-2xl p-5 md:p-8 overflow-y-auto max-h-[90vh]">
-            <button onClick={() => setEditMember(null)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-black hover:bg-gray-200 text-sm">✕</button>
-            <h3 className="text-lg md:text-xl font-bold text-[#003366] mb-4">Edit Member</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/60 backdrop-blur-md">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200/80 p-5 md:p-7 overflow-y-auto max-h-[92vh]">
+            <button
+              onClick={() => setEditMember(null)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 z-10 text-xs font-bold transition"
+            >
+              ✕
+            </button>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-mono text-xs font-bold text-[#003366] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                {editMember.member_id}
+              </span>
+              {statusBadge(editMember.status || 'pending')}
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-4">Edit Member Details</h3>
 
             {/* Edit Photo Input Section */}
-            <div style={{
-              display: 'flex', alignItems: 'center',
-              gap: '16px', padding: '12px',
-              background: 'var(--bg-secondary)',
-              borderRadius: '10px', marginBottom: '16px',
-              border: '1px solid var(--border)'
-            }}>
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 mb-4 flex items-center gap-4">
               {/* Preview */}
-              <div style={{ flexShrink: 0, position: 'relative' }}>
+              <div className="flex-shrink-0 relative">
                 {editPhotoPreview ? (
                   <div
                     className="relative group cursor-pointer"
@@ -3182,53 +3583,32 @@ NEW MEMBER REGISTRATION DETAILS
                   >
                     <img
                       src={editPhotoPreview}
-                      style={{
-                        width: '80px', height: '96px',
-                        objectFit: 'cover', borderRadius: '6px',
-                        border: '2px solid #003366'
-                      }}
+                      className="w-18 h-22 object-cover rounded-xl ring-2 ring-amber-400 shadow-sm"
+                      style={{ width: '72px', height: '88px' }}
                     />
-                    <div className="absolute inset-0 bg-black/60 rounded-[6px] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold transition">
+                    <div className="absolute inset-0 bg-black/60 rounded-xl opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold transition">
                       <span>✂️</span>
-                      <span>பயிர் செய்</span>
+                      <span>Crop</span>
                     </div>
                   </div>
                 ) : (
-                  <div style={{
-                    width: '80px', height: '96px',
-                    borderRadius: '6px',
-                    background: '#FF6B00',
-                    display: 'flex', alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '2rem', color: '#fff',
-                    fontWeight: '800'
-                  }}>
-                    {editMember?.full_name?.charAt(0)
-                      ?.toUpperCase() || '?'}
+                  <div className="w-18 h-22 rounded-xl bg-gradient-to-br from-[#FF6B00] to-[#FFB347] text-white flex items-center justify-center font-black text-xl shadow-sm" style={{ width: '72px', height: '88px' }}>
+                    {editMember?.full_name?.charAt(0)?.toUpperCase() || '?'}
                   </div>
                 )}
               </div>
 
               {/* Controls */}
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  fontSize: '13px', fontWeight: '700',
-                  color: 'var(--text-primary)',
-                  marginBottom: '4px'
-                }}>படம் மாற்று / Change Photo</div>
-                <div style={{
-                  fontSize: '11px', color: 'var(--text-muted)',
-                  marginBottom: '10px'
-                }}>JPG, PNG · Max 2MB</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-slate-800 mb-0.5">
+                  படம் மாற்று / Change Photo
+                </div>
+                <div className="text-[11px] text-slate-400 mb-2.5">
+                  JPG, PNG · Auto-compressed to Cloud
+                </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <label style={{
-                    display: 'inline-block',
-                    padding: '7px 14px',
-                    background: '#003366', color: '#fff',
-                    borderRadius: '6px', fontSize: '12px',
-                    fontWeight: '700', cursor: 'pointer'
-                  }}>
+                  <label className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#003366] text-white text-xs font-bold cursor-pointer hover:bg-[#002244] transition shadow-xs">
                     📷 தேர்வு / Choose
                     <input
                       type="file"
@@ -3242,16 +3622,9 @@ NEW MEMBER REGISTRATION DETAILS
                     <button
                       type="button"
                       onClick={() => openCropper({ imageSrc: editPhotoPreview, member: editMember, target: 'edit', title: 'புகைப்படம் பயிர் செய் / Crop Photo' })}
-                      style={{
-                        padding: '7px 14px',
-                        background: '#FF6B00', color: '#fff',
-                        border: 'none',
-                        borderRadius: '6px', fontSize: '12px',
-                        fontWeight: '700', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '4px'
-                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#FF6B00] text-white text-xs font-bold hover:bg-[#e66000] transition shadow-xs"
                     >
-                      ✂️ பயிர் செய் / Crop
+                      ✂️ பயிர் / Crop
                     </button>
                   )}
 
@@ -3263,18 +3636,13 @@ NEW MEMBER REGISTRATION DETAILS
                           editMember._original_photo_url ||
                           editMember._original_photo_base64 ||
                           null
-                        )
-                        setEditPhotoFile(null)
+                        );
+                        setEditPhotoFile(null);
                       }}
-                      style={{
-                        padding: '7px 10px',
-                        background: 'transparent',
-                        color: '#E53E3E',
-                        border: '1px solid #E53E3E',
-                        borderRadius: '6px', fontSize: '12px',
-                        cursor: 'pointer'
-                      }}
-                    >↩ Reset</button>
+                      className="px-2.5 py-1.5 rounded-xl border border-rose-300 text-rose-600 text-xs font-bold hover:bg-rose-50 transition"
+                    >
+                      ↩ Reset
+                    </button>
                   )}
                 </div>
               </div>
@@ -3282,15 +3650,15 @@ NEW MEMBER REGISTRATION DETAILS
 
             {/* Rejection reason banner if rejected */}
             {editMember.rejection_reason && (
-              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-red-800 mb-1">
+              <div className="mb-4 p-3.5 rounded-2xl bg-rose-50 border border-rose-200">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-rose-800 mb-1">
                   <span>❌</span> நிராகரிப்பு காரணம் / Rejection Reason:
                 </div>
-                <div className="text-xs text-red-900 font-medium bg-white/60 p-2 rounded-lg border border-red-100">
+                <div className="text-xs text-rose-950 font-medium bg-white/70 p-2.5 rounded-xl border border-rose-100">
                   {editMember.rejection_reason}
                 </div>
-                <div className="text-[11px] text-red-600 mt-1.5">
-                  💡 சரியான விவரங்களை திருத்தி / புதிய புகைப்படத்தை பதிவேற்றி கீழே உள்ள <b>&quot;சேமித்து அனுமதி&quot;</b> பட்டனை அழுத்தவும்.
+                <div className="text-[11px] text-rose-600 mt-1.5 font-medium">
+                  💡 விவரங்களை திருத்தி / புதிய புகைப்படத்தை பதிவேற்றி கீழே உள்ள <b>&quot;சேமித்து அனுமதி&quot;</b> பட்டனை அழுத்தவும்.
                 </div>
               </div>
             )}
@@ -3309,27 +3677,18 @@ NEW MEMBER REGISTRATION DETAILS
                 { key: 'nominee_name', label: 'வாரிசுதாரர் / Nominee', type: 'text' },
                 { key: 'nominee_phone', label: 'வாரிசுதாரர் கைபேசி / Nominee Phone', type: 'tel' },
               ].map(field => (
-                <div key={field.key} style={{ marginBottom: '12px' }}>
-                  <label style={{
-                    fontSize: '12px', fontWeight: '600',
-                    color: 'var(--text-muted)',
-                    display: 'block', marginBottom: '4px'
-                  }}>{field.label}</label>
+                <div key={field.key}>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">
+                    {field.label}
+                  </label>
                   {field.type === 'textarea' ? (
                     <textarea
-                      rows={3}
+                      rows={2}
                       value={editMember[field.key] || ''}
                       onChange={e => setEditMember(prev => ({
                         ...prev, [field.key]: e.target.value
                       }))}
-                      style={{
-                        width: '100%', padding: '8px 12px',
-                        borderRadius: '8px', fontSize: '14px',
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text-primary)',
-                        resize: 'vertical'
-                      }}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition resize-none"
                     />
                   ) : (
                     <input
@@ -3338,25 +3697,22 @@ NEW MEMBER REGISTRATION DETAILS
                       onChange={e => setEditMember(prev => ({
                         ...prev, [field.key]: e.target.value
                       }))}
-                      style={{
-                        width: '100%', padding: '8px 12px',
-                        borderRadius: '8px', fontSize: '14px',
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text-primary)'
-                      }}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 transition"
                     />
                   )}
                 </div>
               ))}
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">District / மாவட்டம்</label>
+                <label className="block text-xs font-bold text-slate-600 mb-1">
+                  மாவட்டம் / District
+                </label>
                 <select 
                   value={editMember.district || ''} 
                   onChange={e => setEditMember(prev => ({ ...prev, district: e.target.value }))}
                   translate="no"
-                  className="w-full notranslate rounded-lg border border-gray-200 px-3 py-2 text-black focus:outline-none focus:border-[#FFB347] text-sm">
-                  <option value="" translate="no" className="notranslate">-- Select --</option>
+                  className="w-full notranslate rounded-xl border border-slate-200 px-3 py-2 text-slate-900 font-semibold focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 text-sm"
+                >
+                  <option value="" translate="no" className="notranslate">-- Select District --</option>
                   {DISTRICT_LIST.map(d => (
                     <option key={d.ta} value={d.ta} translate="no" className="notranslate">
                       {d.ta} / {d.en}
@@ -3366,16 +3722,13 @@ NEW MEMBER REGISTRATION DETAILS
               </div>
 
               {/* District Member ID Sync Tool */}
-              <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200 space-y-2">
+              <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-2 mt-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-[#003366]">
                     உறுப்பினர் எண் / Member ID
                   </label>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    editMember.status === 'approved' ? 'bg-green-100 text-green-800' :
-                    editMember.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    Status: {editMember.status || 'pending'}
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-[#003366]">
+                    Current ID
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -3383,14 +3736,14 @@ NEW MEMBER REGISTRATION DETAILS
                     type="text"
                     value={editMember.member_id || ''}
                     onChange={e => setEditMember(prev => ({ ...prev, member_id: e.target.value }))}
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-black font-mono text-xs font-bold bg-white focus:outline-none focus:border-[#003366]"
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-slate-900 font-mono text-xs font-bold bg-white focus:outline-none focus:border-[#003366]"
                     placeholder="e.g. TIWTN-2026-CHN-001"
                   />
                   <button
                     type="button"
                     disabled={regeneratingId || !editMember.district}
                     onClick={() => handleRegenerateDistrictId(editMember.district)}
-                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#003366] text-white hover:bg-[#002244] transition flex items-center gap-1 shadow-sm whitespace-nowrap disabled:opacity-50"
+                    className="px-3 py-2 text-xs font-bold rounded-xl bg-[#003366] text-white hover:bg-[#002244] transition flex items-center gap-1 shadow-xs whitespace-nowrap disabled:opacity-50"
                     title="Generate correct district ID code for the selected district"
                   >
                     {regeneratingId ? '⏳ Generating...' : '🔄 மாவட்ட ID உருவாக்கு'}
@@ -3403,13 +3756,14 @@ NEW MEMBER REGISTRATION DETAILS
                 )}
               </div>
             </div>
+
             <div className="mt-6 flex flex-col sm:flex-row gap-2.5">
               {(editMember.status === 'rejected' || editMember.status === 'pending') && (
                 <button
                   type="button"
                   disabled={savingEdit}
                   onClick={() => saveEditMember(true)}
-                  className="flex-1 rounded-lg bg-[#16A34A] text-white py-2.5 px-3 font-bold hover:bg-[#15803D] transition text-sm flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
+                  className="flex-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-2.5 px-3 font-bold hover:opacity-95 transition text-xs md:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 disabled:opacity-50"
                 >
                   {savingEdit ? '⏳ சேமிக்கிறது...' : '✅ சேமித்து அனுமதி / Save & Approve'}
                 </button>
@@ -3418,7 +3772,7 @@ NEW MEMBER REGISTRATION DETAILS
                 type="button"
                 disabled={savingEdit}
                 onClick={() => saveEditMember(false)}
-                className="flex-1 rounded-lg bg-[#FFB347] text-black py-2.5 px-3 font-bold hover:opacity-90 transition text-sm flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
+                className="flex-1 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#E55A00] text-white py-2.5 px-3 font-bold hover:opacity-95 transition text-xs md:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 disabled:opacity-50"
               >
                 {savingEdit ? '⏳ சேமிக்கிறது...' : '💾 மாற்றங்களை சேமி / Save Changes'}
               </button>
@@ -3426,7 +3780,7 @@ NEW MEMBER REGISTRATION DETAILS
                 type="button"
                 disabled={savingEdit}
                 onClick={() => setEditMember(null)}
-                className="rounded-lg border border-gray-300 py-2.5 px-4 text-gray-600 hover:bg-gray-50 transition text-sm font-semibold"
+                className="rounded-xl border border-slate-200 py-2.5 px-4 text-slate-600 hover:bg-slate-100 transition text-xs md:text-sm font-semibold"
               >
                 Cancel
               </button>
@@ -3437,30 +3791,39 @@ NEW MEMBER REGISTRATION DETAILS
 
       {/* ── GALLERY ADD FORM MODAL ── */}
       {showGalleryForm && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 p-0 md:p-4">
-          <div className="relative w-full max-w-lg bg-white rounded-t-3xl md:rounded-2xl shadow-2xl p-5 md:p-8 overflow-y-auto max-h-[90vh]">
-            <button onClick={closeGalleryForm} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-black hover:bg-gray-200 text-sm">✕</button>
-            <h3 className="text-lg md:text-xl font-bold text-[#003366] mb-4">Add Gallery Photo</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/60 backdrop-blur-md">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200/80 p-5 md:p-7 overflow-y-auto max-h-[92vh]">
+            <button
+              onClick={closeGalleryForm}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 z-10 text-xs font-bold transition"
+            >
+              ✕
+            </button>
+            <h3 className="text-xl font-black text-slate-900 mb-4">Add Gallery Photos</h3>
             
             <form onSubmit={handleGallerySubmit} className="space-y-4 text-sm">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Title / தலைப்பு</label>
+                <label className="mb-1 block text-xs font-bold text-slate-600 uppercase">
+                  Title / தலைப்பு <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   required
                   value={newGalleryItem.title}
                   onChange={e => setNewGalleryItem(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-black focus:outline-none focus:border-[#FFB347] text-sm"
-                  placeholder="e.g. Workshop event"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 text-sm"
+                  placeholder="e.g. Coimbatore Workshop 2026"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Category / வகை</label>
+                <label className="mb-1 block text-xs font-bold text-slate-600 uppercase">
+                  Category / வகை
+                </label>
                 <select
                   value={newGalleryItem.category}
                   onChange={e => setNewGalleryItem(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-black focus:outline-none focus:border-[#FFB347] text-sm"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-slate-900 font-semibold focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 text-sm"
                 >
                   <option value="EVENTS">Events / நிகழ்ச்சிகள்</option>
                   <option value="WORKSHOPS">Workshops / பயிற்சி வகுப்புகள்</option>
@@ -3468,40 +3831,27 @@ NEW MEMBER REGISTRATION DETAILS
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Description / விளக்கம் (Optional)</label>
+                <label className="mb-1 block text-xs font-bold text-slate-600 uppercase">
+                  Description / விளக்கம் (Optional)
+                </label>
                 <textarea
                   rows={2}
                   value={newGalleryItem.description || ''}
                   onChange={e => setNewGalleryItem(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-black focus:outline-none focus:border-[#FFB347] text-sm resize-none"
-                  placeholder="Brief description..."
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15 text-sm resize-none"
+                  placeholder="Brief description of the event..."
                 />
               </div>
 
               {/* IMAGE UPLOAD UI SECTION */}
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{
-                  fontSize: '12px', fontWeight: '600',
-                  color: 'var(--text-muted)',
-                  display: 'block', marginBottom: '4px'
-                }}>படம் பதிவேற்று / Upload Image</label>
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-slate-600 uppercase">
+                  படங்கள் பதிவேற்று / Upload Images
+                </label>
 
                 {/* Upload box */}
-                <div style={{
-                  border: '2px dashed var(--border)',
-                  borderRadius: '10px',
-                  padding: '1.5rem',
-                  textAlign: 'center',
-                  background: 'var(--bg-secondary)',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  transition: 'border 0.2s'
-                }}
-                  onMouseEnter={e =>
-                    e.currentTarget.style.borderColor = '#FF6B00'}
-                  onMouseLeave={e =>
-                    e.currentTarget.style.borderColor =
-                      'var(--border)'}
+                <div
+                  className="border-2 border-dashed border-slate-200 hover:border-[#FF6B00] rounded-2xl p-6 text-center bg-slate-50/50 hover:bg-slate-50 transition relative cursor-pointer"
                 >
                   <input
                     type="file"
@@ -3509,58 +3859,27 @@ NEW MEMBER REGISTRATION DETAILS
                     multiple
                     onChange={handleGalleryImageUpload}
                     disabled={uploadingImage}
-                    style={{
-                      position: 'absolute', inset: 0,
-                      opacity: 0, cursor: 'pointer',
-                      width: '100%', height: '100%'
-                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                   />
 
                   {uploadingImage ? (
                     <div>
-                      <div style={{
-                        fontSize: '2rem', marginBottom: '8px'
-                      }}>⏳</div>
-                      <div style={{
-                        fontSize: '13px',
-                        color: 'var(--text-muted)'
-                      }}>
-                        பதிவேற்றுகிறது... / Uploading...
+                      <div className="text-3xl mb-2">⏳</div>
+                      <div className="text-xs font-bold text-slate-700">
+                        பதிவேற்றுகிறது... / Uploading to Cloud...
                       </div>
-                      {/* Progress bar */}
-                      <div style={{
-                        width: '100%', height: '4px',
-                        background: 'var(--border)',
-                        borderRadius: '2px',
-                        marginTop: '12px',
-                        overflow: 'hidden'
-                      }}>
-                        <div style={{
-                          width: '60%', height: '100%',
-                          background: '#FF6B00',
-                          borderRadius: '2px',
-                          animation: 'pulse 1s infinite'
-                        }} />
+                      <div className="w-full h-1.5 bg-slate-200 rounded-full mt-3 overflow-hidden">
+                        <div className="w-2/3 h-full bg-gradient-to-r from-[#FF6B00] to-[#FFB347] animate-pulse" />
                       </div>
                     </div>
                   ) : (
                     <div>
-                      <div style={{
-                        fontSize: '2.5rem', marginBottom: '8px'
-                      }}>📷</div>
-                      <div style={{
-                        fontSize: '14px', fontWeight: '600',
-                        color: 'var(--text-primary)',
-                        marginBottom: '4px'
-                      }}>
+                      <div className="text-3xl mb-2">📷</div>
+                      <div className="text-sm font-bold text-slate-800 mb-0.5">
                         படங்களை இங்கே இழுக்கவும் அல்லது கிளிக் செய்யவும்
                       </div>
-                      <div style={{
-                        fontSize: '12px',
-                        color: 'var(--text-muted)'
-                      }}>
-                        Drag & drop or click to upload one or more images
-                        <br/>PNG, JPG, WEBP · Max 5MB per image
+                      <div className="text-xs text-slate-400">
+                        PNG, JPG, WEBP · Auto-compressed to Cloudinary CDN
                       </div>
                     </div>
                   )}
@@ -3568,13 +3887,13 @@ NEW MEMBER REGISTRATION DETAILS
 
                 {/* Preview Grid for Uploaded Images */}
                 {uploadedImageUrls.length > 0 && (
-                  <div className="mt-4">
-                    <p className="mb-2 text-xs font-semibold text-gray-500 uppercase">
+                  <div className="mt-3.5">
+                    <p className="mb-2 text-xs font-bold text-slate-500 uppercase">
                       பதிவேற்றப்பட்ட படங்கள் ({uploadedImageUrls.length}) / Uploaded Images
                     </p>
-                    <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1 border border-gray-200 rounded-lg">
+                    <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1.5 border border-slate-200 rounded-xl bg-slate-50/50">
                       {uploadedImageUrls.map((url, index) => (
-                        <div key={index} className="relative group aspect-video rounded border overflow-hidden bg-gray-100">
+                        <div key={index} className="relative group aspect-video rounded-lg border border-slate-200 overflow-hidden bg-white shadow-xs">
                           <img
                             src={url}
                             alt={`Preview ${index}`}
@@ -3583,7 +3902,7 @@ NEW MEMBER REGISTRATION DETAILS
                           <button
                             type="button"
                             onClick={() => removeUploadedPreviewImage(url)}
-                            className="absolute top-1 right-1 bg-black/60 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] transition-colors"
+                            className="absolute top-1 right-1 bg-black/70 hover:bg-rose-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] transition-colors"
                             title="Remove image"
                           >
                             ✕
@@ -3593,13 +3912,21 @@ NEW MEMBER REGISTRATION DETAILS
                     </div>
                   </div>
                 )}
-                </div>
+              </div>
 
-              <div className="mt-5 flex gap-3">
-                <button type="submit" disabled={uploadingImage || uploadedImageUrls.length === 0} className="flex-1 rounded-lg bg-[#FF6B00] text-white py-2.5 font-semibold hover:opacity-90 transition text-sm disabled:opacity-50">
-                  Save Photo
+              <div className="mt-5 flex gap-2.5 pt-2">
+                <button
+                  type="submit"
+                  disabled={uploadingImage || uploadedImageUrls.length === 0}
+                  className="flex-1 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#E55A00] text-white py-3 font-black text-sm hover:opacity-95 shadow-md shadow-amber-500/20 transition disabled:opacity-50"
+                >
+                  Save Album
                 </button>
-                <button type="button" onClick={closeGalleryForm} className="flex-1 rounded-lg border border-gray-300 py-2.5 text-gray-600 hover:bg-gray-50 transition text-sm">
+                <button
+                  type="button"
+                  onClick={closeGalleryForm}
+                  className="rounded-xl border border-slate-200 py-3 px-5 text-slate-600 hover:bg-slate-100 transition text-sm font-semibold"
+                >
                   Cancel
                 </button>
               </div>
