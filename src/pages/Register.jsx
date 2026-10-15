@@ -558,8 +558,8 @@ ${isUpdate ? 'MEMBER APPLICATION CORRECTED & RE-SUBMITTED' : 'NEW MEMBER REGISTR
     } else if (form.profilePhoto) {
       if (!form.profilePhoto.type?.startsWith('image/')) {
         nextErrors.profilePhoto = 'படத்தை பதிவேற்றவும் (Image only)';
-      } else if (form.profilePhoto.size > 2_000_000) {
-        nextErrors.profilePhoto = 'படத்தை 2MB limit';
+      } else if (form.profilePhoto.size > 15 * 1024 * 1024) {
+        nextErrors.profilePhoto = 'புகைப்படம் 15MB-க்குள் இருக்க வேண்டும் / Max 15MB';
       }
     }
     return nextErrors;
