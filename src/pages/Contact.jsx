@@ -3,7 +3,7 @@ import SEO from '../components/SEO';
 import PageLoader from '../components/PageLoader';
 
 const info = [
-  { title: 'Phone', value: '+91 98765 43210, +91 86085 08342, +91 97861 11700' },
+  { title: 'Phone', value: '+91 98765 43210, +91 86085 08342' },
   { title: 'Email', value: 'thenindiawelding@gmail.com' },
   { title: 'Address', value: 'மாநில தலைமை நிர்வாக அலுவலகம் 133/34 1A, 1A பெங்களூரு ஹைவே சென்னை -600124, தமிழ்நாடு.' },
   { title: 'Hours', value: 'Mon - Sat | 9am - 6pm' },

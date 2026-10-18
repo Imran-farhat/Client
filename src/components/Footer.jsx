@@ -40,7 +40,7 @@ function Footer() {
           <div>
             <h3 className="mb-3 text-sm uppercase tracking-[0.3em]" style={{ color: '#FF6B00' }}>Contact</h3>
             <p className="text-sm" style={{ color: '#CCCCCC' }}>thenindiawelding@gmail.com</p>
-            <p className="text-sm" style={{ color: '#CCCCCC' }}>+91 98765 43210, +91 86085 08342, +91 97861 11700</p>
+            <p className="text-sm" style={{ color: '#CCCCCC' }}>+91 98765 43210, +91 86085 08342</p>
             <p className="text-sm" style={{ color: '#CCCCCC' }}>மாநில தலைமை நிர்வாக அலுவலகம் 133/34 1A, 1A பெங்களூரு ஹைவே சென்னை -600124, தமிழ்நாடு.</p>
           </div>
 
