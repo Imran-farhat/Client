@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabase/client';
 import IDCard from '../components/IDCard';
@@ -189,7 +190,15 @@ const compressImageFile = (file) => new Promise((resolve) => {
 });
 
 function AdminDashboard() {
-  const [activeTab, setActiveTab]           = useState('overview');
+  const [searchParams, setSearchParams]     = useSearchParams();
+  const [activeTab, setActiveTab]           = useState(() => searchParams.get('tab') || 'overview');
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') || 'overview';
+    if (tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
   const [sidebarOpen, setSidebarOpen]       = useState(false);
   const [members, setMembers]               = useState([]);
   const [users, setUsers]                   = useState([]);
@@ -1802,8 +1811,13 @@ NEW MEMBER REGISTRATION DETAILS
     }
   };
 
-  // ── Nav helper ───────────────────────────────────────────────
-  const goTab = (id) => { setActiveTab(id); setSidebarOpen(false); };
+  // ── Nav helper with URL routing & scroll to top ─────────────
+  const goTab = (id) => {
+    setActiveTab(id);
+    setSearchParams({ tab: id });
+    setSidebarOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // ── Input helper ─────────────────────────────────────────────
   const inp = (field, label, type = 'text', extra = {}) => (
