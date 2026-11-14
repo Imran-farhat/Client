@@ -1,4 +1,4 @@
-import{r as Xe,j as w}from"./index-Cx5RuHz8.js";/*!
+import{r as Xe,j as w}from"./index-Cb20BDbC.js";/*!
  * html2canvas 1.4.1 <https://html2canvas.hertzen.com>
  * Copyright (c) 2022 Niklas von Hertzen <https://hertzen.com>
  * Released under MIT License
