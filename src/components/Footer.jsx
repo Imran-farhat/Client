@@ -22,7 +22,7 @@ function Footer() {
               <p className="text-sm" style={{ color: '#CCCCCC' }}>Thennindia Welding Thozhilaalargal Nala Sangam, India</p>
             </div>
           </div>
-          <p className="text-sm leading-6" style={{ color: '#CCCCCC' }}>Stay connected with our network of certified welding experts, training, and events across India.</p>
+          <p className="text-sm leading-6" style={{ color: '#CCCCCC' }}>Stay connected with our network of welding professionals, welfare initiatives, and events across South India.</p>
         </div>
 
         <div className="grid gap-8 text-center md:col-span-2 md:grid-cols-3 md:text-left">

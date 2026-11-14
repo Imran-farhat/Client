@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ParticleBackground from '../components/ParticleBackground';
 import OrgLogo from '../components/OrgLogo';
+import HeroCarousel from '../components/HeroCarousel';
 import { supabase } from '../supabase/client';
 import SEO from '../components/SEO';
 import PageLoader from '../components/PageLoader';
@@ -9,12 +10,6 @@ import PageLoader from '../components/PageLoader';
 const STATIC_STATS = [
   { label: 'செயல்பாட்டு ஆண்டுகள்', suffix: '+', staticNum: 6 },
   { label: 'கிளைகள்', suffix: '', staticNum: 38 },
-];
-
-const testimonials = [
-  { quote: 'தென் இந்தியா வெல்டிங் தொழிலாளர்கள்கள் நலச்சங்கத்தைச் சேர்ந்ததன் மூலம் நான் இரண்டு ஆண்டுகளில் பயிற்சி பயில்வாளராஜிருந்து தலைசிறந்த வடிவாளர் ஆகி விட்டேன்.', name: 'Ananya Singh', role: 'Senior Welder' },
-  { quote: 'The networking events brought me into high-value industrial partnerships.', name: 'Rohit Kumar', role: 'Fabrication Specialist' },
-  { quote: 'Their certification boosted my career and credibility instantly.', name: 'Meera Patel', role: 'Inspection Lead' },
 ];
 
 let cachedMemberCount = null;
@@ -140,23 +135,13 @@ function Home() {
           </div>
         </div>
 
-        <div className="mt-16 grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-          <div className="rounded-[32px] border border-[var(--border)] bg-card p-8" style={{ boxShadow: 'var(--card-shadow)' }}>
-            <p className="text-sm uppercase tracking-[0.3em] text-amber/90">Member Highlights</p>
-            <div className="mt-8 space-y-5">
-              {testimonials.map((item) => (
-                <div key={item.name} className="rounded-3xl border border-[var(--border)] bg-primary p-6" style={{ boxShadow: 'var(--card-shadow)' }}>
-                  <p className="text-lg leading-7 text-primary">"{item.quote}"</p>
-                  <p className="mt-4 text-sm text-secondary">{item.name} · {item.role}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="mt-14 space-y-8">
+          <HeroCarousel />
 
-          <div className="rounded-[32px] border border-[var(--border)] bg-card p-8" style={{ boxShadow: 'var(--card-shadow)' }}>
+          <div className="rounded-[32px] border border-[var(--border)] bg-card p-6 md:p-8" style={{ boxShadow: 'var(--card-shadow)' }}>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {displayStats.map((stat, index) => (
-                <div key={stat.label} className="rounded-3xl p-6 text-center" style={{
+                <div key={stat.label} className="rounded-3xl p-6 text-center flex flex-col justify-center" style={{
                   backgroundColor: 'var(--bg-primary)',
                   borderLeft: '3px solid var(--amber)',
                   boxShadow: 'var(--card-shadow)',

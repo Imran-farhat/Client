@@ -60,7 +60,7 @@ function Contact() {
           <div className="rounded-[32px] border border-[var(--border)] bg-primary p-10 shadow-sm">
             <p className="text-sm uppercase tracking-[0.3em] text-amber">CONTACT</p>
             <h1 className="mt-4 text-3xl font-display text-navy md:text-5xl">We're ready to help you connect with தென்னிந்திய வெல்டிங் தொழிலாளர்கள் நலச்சங்கம்.</h1>
-            <p className="mt-6 max-w-3xl text-lg leading-8 text-secondary">Reach out for membership support, certification questions, and event inquiries across our welding network.</p>
+            <p className="mt-6 max-w-3xl text-lg leading-8 text-secondary">Reach out for membership support, welfare board assistance, and event inquiries across our welding network.</p>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
@@ -117,9 +117,24 @@ function Contact() {
               </div>
 
               <div className="rounded-[32px] border border-[var(--border)] bg-card p-6 shadow-sm">
-                <p className="text-sm uppercase tracking-[0.3em] text-amber">Our Location</p>
-                <div className="mt-4 h-56 overflow-hidden rounded-3xl border border-[var(--border)] bg-secondary">
-                  <iframe className="h-full w-full" src="https://maps.google.com/maps?q=Pune%20India&t=&z=13&ie=UTF8&iwloc=&output=embed" title="Map" loading="lazy" />
+                <div className="flex items-center justify-between">
+                  <p className="text-sm uppercase tracking-[0.3em] text-amber">Our Location</p>
+                  <a
+                    href="https://www.google.com/maps/search/?api=1&query=133%2F34+1A%2C+Bengaluru+Highway%2C+Thirumazhisai%2C+Chennai+600124"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-semibold text-amber hover:underline"
+                  >
+                    Open in Maps ↗
+                  </a>
+                </div>
+                <div className="mt-4 h-64 overflow-hidden rounded-3xl border border-[var(--border)] bg-secondary">
+                  <iframe
+                    className="h-full w-full"
+                    src="https://maps.google.com/maps?q=133%2F34+1A%2C+Bengaluru+Highway%2C+Thirumazhisai%2C+Chennai+600124&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                    title="Map"
+                    loading="lazy"
+                  />
                 </div>
               </div>
             </div>

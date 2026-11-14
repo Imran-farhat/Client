@@ -57,7 +57,7 @@ function Gallery() {
   }, []);
 
   const filteredImages = useMemo(
-    () => (filter === 'ALL' ? galleryItems : galleryItems.filter((item) => item.category === filter)),
+    () => (filter === 'ALL' ? galleryItems.filter(item => item.category !== 'CAROUSEL') : galleryItems.filter((item) => item.category === filter)),
     [filter, galleryItems]
   );
 
@@ -144,7 +144,7 @@ function Gallery() {
           <div className="rounded-[32px] border border-[var(--border)] bg-primary p-10 shadow-sm">
             <p className="text-sm uppercase tracking-[0.3em] text-amber">GALLERY</p>
             <h1 className="mt-4 text-3xl font-display text-navy md:text-5xl">Welding scenes from workshops and events.</h1>
-            <p className="mt-6 max-w-3xl text-lg leading-8 text-secondary">Explore our gallery of certification moments, and networking experiences.</p>
+            <p className="mt-6 max-w-3xl text-lg leading-8 text-secondary">Explore our gallery of association initiatives, member gatherings, and networking experiences.</p>
           </div>
 
           <div className="mt-10 flex flex-wrap gap-3">

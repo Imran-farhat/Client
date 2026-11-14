@@ -38,13 +38,14 @@ const EMPTY_REGISTER_FORM = {
 
 const NAV = [
   { id: 'overview', icon: '📊', label: 'Overview' },
+  { id: 'carousel', icon: '🖼️', label: 'Hero Carousel' },
   { id: 'pending',  icon: '⏳', label: 'Pending Approval' },
   { id: 'rejected', icon: '❌', label: 'Rejected (Fix & Upload)' },
   { id: 'members',  icon: '👥', label: 'All Members' },
   { id: 'district', icon: '🗺️', label: 'By District' },
   { id: 'register', icon: '📝', label: 'Register Member' },
   { id: 'users',    icon: '🙍', label: 'All Users' },
-  { id: 'gallery',  icon: '🖼️', label: 'Gallery' },
+  { id: 'gallery',  icon: '📁', label: 'Gallery' },
 ];
 
 // ── Album card for admin gallery ──────────────────────────────
@@ -274,6 +275,10 @@ function AdminDashboard() {
   });
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadedImageUrls, setUploadedImageUrls] = useState([]);
+  const [carouselModalOpen, setCarouselModalOpen] = useState(false);
+  const [carouselForm, setCarouselForm] = useState({ id: null, title: '', description: '', imageUrl: '' });
+  const [carouselUploading, setCarouselUploading] = useState(false);
+  const [carouselPreview, setCarouselPreview] = useState(null);
   const joiningDate = useMemo(() => formatDateDisplay(), []);
 
   const { logout, userProfile } = useAuth();
@@ -367,6 +372,103 @@ function AdminDashboard() {
   const loadGallery = async () => {
     const { data } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
     if (data) setGalleryItems(data);
+  };
+
+  const carouselSlides = useMemo(
+    () => galleryItems.filter(item => item.category === 'CAROUSEL'),
+    [galleryItems]
+  );
+
+  const openAddCarouselModal = () => {
+    setCarouselForm({ id: null, title: '', description: '', imageUrl: '' });
+    setCarouselPreview(null);
+    setCarouselModalOpen(true);
+  };
+
+  const openEditCarouselModal = (slide) => {
+    setCarouselForm({
+      id: slide.id,
+      title: slide.title || '',
+      description: slide.description || '',
+      imageUrl: slide.image_url || '',
+    });
+    setCarouselPreview(slide.image_url || null);
+    setCarouselModalOpen(true);
+  };
+
+  const handleCarouselFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const localPreview = URL.createObjectURL(file);
+    setCarouselPreview(localPreview);
+
+    setCarouselUploading(true);
+    try {
+      const uploadedUrl = await uploadSingleImage(file);
+      if (!uploadedUrl) throw new Error('Upload returned empty URL');
+      setCarouselForm(prev => ({ ...prev, imageUrl: uploadedUrl }));
+      setCarouselPreview(uploadedUrl);
+    } catch (err) {
+      console.error('Carousel slide upload failed:', err);
+      alert('படம் பதிவேற்றம் தோல்வி / Photo upload failed: ' + err.message);
+    } finally {
+      setCarouselUploading(false);
+    }
+  };
+
+  const handleSaveCarouselSlide = async (e) => {
+    e.preventDefault();
+    if (!carouselForm.imageUrl) {
+      alert('தயவுசெய்து படம் பதிவேற்றவும் / Please upload an image');
+      return;
+    }
+
+    setCarouselUploading(true);
+    try {
+      const slideTitle = carouselForm.title?.trim() || `Slide ${Date.now()}`;
+      if (carouselForm.id) {
+        const { error } = await supabase
+          .from('gallery')
+          .update({
+            title: slideTitle,
+            description: '',
+            image_url: carouselForm.imageUrl,
+          })
+          .eq('id', carouselForm.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('gallery')
+          .insert([{
+            title: slideTitle,
+            description: '',
+            image_url: carouselForm.imageUrl,
+            category: 'CAROUSEL',
+          }]);
+        if (error) throw error;
+      }
+
+      await loadGallery();
+      setCarouselModalOpen(false);
+      setCarouselForm({ id: null, title: '', description: '', imageUrl: '' });
+      setCarouselPreview(null);
+    } catch (err) {
+      alert('சேமிப்பதில் பிழை / Save failed: ' + err.message);
+    } finally {
+      setCarouselUploading(false);
+    }
+  };
+
+  const handleDeleteCarouselSlide = async (id) => {
+    if (!window.confirm('இந்த ஸ்லைடை நிச்சயமாக நீக்க விரும்புகிறீர்களா? / Are you sure you want to delete this carousel slide?')) return;
+    try {
+      const { error } = await supabase.from('gallery').delete().eq('id', id);
+      if (error) throw error;
+      await loadGallery();
+    } catch (err) {
+      alert('நீக்குவதில் பிழை / Delete failed: ' + err.message);
+    }
   };
 
   const fetchMultipleMemberPhotos = async (memberIds) => {
@@ -1812,12 +1914,12 @@ NEW MEMBER REGISTRATION DETAILS
                   <span className="text-lg transition-transform group-hover:scale-110">{tab.icon}</span>
                   <span className="truncate">{tab.label}</span>
                   {tab.id === 'pending' && pendingCount > 0 && (
-                    <span className="ml-auto bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-full px-2 py-0.5 text-[11px] font-black shadow-md shadow-red-500/40 animate-pulse">
+                    <span className="ml-auto bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full px-2 py-0.5 text-[10px] font-bold">
                       {pendingCount}
                     </span>
                   )}
                   {tab.id === 'rejected' && rejectedCount > 0 && (
-                    <span className="ml-auto bg-gradient-to-r from-red-600 to-rose-700 text-white rounded-full px-2 py-0.5 text-[11px] font-black shadow-md shadow-red-600/40 animate-pulse">
+                    <span className="ml-auto bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded-full px-2 py-0.5 text-[10px] font-bold">
                       {rejectedCount}
                     </span>
                   )}
@@ -1852,38 +1954,37 @@ NEW MEMBER REGISTRATION DETAILS
           {activeTab === 'overview' && (
             <div className="space-y-6 max-w-6xl">
               {/* Executive Header Banner */}
-              <div className="bg-white rounded-2xl p-5 md:p-6 border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="bg-white rounded-xl p-5 md:p-6 border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200/60 text-amber-800 text-[11px] font-bold uppercase tracking-wider mb-2">
-                    <span>🏛️</span> தென்னிந்திய வெல்டிங் நலச்சங்கம் · Administrative Portal
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-semibold tracking-wider uppercase mb-1.5">
+                    Administrative Portal · தென்னிந்திய வெல்டிங் சங்கம்
                   </div>
-                  <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
                     Dashboard Overview
                   </h2>
-                  <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-slate-500 font-medium">
-                    <span className="flex items-center gap-1 font-semibold text-slate-700">
+                  <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-500">
+                    <span className="font-medium text-slate-700">
                       📅 {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Kolkata' })}
                     </span>
                     <span className="text-slate-300">•</span>
-                    <span className="inline-flex items-center gap-1 text-emerald-600 font-bold">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 admin-pulse-dot" />
+                    <span className="inline-flex items-center gap-1.5 text-emerald-600 font-semibold text-[11px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       Realtime Live Sync
                     </span>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2.5 flex-shrink-0">
+                <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
                   <button onClick={() => goTab('register')}
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-md hover:shadow-lg transition-all"
-                    style={{ background: 'linear-gradient(135deg, #FF6B00, #E55A00)', boxShadow: '0 4px 12px rgba(255, 107, 0, 0.3)' }}>
-                    <span>➕</span> புது உறுப்பினர் / Register
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white bg-[#FF6B00] hover:bg-[#E55A00] transition shadow-xs">
+                    <span>＋</span> புது உறுப்பினர் / Register
                   </button>
                   <button onClick={() => exportCSV()}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition">
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition shadow-xs">
                     <span>📥</span> CSV
                   </button>
                   <button onClick={() => { loadMembers(); loadUsers(); }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-[#003366] bg-blue-50 hover:bg-blue-100 border border-blue-200 transition">
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition shadow-xs">
                     <span className={loadingData ? 'animate-spin' : ''}>↻</span> Refresh
                   </button>
                 </div>
@@ -1899,10 +2000,7 @@ NEW MEMBER REGISTRATION DETAILS
                     tamil: 'மொத்த உறுப்பினர்கள்',
                     value: members.length,
                     sub: 'All time registrations',
-                    tag: '📈 Total Roster',
-                    accent: '#FF6B00',
-                    shadow: 'rgba(255, 107, 0, 0.35)',
-                    iconBg: 'linear-gradient(135deg, #FF6B00, #FF8C00)',
+                    tag: 'Total Roster',
                     icon: '👥'
                   },
                   {
@@ -1910,32 +2008,23 @@ NEW MEMBER REGISTRATION DETAILS
                     tamil: 'இன்று இணைந்தவர்கள்',
                     value: todayCount,
                     sub: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', timeZone: 'Asia/Kolkata' }),
-                    tag: '⚡ New Inflow',
-                    accent: '#10B981',
-                    shadow: 'rgba(16, 185, 129, 0.35)',
-                    iconBg: 'linear-gradient(135deg, #10B981, #059669)',
-                    icon: '✅'
+                    tag: 'New Inflow',
+                    icon: '⚡'
                   },
                   {
                     label: 'Districts Covered',
                     tamil: 'மாவட்டங்கள்',
                     value: activeDistricts,
                     sub: `of ${TAMIL_NADU_DISTRICTS.length} total districts`,
-                    tag: '📍 40/40 Covered',
-                    accent: '#2563EB',
-                    shadow: 'rgba(37, 99, 235, 0.35)',
-                    iconBg: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-                    icon: '🗺️'
+                    tag: `${activeDistricts}/${TAMIL_NADU_DISTRICTS.length} Covered`,
+                    icon: '📍'
                   },
                   {
                     label: 'Signed-Up Users',
                     tamil: 'இணைய கணக்குகள்',
                     value: users.length,
                     sub: 'Accounts created',
-                    tag: '👤 Portal Accounts',
-                    accent: '#7C3AED',
-                    shadow: 'rgba(124, 58, 237, 0.35)',
-                    iconBg: 'linear-gradient(135deg, #7C3AED, #6D28D9)',
+                    tag: 'Portal Accounts',
                     icon: '👤'
                   },
                   {
@@ -1943,11 +2032,8 @@ NEW MEMBER REGISTRATION DETAILS
                     tamil: 'அனுமதி நிலுவை',
                     value: pendingCount,
                     sub: pendingCount > 0 ? 'Awaiting admin review' : 'All applications reviewed',
-                    tag: pendingCount > 0 ? '⏳ Action Required' : '✓ All Clear',
-                    accent: '#F59E0B',
-                    shadow: 'rgba(245, 158, 11, 0.35)',
-                    iconBg: pendingCount > 0 ? 'linear-gradient(135deg, #F59E0B, #D97706)' : 'linear-gradient(135deg, #10B981, #059669)',
-                    icon: pendingCount > 0 ? '⏳' : '✅',
+                    tag: pendingCount > 0 ? 'Action Required' : 'All Clear',
+                    icon: '⏳',
                     isAlert: pendingCount > 0,
                     onClick: pendingCount > 0 ? () => goTab('pending') : undefined
                   },
@@ -1956,11 +2042,8 @@ NEW MEMBER REGISTRATION DETAILS
                     tamil: 'நிராகரிக்கப்பட்டவை',
                     value: rejectedCount,
                     sub: rejectedCount > 0 ? 'Fix info / photo & approve' : 'Zero rejected',
-                    tag: rejectedCount > 0 ? '❌ Requires Action' : '✓ All Good',
-                    accent: '#DC2626',
-                    shadow: 'rgba(220, 38, 38, 0.35)',
-                    iconBg: rejectedCount > 0 ? 'linear-gradient(135deg, #DC2626, #B91C1C)' : 'linear-gradient(135deg, #10B981, #059669)',
-                    icon: rejectedCount > 0 ? '❌' : '✅',
+                    tag: rejectedCount > 0 ? 'Requires Action' : 'All Good',
+                    icon: '✕',
                     isAlert: rejectedCount > 0,
                     onClick: rejectedCount > 0 ? () => goTab('rejected') : undefined
                   },
@@ -1969,52 +2052,34 @@ NEW MEMBER REGISTRATION DETAILS
                     tamil: 'விண்ணப்பிக்காதோர்',
                     value: notRegistered,
                     sub: notRegistered > 0 ? 'Signed-up but no form' : 'All accounts submitted',
-                    tag: '📋 Unregistered',
-                    accent: '#EA580C',
-                    shadow: 'rgba(234, 88, 12, 0.35)',
-                    iconBg: notRegistered > 0 ? 'linear-gradient(135deg, #EA580C, #C2410C)' : 'linear-gradient(135deg, #10B981, #059669)',
-                    icon: notRegistered > 0 ? '⏳' : '🎉'
+                    tag: 'Unregistered',
+                    icon: '📋'
                   },
                   {
                     label: 'Legacy Storage Photos',
                     tamil: 'பழைய படங்கள்',
                     value: legacyPhotos,
                     sub: legacyPhotos > 0 ? 'Pending cloud sync' : '100% Cloud Synced',
-                    tag: legacyPhotos > 0 ? '🖼️ Syncing' : '☁️ 100% Cloud',
-                    accent: '#0D9488',
-                    shadow: 'rgba(13, 148, 136, 0.35)',
-                    iconBg: legacyPhotos > 0 ? 'linear-gradient(135deg, #0D9488, #0F766E)' : 'linear-gradient(135deg, #10B981, #059669)',
-                    icon: legacyPhotos > 0 ? '🖼️' : '☁️'
+                    tag: legacyPhotos > 0 ? 'Syncing' : 'Cloud Synced',
+                    icon: '☁️'
                   },
                 ];
 
                 return (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {cards.map(card => (
                       <div key={card.label}
-                        className="admin-card-hover relative overflow-hidden bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm transition-all flex flex-col justify-between group cursor-pointer"
-                        style={{
-                          borderTop: `4px solid ${card.accent}`
-                        }}
+                        className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:border-slate-300 hover:shadow-sm transition-all flex flex-col justify-between group cursor-pointer"
                         onClick={card.onClick}
                       >
-                        {/* Subtle ambient watermark glow */}
-                        <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full blur-2xl opacity-15 pointer-events-none" style={{ background: card.accent }} />
-
                         {/* Top row: Icon + Tag */}
-                        <div className="flex items-center justify-between gap-2 relative z-10">
-                          <div style={{
-                            width: '44px', height: '44px', borderRadius: '12px',
-                            background: card.iconBg,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '20px',
-                            boxShadow: `0 8px 16px -4px ${card.shadow}`
-                          }}>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-sm font-semibold">
                             {card.icon}
                           </div>
-                          <span className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full border ${
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
                             card.isAlert
-                              ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
+                              ? 'bg-rose-50 text-rose-700 border-rose-200'
                               : 'bg-slate-50 text-slate-600 border-slate-200'
                           }`}>
                             {card.tag}
@@ -2022,23 +2087,23 @@ NEW MEMBER REGISTRATION DETAILS
                         </div>
 
                         {/* Middle Metric: Number + Label */}
-                        <div className="mt-4 relative z-10">
-                          <div className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-none" style={{ color: card.accent }}>
+                        <div className="mt-4">
+                          <div className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight font-sans">
                             {loadingData ? '—' : (card.value || 0).toLocaleString('en-IN')}
                           </div>
-                          <div className="text-sm font-bold text-slate-800 mt-2">
+                          <div className="text-xs font-semibold text-slate-700 mt-1">
                             {card.label}
                           </div>
-                          <div className="text-[11px] font-medium text-slate-500">
+                          <div className="text-[11px] text-slate-400">
                             {card.tamil}
                           </div>
                         </div>
 
                         {/* Bottom row: Subtitle + Action link */}
-                        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 relative z-10">
+                        <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
                           <span className="truncate">{card.sub}</span>
                           {card.onClick && (
-                            <span className="text-xs font-bold text-[#FF6B00] flex items-center gap-0.5 group-hover:translate-x-1 transition-transform flex-shrink-0 ml-1">
+                            <span className="text-xs font-semibold text-[#FF6B00] flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform flex-shrink-0 ml-1">
                               View →
                             </span>
                           )}
@@ -2264,6 +2329,91 @@ NEW MEMBER REGISTRATION DETAILS
                   </div>
                 );
               })()}
+            </div>
+          )}
+
+          {/* ── HERO CAROUSEL MANAGEMENT ── */}
+          {activeTab === 'carousel' && (
+            <div className="space-y-6 max-w-6xl">
+              {/* Executive Header Banner */}
+              <div className="bg-white rounded-xl p-5 md:p-6 border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-semibold tracking-wider uppercase mb-1.5">
+                    Homepage Hero Banner
+                  </div>
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
+                    Hero Carousel Slider / முகப்பு ஸ்லைடர்
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Upload and manage sliding hero banners displayed prominently on the website homepage.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={openAddCarouselModal}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-semibold text-white bg-[#FF6B00] hover:bg-[#E55A00] transition shadow-xs"
+                  >
+                    <span>＋</span> புதிய ஸ்லைடு சேர் / Add Slide
+                  </button>
+                </div>
+              </div>
+
+              {/* Informative Guidance Banner */}
+              <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-xs text-blue-900 flex items-start gap-3">
+                <span className="text-base">💡</span>
+                <div className="leading-relaxed">
+                  <strong>Auto-Crop & Live Sync:</strong> Uploaded images automatically scale and crop cleanly for mobile phones, tablets, and desktop viewports (`object-cover`). Any changes made here reflect on the live homepage hero carousel instantly.
+                </div>
+              </div>
+
+              {/* Slides Grid */}
+              {carouselSlides.length === 0 ? (
+                <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-xs">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center text-xl mx-auto mb-3">
+                    🖼️
+                  </div>
+                  <h3 className="text-sm font-semibold text-slate-800">எந்த ஸ்லைடுகளும் இல்லை / No Custom Carousel Slides</h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                    Currently displaying default association highlights. Click below to upload your first custom hero banner.
+                  </p>
+                  <button
+                    onClick={openAddCarouselModal}
+                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 transition"
+                  >
+                    ＋ Add First Carousel Slide
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {carouselSlides.map((slide, idx) => (
+                    <div key={slide.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between group">
+                      <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+                        <img
+                          src={slide.image_url}
+                          alt={`Slide ${idx + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute top-2.5 left-2.5 bg-black/70 backdrop-blur-md text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded-md">
+                          Slide #{idx + 1}
+                        </div>
+                      </div>
+
+                      <div className="p-3 border-t border-slate-100 flex items-center justify-between text-xs bg-slate-50/50">
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          {slide.created_at ? new Date(slide.created_at).toLocaleDateString('en-IN') : 'Slide Image'}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteCarouselSlide(slide.id)}
+                          className="text-xs font-semibold text-rose-600 hover:text-rose-700 px-2 py-1 rounded hover:bg-rose-50 transition"
+                        >
+                          Delete Slide
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -3954,6 +4104,78 @@ NEW MEMBER REGISTRATION DETAILS
                   className="rounded-xl border border-slate-200 py-3 px-5 text-slate-600 hover:bg-slate-100 transition text-sm font-semibold"
                 >
                   Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── CAROUSEL SLIDE MODAL ── */}
+      {carouselModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  {carouselForm.id ? 'Edit Carousel Slide / ஸ்லைடு திருத்து' : 'New Carousel Slide / புதிய ஸ்லைடு'}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">Appears on the homepage hero banner slider</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setCarouselModalOpen(false); setCarouselPreview(null); }}
+                className="text-slate-400 hover:text-slate-600 text-lg w-7 h-7 rounded-full flex items-center justify-center hover:bg-slate-100 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCarouselSlide} className="p-6 space-y-4">
+              {/* Image Upload Box */}
+              <div>
+                <div className="border-2 border-dashed border-slate-300 hover:border-[#FF6B00] rounded-xl p-6 text-center bg-slate-50/60 transition relative cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCarouselFileChange}
+                    disabled={carouselUploading}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  />
+                  {carouselPreview ? (
+                    <div className="relative aspect-video w-full rounded-lg overflow-hidden border border-slate-200 bg-black/5">
+                      <img src={carouselPreview} alt="Preview" className="w-full h-full object-cover" />
+                      {carouselUploading && (
+                        <div className="absolute inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center text-white text-xs font-semibold">
+                          Uploading to CDN...
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="py-6">
+                      <div className="text-3xl mb-2">📷</div>
+                      <div className="text-sm font-semibold text-slate-800">Click or Drag & Drop photo here</div>
+                      <div className="text-xs text-slate-400 mt-1">PNG, JPG, WEBP · Auto-crops cleanly on all devices</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-2 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => { setCarouselModalOpen(false); setCarouselPreview(null); }}
+                  className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={carouselUploading || !carouselForm.imageUrl}
+                  className="px-5 py-2.5 rounded-lg text-xs font-semibold text-white bg-[#FF6B00] hover:bg-[#E55A00] disabled:opacity-50 transition shadow-xs"
+                >
+                  {carouselUploading ? 'Uploading...' : 'Publish to Carousel'}
                 </button>
               </div>
             </form>
